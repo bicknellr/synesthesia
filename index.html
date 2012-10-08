@@ -1,10 +1,14 @@
 <html>
 <head>
 
+
 <script type="application/javascript" src="./module.js"></script>
 <script type="application/javascript" src="./Utilities.js"></script>
 <script type="application/javascript" src="./Synesthesia.js"></script>
+  <link rel="stylesheet" type="text/css" href="./Synesthesia.css" />
+<script type="application/javascript" src="./Synesthesia.AudioNode.js"></script>
 <script type="application/javascript" src="./Synesthesia.UI.js"></script>
+  <link rel="stylesheet" type="text/css" href="./Synesthesia.UI.css" />
 <script type="application/javascript" src="./Synesthesia.Instrument.js"></script>
 
 <script type="application/javascript">
@@ -105,30 +109,48 @@ var KeyboardInput = (function () {
 })();
 
 window.addEventListener("load", function () {
-  module("MAIN", ["Synesthesia"], function () {
+  module("MAIN", ["Synesthesia", "Synesthesia.UI"], function () {
 
     window.Synesthesia = require("Synesthesia");
     
     MainSynesthesia = new Synesthesia();
 
-    MainSine = new Synesthesia.Instrument.Oscillator({
-      synesthesia: MainSynesthesia,
-      type: Synesthesia.Instrument.Oscillator.Type.SAWTOOTH
-    });
-    MainSine.connect(MainSynesthesia.getDestination());
-
     MainKeyboard = new KeyboardInput();
     MainKeyboard.attach(MainSynesthesia);
 
-    MainSynesthesia.mapInput(MainKeyboard, MainSine);
+    TestOsc1 = new Synesthesia.Instrument.Oscillator({
+      synesthesia: MainSynesthesia,
+      type: Synesthesia.Instrument.Oscillator.Type.SINE,
+
+      x: 10, y: 10
+    });
+    TestOsc1.connect(MainSynesthesia.getDestination());
+
+    MainSynesthesia.mapInput(MainKeyboard, TestOsc1);
+
+    TestOsc2 = new Synesthesia.Instrument.Oscillator({
+      synesthesia: MainSynesthesia,
+      type: Synesthesia.Instrument.Oscillator.Type.SINE,
+
+      x: 10, y: 170
+    });
+    TestOsc2.connect(MainSynesthesia.getDestination());
+
+    MainSynesthesia.mapInput(MainKeyboard, TestOsc2);
 
     // UI
 
     MainUI = new Synesthesia.UI({
-      canvas: document.getElementById("MainCanvas")
+      node_canvas: document.getElementById("NodeCanvas"),
+      node_div: document.getElementById("NodeDiv")
     });
-      MainUI.addNode(MainSine);
-    MainUI.draw();
+      MainUI.addNode(TestOsc1, {
+        width: 240, height: 240
+      });
+      MainUI.addNode(TestOsc2, {
+        width: 240, height: 240
+      });
+    MainUI.start();
 
   });
 }, false);
@@ -137,7 +159,10 @@ window.addEventListener("load", function () {
 </head>
 <body>
 
-<canvas id="MainCanvas" width="640" height="480"></canvas>
+<canvas style="display:none;" id="MainCanvas" width="640" height="480"></canvas>
+
+<canvas id="NodeCanvas" width="640" height="480"></canvas>
+<div id="NodeDiv"></div>
 
 </body>
 </html>

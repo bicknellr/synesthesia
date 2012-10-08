@@ -9,6 +9,15 @@ module("Utilities", [], function () {
         root[prop] = obj[prop];
       }
     }
+    
+    root._ancestors = [];
+    for (var i = 0; i < arguments.length; i++) {
+      root._ancestors.push(arguments[i].constructor);
+    }
+    root._extends = function (ancestor) {
+      return (root._ancestors.indexOf(ancestor) != -1);
+    };
+
     return root;
   };
 
@@ -37,6 +46,10 @@ module("Utilities", [], function () {
 
       this.keys.splice(index, 1);
       return this.values.splice(index, 1);
+    };
+
+    Map.prototype.getKeys = function () {
+      return this.keys.concat([]);
     };
 
     return Map;

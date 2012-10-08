@@ -10,27 +10,27 @@
 
       if (cur_module.processed) continue;
 
-      for (var req_ix = 0; req_ix < cur_module.requirements.length; req_ix++) {
-        var req_name = cur_module.requirements[req_ix];
+      for (var req_ix = 0; req_ix < cur_module.dependencies.length; req_ix++) {
+        var req_name = cur_module.dependencies[req_ix];
         if (!modules[req_name]) {
-          console.log("module: not found: " + req_name);
+          console.log("module: Dependency '" + req_name + "' for '" + cur_module.name + "' not found.");
           continue to_next_module;
         }
         if (!modules[req_name].processed) {
-          console.log("module: not processed: " + req_name);
+          console.log("module: Dependency '" + req_name + "' for '" + cur_module.name + "' not processed.");
           continue to_next_module;
         }
       }
 
-      console.log("module: processing: " + cur_module.name);
+      console.log("module: Processing '" + cur_module.name + "'.");
 
       try {
-        cur_module.exports = cur_module.callback();
+        cur_module.exports = cur_module.callback.apply(window);
       } catch (e) {
         if (e.stack) {
-          console.error("module: processing " + cur_module.name + " failed:\n" + e.stack.toString());
+          console.error("module: Processing '" + cur_module.name + "' failed:\n" + e.stack.toString());
         } else {
-          console.error("module: processing " + cur_module.name + " failed:");
+          console.error("module: Processing '" + cur_module.name + "' failed:");
           console.error(e);
         }
         continue;
@@ -43,10 +43,10 @@
     if (changes) check_modules();
   };
 
-  window.module = function (name, requirements, callback) {
+  window.module = function (name, dependencies, callback) {
     modules[name] = {
       name: name,
-      requirements: requirements,
+      dependencies: dependencies,
       callback: callback,
       exports: {},
       processed: false
@@ -56,6 +56,9 @@
   };
 
   window.require = function (name) {
+    if (!modules[name]) {
+      throw new Error("module: Unsatisfied dependency (" + name + ") requested!");
+    }
     return modules[name].exports;
   };
 

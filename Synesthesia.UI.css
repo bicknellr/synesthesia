@@ -1,0 +1,70 @@
+.Synesthesia_UI_NodeCanvas__canvas {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+
+.Synesthesia_UI__node_div {
+  pointer-events: none;
+  overflow: hidden;
+
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+}
+
+.Synesthesia_UI__node_div * {
+  pointer-events: auto;
+}
+
+.Synesthesia_UI_Node__main {
+  -webkit-user-select: none;
+
+  position: absolute;
+  overflow: hidden;
+  
+  /* HACK: placement of node decoration
+  needs to be dependend upon border also. */
+  margin-top: -2px;
+  margin-left: -2px;
+
+  border: 2px solid #808080;
+
+  background-color: #f0f0f0;
+}
+
+.Synesthesia_UI_Node__main .title {
+  -webkit-user-select: none;
+  cursor: move;
+
+  background-color: #ffffff;
+  border-bottom: 1px solid #808080;
+  padding: 3px;
+  color: #404040;
+
+  -webkit-transition:
+    background ease-in-out 0.1s,
+    color ease-in-out 0.1s;
+}
+
+.Synesthesia_UI_Node__main .title:hover {
+  color: #e0e0e0;
+  background-color: #444444;
+}
+
+.Synesthesia_UI_Node__main .resize_grabber {
+  cursor: nwse-resize;
+
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  width: 8px;
+  height: 8px;
+
+  border-width: 1px 0px 0px 1px;
+  border-style: solid;
+  border-color: #808080;
+  background-color: rgba(255, 255, 255, 0.5);
+}

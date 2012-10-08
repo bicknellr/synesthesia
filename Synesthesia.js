@@ -15,6 +15,11 @@ module("Synesthesia", ["Utilities"], function (exports) {
       this.context = new Synesthesia.AudioContext();
     }
 
+    Synesthesia.requestAnimationFrame = (
+      window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : null ||
+      window.webkitRequestAnimationFrame ? window.webkitRequestAnimationFrame.bind(window) : null
+    );
+
     Synesthesia.AudioContext = window.AudioContext || window.webkitAudioContext;
 
     //
