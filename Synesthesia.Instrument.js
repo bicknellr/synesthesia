@@ -41,9 +41,6 @@ function () {
     function Oscillator (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Synesthesia.UI.Node.apply(this, arguments);
-      this.title = "Oscillator";
-      
       Synesthesia.Instrument.apply(this, arguments);
 
       // BEGIN
@@ -59,7 +56,10 @@ function () {
         "detune"
       ];
 
-      this.div = null;
+      this.ui_window = new Synesthesia.UI.NodeWindow({
+        node: this,
+        title: "Oscillator"
+      });
     }
 
     Oscillator.Type = {
@@ -71,7 +71,6 @@ function () {
     };
 
     Oscillator.prototype = Utilities.extend(
-      new Synesthesia.UI.Node(),
       new Synesthesia.Instrument()
     );
 
@@ -102,6 +101,10 @@ function () {
 
     // Synesthesia.UI.Node
 
+    Oscillator.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
     Oscillator.prototype.getInputDescriptors = function () {
       return [
         { name: "notes",
@@ -126,8 +129,8 @@ function () {
       ];
     };
 
-    Oscillator.prototype.informPrepared = function () {
-      //Synesthesia.UI.Node.prototype.attachDiv.apply(this, arguments); // SUPER
+    Oscillator.prototype.informWindowPrepared = function (div) {
+      this.div = div;
 
       // TEST
       this.type_select = document.createElement("select");

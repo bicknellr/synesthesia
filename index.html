@@ -120,9 +120,7 @@ window.addEventListener("load", function () {
 
     TestOsc1 = new Synesthesia.Instrument.Oscillator({
       synesthesia: MainSynesthesia,
-      type: Synesthesia.Instrument.Oscillator.Type.SINE,
-
-      x: 10, y: 10
+      type: Synesthesia.Instrument.Oscillator.Type.SINE
     });
     TestOsc1.connect(MainSynesthesia.getDestination());
 
@@ -130,9 +128,7 @@ window.addEventListener("load", function () {
 
     TestOsc2 = new Synesthesia.Instrument.Oscillator({
       synesthesia: MainSynesthesia,
-      type: Synesthesia.Instrument.Oscillator.Type.SINE,
-
-      x: 10, y: 170
+      type: Synesthesia.Instrument.Oscillator.Type.SINE
     });
     TestOsc2.connect(MainSynesthesia.getDestination());
 
@@ -145,10 +141,10 @@ window.addEventListener("load", function () {
       node_div: document.getElementById("NodeDiv")
     });
       MainUI.addNode(TestOsc1, {
-        width: 240, height: 240
+        x: 20, y: 10
       });
       MainUI.addNode(TestOsc2, {
-        width: 240, height: 240
+        x: 20, y: 170
       });
     MainUI.start();
 
@@ -158,8 +154,6 @@ window.addEventListener("load", function () {
 </script>
 </head>
 <body>
-
-<canvas style="display:none;" id="MainCanvas" width="640" height="480"></canvas>
 
 <canvas id="NodeCanvas" width="640" height="480"></canvas>
 <div id="NodeDiv"></div>

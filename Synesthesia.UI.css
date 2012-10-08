@@ -4,7 +4,7 @@
   left: 0px;
 }
 
-.Synesthesia_UI__node_div {
+.Synesthesia_UI__node_window_container {
   pointer-events: none;
   overflow: hidden;
 
@@ -15,11 +15,11 @@
   bottom: 0px;
 }
 
-.Synesthesia_UI__node_div * {
+.Synesthesia_UI__node_window_container * {
   pointer-events: auto;
 }
 
-.Synesthesia_UI_Node__main {
+.Synesthesia_UI_NodeWindow__main {
   -webkit-user-select: none;
 
   position: absolute;
@@ -31,11 +31,12 @@
   margin-left: -2px;
 
   border: 2px solid #808080;
+  border-radius: 2px;
 
   background-color: #f0f0f0;
 }
 
-.Synesthesia_UI_Node__main .title {
+.Synesthesia_UI_NodeWindow__main .title {
   -webkit-user-select: none;
   cursor: move;
 
@@ -49,12 +50,12 @@
     color ease-in-out 0.1s;
 }
 
-.Synesthesia_UI_Node__main .title:hover {
+.Synesthesia_UI_NodeWindow__main .title:hover {
   color: #e0e0e0;
   background-color: #444444;
 }
 
-.Synesthesia_UI_Node__main .resize_grabber {
+.Synesthesia_UI_NodeWindow__main .resize_grabber {
   cursor: nwse-resize;
 
   position: absolute;
@@ -66,5 +67,6 @@
   border-width: 1px 0px 0px 1px;
   border-style: solid;
   border-color: #808080;
+  border-radius: 2px 0px 0px 0px;
   background-color: rgba(255, 255, 255, 0.5);
 }

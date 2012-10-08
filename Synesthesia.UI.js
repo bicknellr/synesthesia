@@ -12,45 +12,48 @@ function () {
 
       this.running = false;
 
-      this.node_ordering = [];
-      this.nodes = new Utilities.Map();
+      this.nodes = [];
+      this.endpoints = [];
+      this.connections = [];
 
       this.node_canvas = new Synesthesia.UI.NodeCanvas({
         canvas: this.params.node_canvas
       });
-      this.node_canvas.useMap(this.nodes);
+      this.node_canvas.setDrawables({
+        nodes: this.nodes,
+        endpoints: this.endpoints,
+        connections: this.connections
+      });
 
       this.node_div = this.params.node_div;
-      this.node_div.className = "Synesthesia_UI__node_div";
+      this.node_div.className = "Synesthesia_UI__node_window_container";
     }
 
     UI.prototype.addNode = function (new_node, params) {
       var params = (typeof params !== "undefined" ? params : {});
 
-      new_node.attachUI(this);
+      new_node.getWindow().attachUI(this);
+      this.addNodeWindow(new_node.getWindow(), params);
+    };
 
-      var node_canvas = document.createElement("canvas");
-        node_canvas.width = params.width;
-        node_canvas.height = params.height;
-
+    UI.prototype.addNodeWindow = function (node_window, params) {
       var div = document.createElement("div");
       this.node_div.appendChild(div);
-      new_node.setContainer(div);
+      node_window.setContainer(div);
         
-      var node_props = {
-        canvas: node_canvas,
-        node_div: this.node_div
-      };
-      this.node_ordering.push(new_node);
-      this.nodes.set(new_node, node_props);
+      this.nodes.push(node_window);
 
-      new_node.reflow();
+      for (var prop_name in params) {
+        if (!params.hasOwnProperty(prop_name)) continue;
+        node_window[prop_name] = params[prop_name];
+      }
+      node_window.reflow();
     };
 
     UI.prototype.bringToFront = function (node) {
-      var index = this.node_ordering.indexOf(node);
-      this.node_ordering.push(
-        this.node_ordering.splice(index, 1)[0]
+      var index = this.nodes.indexOf(node);
+      this.nodes.push(
+        this.nodes.splice(index, 1)[0]
       );
     };
 
@@ -71,9 +74,7 @@ function () {
     };
 
     UI.prototype.draw = function () {
-      this.node_canvas.draw({
-        with_ordering: this.node_ordering
-      });
+      this.node_canvas.draw();
     };
 
     return UI;
@@ -129,13 +130,15 @@ function () {
     return Draggable;
   })();
 
-  Synesthesia.UI.Node = (function () {
-    function Node (params) {
+  Synesthesia.UI.NodeWindow = (function () {
+    function NodeWindow (params) {
       if (!params) return; // INTERFACE
 
       this.params = (typeof params !== "undefined" ? params : {});
 
       this.UI = null
+
+      this.node = params.node;
 
       this.x = this.params.x || 0;
       this.y = this.params.y || 0;
@@ -143,62 +146,82 @@ function () {
       this.width = this.params.width || 200;
       this.height = this.params.height || 150;
 
-      this.title = "Node";
+      this.title = this.params.title || "Node";
+
+      this.input_endpoints = this.node.getInputDescriptors().map((function (desc) {
+        return new Synesthesia.UI.Endpoint({
+          parent_window: this,
+          node: this.node,
+          name: desc.name,
+          type: desc.type
+        });
+      }).bind(this));
+
+      this.output_endpoints = this.node.getOutputDescriptors().map((function (desc) {
+        return new Synesthesia.UI.Endpoint({
+          parent_window: this,
+          node: this.node,
+          name: desc.name,
+          type: desc.type
+        });
+      }).bind(this));
     }
 
-    Node.prototype.getInputDescriptors = function () {
-      throw new Error("Synesthesia.UI.Node(.getInputDescriptors): Not implemented.");
+    NodeWindow.prototype.getNode = function () {
+      return this.node;
     };
 
-    Node.prototype.getOutputDescriptors = function () {
-      throw new Error("Synesthesia.UI.Node(.getOutputDescriptors): Not implemented.");
-    };
-
-    Node.prototype.attachUI = function (UI) {
+    NodeWindow.prototype.attachUI = function (UI) {
       this.UI = UI;
     };
 
-    Node.prototype.draw = function () {
-      throw new Error("Synesthesia.UI.Drawable(.draw): Not implemented.");
+    NodeWindow.prototype.setTitle = function (new_title) {
+      this.title = new_title;
     };
 
-    Node.prototype.setContainer = function (div) {
+    NodeWindow.prototype.draw = function () {
+      this.title_div.innerHTML = this.title;
+      this.node.draw();
+      //throw new Error("Synesthesia.UI.Drawable(.draw): Not implemented.");
+    };
+
+    NodeWindow.prototype.setContainer = function (div) {
       this._container = div;
-        this._container.className = "Synesthesia_UI_Node__main";
+        this._container.className = "Synesthesia_UI_NodeWindow__main";
         this._container.style.left = "" + this.x + "px";
         this._container.style.top = "" + this.y + "px";
         this._container.addEventListener("mousedown", (function () {
           this.UI.bringToFront(this);
         }).bind(this), false);
 
-      var title = document.createElement("div");
-        title.className = "title";
-        title.innerHTML = this.title;
-      this._container.appendChild(title);
+      this.title_div = document.createElement("div");
+        this.title_div.className = "title";
+        this.title_div.innerHTML = this.title;
+      this._container.appendChild(this.title_div);
 
       this.div = document.createElement("div");
       this._container.appendChild(this.div);
 
-      var resize_grabber = document.createElement("div");
-        resize_grabber.className = "resize_grabber";
-      this._container.appendChild(resize_grabber);
+      this.resize_grabber = document.createElement("div");
+        this.resize_grabber.className = "resize_grabber";
+      this._container.appendChild(this.resize_grabber);
 
       this._draggable = new Synesthesia.UI.Draggable({
-        handle: title,
+        handle: this.title_div,
         callback: this.handle_drag.bind(this)
       });
 
       this._resizeable = new Synesthesia.UI.Draggable({
-        handle: resize_grabber,
+        handle: this.resize_grabber,
         callback: this.handle_resize.bind(this)
       });
 
-      //throw new Error("Synesthesia.UI.Node(.attachDiv): Not implemented.");
+      //throw new Error("Synesthesia.UI.NodeWindow(.attachDiv): Not implemented.");
 
-      this.informPrepared();
+      this.node.informWindowPrepared(this.div);
     };
 
-    Node.prototype.handle_drag = function (params) {
+    NodeWindow.prototype.handle_drag = function (params) {
       var div_style = window.getComputedStyle(this._container);
       this.x = parseInt(div_style.left) + params.dx;
       this.y = parseInt(div_style.top) + params.dy;
@@ -210,28 +233,74 @@ function () {
       params.event.preventDefault();
     };
 
-    Node.prototype.handle_resize = function (params) {
+    NodeWindow.prototype.handle_resize = function (params) {
       var div_style = window.getComputedStyle(this._container);
-      this.width = parseInt(div_style.width) + params.dx;
-      this.height = parseInt(div_style.height) + params.dy;
+      this.width = Math.max(parseInt(div_style.width) + params.dx, 100);
+      this.height = Math.max(parseInt(div_style.height) + params.dy, 100);
 
       this.reflow();
 
       params.event.preventDefault();
     };
 
-    Node.prototype.setZIndex = function (index) {
+    NodeWindow.prototype.setZIndex = function (index) {
       this._container.style.zIndex = "" + index;
     };
 
-    Node.prototype.reflow = function () {
+    NodeWindow.prototype.reflow = function () {
       this._container.style.left = "" + this.x + "px";
       this._container.style.top = "" + this.y + "px";
-      this._container.style.width = "" + Math.max(this.width, 200) + "px";
-      this._container.style.height = "" + Math.max(this.height, 150) + "px";
+      this._container.style.width = "" + this.width + "px";
+      this._container.style.height = "" + this.height + "px";
     };
 
-    return Node;
+    NodeWindow.prototype.drawEndpoints = function (canvas) {
+      // input endpoints
+      for (var endp_ix = 0; endp_ix < this.input_endpoints.length; endp_ix++) {
+        var cur_endpoint = this.input_endpoints[endp_ix];
+        cur_endpoint.drawWithParams(canvas, {
+          x: this.x - 10,
+          y: this.y + 10 + 20 * endp_ix
+        });
+      }
+
+      // output endpoints
+      for (var endp_ix = 0; endp_ix < this.output_endpoints.length; endp_ix++) {
+        var cur_endpoint = this.output_endpoints[endp_ix];
+        cur_endpoint.drawWithParams(canvas, {
+          x: this.x + this.width + 10,
+          y: this.y + 10 + 20 * endp_ix
+        });
+      }
+    };
+
+    return NodeWindow;
+  })();
+
+  Synesthesia.UI.Endpoint = (function () {
+    function Endpoint (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.node = params.node;
+      this.name = params.name;
+    }
+
+    Endpoint.prototype.drawWithParams = function (canvas, params) {
+      var context = canvas.getContext("2d");
+      context.save();
+        context.beginPath();
+        context.arc(
+          params.x, params.y,
+          5,
+          0, 2 * Math.PI
+        );
+        context.strokeStyle = "rgba(0, 0, 0, 1)";
+        context.lineWidth = 2;
+        context.stroke();
+      context.restore();
+    };
+
+    return Endpoint;
   })();
 
   Synesthesia.UI.NodeCanvas = (function () {
@@ -243,6 +312,8 @@ function () {
       this.context = this.canvas.getContext("2d");
 
       this.node_map = null;
+
+      this.drawables = {};
 
       this.init();
     }
@@ -258,6 +329,10 @@ function () {
       this.canvas.addEventListener("mousewheel", this.handle_mousewheel.bind(this), false);
 
       this.handle_resize();
+    };
+
+    NodeCanvas.prototype.setDrawables = function (new_drawables) {
+      this.drawables = new_drawables;
     };
 
     // Event handlers.
@@ -302,54 +377,27 @@ function () {
       e.stopPropagation();
     };
 
-    // Node managment.
-
-    NodeCanvas.prototype.useMap = function (map) {
-      this.node_map = map;
-    };
-
     // UI drawing.
 
     NodeCanvas.prototype.draw = function (params) {
       params = (typeof params !== "undefined" ? params : {});
-      if (!this.node_map) return;
       
       this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-      var nodes = params.with_ordering || this.node_map.getKeys();
-      for (var node_ix = 0; node_ix < nodes.length; node_ix++) {
-        var cur_node = nodes[node_ix];
-        var cur_node_props = this.node_map.get(cur_node);
-
+      var drawNode = (function (cur_node) {
         cur_node.setZIndex(node_ix);
+        // Inform node that it should do it's own internal drawing now.
         cur_node.draw();
+        // Ask node to draw endpoints.
+        this.context.save();
+          cur_node.drawEndpoints(this.canvas);
+        this.context.restore();
+      }).bind(this);
 
-        var inputs_desc = cur_node.getInputDescriptors();
-        for (var input_ix = 0; input_ix < inputs_desc.length; input_ix++) {
-          this.context.beginPath();
-          this.context.arc(
-            cur_node.x - 10,
-            cur_node.y + input_ix * 20 + 10,
-            5,
-            0, 2 * Math.PI
-          );
-          this.context.strokeStyle = "rgba(0, 0, 0, 1)";
-          this.context.lineWidth = 2;
-          this.context.stroke();
-        }
-
-        var outputs_desc = cur_node.getOutputDescriptors();
-        for (var output_ix = 0; output_ix < outputs_desc.length; output_ix++) {
-          this.context.beginPath();
-          this.context.arc(
-            cur_node.x + cur_node.width + 10,
-            cur_node.y + output_ix * 20 + 10,
-            5,
-            0, 2 * Math.PI
-          );
-          this.context.strokeStyle = "rgba(0, 0, 0, 1)";
-          this.context.lineWidth = 2;
-          this.context.stroke();
+      if (this.drawables.nodes) {
+        for (var node_ix = 0; node_ix < this.drawables.nodes.length; node_ix++) {
+          var cur_node = this.drawables.nodes[node_ix];
+          drawNode(cur_node);
         }
       }
     };
