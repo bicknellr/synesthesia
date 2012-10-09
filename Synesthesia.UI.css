@@ -59,6 +59,10 @@
     color ease-in-out 0.1s;
 }
 
+.Synesthesia_UI_NodeWindow__main:hover .title {
+  background-color: #e0e0e0;
+}
+
 .Synesthesia_UI_NodeWindow__main .title:hover {
   color: #e0e0e0;
   background-color: #444444;

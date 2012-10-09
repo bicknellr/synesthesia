@@ -350,6 +350,26 @@ function () {
       }
     };
 
+    Endpoint.prototype.getConnectionForPoint = function (point) {
+      var connection_ix = null;
+      switch (this.direction) {
+        case "output":
+          connection_ix = Math.floor((point.x - this.x) / this.width - 1);
+          break;
+        case "input":
+          connection_ix = Math.floor((this.x - point.x) / this.width);
+          console.log("INPUT #" + connection_ix);
+          break;
+      }
+
+      console.log("found connection " + connection_ix);
+      if (connection_ix === null || connection_ix < 0 || connection_ix > (this.connections.length - 1)) {
+        return null;
+      } else {
+        return this.connections[connection_ix];
+      }
+    };
+
     Endpoint.prototype.isPointWithinBounds = function (point) {
       if (!this.hasState("hovering")) {
         return this.distanceTo(point) < 10;
@@ -402,6 +422,14 @@ function () {
 
     Endpoint.prototype.informConnected = function (new_connection) {
       this.connections.push(new_connection);
+    };
+
+    Endpoint.prototype.informDisconnected = function (rm_connection) {
+      if (this.connections.indexOf(rm_connection) != -1) {
+        this.connections.splice(
+          this.connections.indexOf(rm_connection), 1
+        );
+      }
     };
 
     // Drawing / positioning.
@@ -605,45 +633,66 @@ function () {
     };
 
     NodeCanvas.prototype.handle_mousedown = function (e) {
-      console.log("NodeCanvas mousedown pageX " + e.pageX + " pageY " + e.pageY);
+      //console.log("NodeCanvas mousedown pageX " + e.pageX + " pageY " + e.pageY);
       var selectable_endpoint = this.getSelectableEndpointForPoint({
         x: e.pageX, y: e.pageY
       });
       if (selectable_endpoint) {
         this.selected_endpoint = selectable_endpoint;
-        // Correct direction.
-        if (this.selected_endpoint.direction == "input") {
-          this.temporary_endpoint = new Synesthesia.UI.Endpoint({
-            /*
-            parent_window: this,
-            node: this.node,
-            name: desc.name,
-            */
-            type: null,
-            direction: "output"
-          });
-          this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
-          this.temporary_connection = new Synesthesia.UI.Connection({
-            from_endpoint: this.temporary_endpoint,
-            to_endpoint: this.selected_endpoint
-          });
-        } else if (this.selected_endpoint.direction == "output") {
-          this.temporary_endpoint = new Synesthesia.UI.Endpoint({
-            /*
-            parent_window: this,
-            node: this.node,
-            name: desc.name,
-            */
-            type: null,
-            direction: "input"
-          });
-          this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
-          this.temporary_connection = new Synesthesia.UI.Connection({
-            from_endpoint: this.selected_endpoint,
-            to_endpoint: this.temporary_endpoint
-          });
+
+        var edit_connection = this.selected_endpoint.getConnectionForPoint({
+          x: e.pageX, y: e.pageY
+        });
+        console.log("edit connection:");
+        console.log(edit_connection);
+        if (edit_connection) { // are we attempting to edit a connection?
+          console.log("edit input");
+
+          this.temporary_connection = edit_connection;
+          edit_connection.from_endpoint.informDisconnected(edit_connection);
+          edit_connection.to_endpoint.informDisconnected(edit_connection);
+          if (selectable_endpoint.direction == "input") {
+            this.temporary_endpoint = new Synesthesia.UI.Endpoint({
+              type: null,
+              direction: "input"
+            });
+            this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
+            this.selected_endpoint = edit_connection.from_endpoint;
+            edit_connection.to_endpoint = this.temporary_endpoint;
+          } else if (this.selected_endpoint.direction == "output") {
+            this.temporary_endpoint = new Synesthesia.UI.Endpoint({
+              type: null,
+              direction: "output"
+            });
+            this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
+            this.selected_endpoint = edit_connection.to_endpoint;
+            edit_connection.from_endpoint = this.temporary_endpoint;
+          }
+        } else {
+          // Correct direction.
+          if (this.selected_endpoint.direction == "input") {
+            this.temporary_endpoint = new Synesthesia.UI.Endpoint({
+              type: null,
+              direction: "output"
+            });
+            this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
+            this.temporary_connection = new Synesthesia.UI.Connection({
+              from_endpoint: this.temporary_endpoint,
+              to_endpoint: this.selected_endpoint
+            });
+          } else if (this.selected_endpoint.direction == "output") {
+            this.temporary_endpoint = new Synesthesia.UI.Endpoint({
+              type: null,
+              direction: "input"
+            });
+            this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
+            this.temporary_connection = new Synesthesia.UI.Connection({
+              from_endpoint: this.selected_endpoint,
+              to_endpoint: this.temporary_endpoint
+            });
+          }
+          this.connections.push(this.temporary_connection);
         }
-        this.connections.push(this.temporary_connection);
       }
 
       this.last_pageX = e.pageX;
@@ -674,7 +723,7 @@ function () {
 
       if (!this.isMousedown) return;
 
-      console.log("NodeCanvas mousemove pageX " + e.pageX + " pageY " + e.pageY);
+      //console.log("NodeCanvas mousemove pageX " + e.pageX + " pageY " + e.pageY);
       this.last_pageX = e.pageX;
       this.last_pageY = e.pageY;
     };
@@ -682,7 +731,6 @@ function () {
     NodeCanvas.prototype.handle_mouseup = function (e) {
       if (!this.isMousedown) return;
 
-      console.log("NodeCanvas mousedown pageX " + e.pageX + " pageY " + e.pageY);
       var selectable_endpoint = this.getSelectableEndpointForPoint({
         x: e.pageX, y: e.pageY
       });
@@ -700,13 +748,14 @@ function () {
         did_finalize_connection = true;
       }
 
-      console.log("NodeCanvas mouseup pageX " + e.pageX + " pageY " + e.pageY);
+      //console.log("NodeCanvas mouseup pageX " + e.pageX + " pageY " + e.pageY);
       this.last_pageX = e.pageX;
       this.last_pageY = e.pageY;
 
-      this.selected_endpoint = null;
       if (this.temporary_connection) {
         if (!did_finalize_connection) {
+          this.temporary_connection.from_endpoint.informDisconnected(this.temporary_connection);
+          this.temporary_connection.to_endpoint.informDisconnected(this.temporary_connection);
           this.connections.splice(
             this.connections.indexOf(this.temporary_connection),
             1
@@ -714,6 +763,7 @@ function () {
         }
         this.temporary_connection = null;
       }
+      this.selected_endpoint = null;
       this.isMousedown = false;
     };
 
