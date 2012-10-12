@@ -22,7 +22,10 @@ module("Synesthesia", ["Utilities"], function (exports) {
 
     Synesthesia.AudioContext = window.AudioContext || window.webkitAudioContext;
 
-    //
+    Synesthesia.prototype.getContext = function () {
+      return this.context;
+    };
+
     Synesthesia.prototype.getDestination = function () {
       return this.context.destination;
     };

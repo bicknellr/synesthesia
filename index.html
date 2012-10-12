@@ -6,10 +6,10 @@
 <script type="application/javascript" src="./Utilities.js"></script>
 <script type="application/javascript" src="./Synesthesia.js"></script>
   <link rel="stylesheet" type="text/css" href="./Synesthesia.css" />
-<script type="application/javascript" src="./Synesthesia.AudioNode.js"></script>
+<script type="application/javascript" src="./Synesthesia.Graph.js"></script>
 <script type="application/javascript" src="./Synesthesia.UI.js"></script>
   <link rel="stylesheet" type="text/css" href="./Synesthesia.UI.css" />
-<script type="application/javascript" src="./Synesthesia.Instrument.js"></script>
+<script type="application/javascript" src="./Synesthesia.Library.js"></script>
 
 <script type="application/javascript">
 
@@ -109,43 +109,59 @@ var KeyboardInput = (function () {
 })();
 
 window.addEventListener("load", function () {
-  module("MAIN", ["Synesthesia", "Synesthesia.UI"], function () {
+  module("MAIN", ["Synesthesia", "Synesthesia.UI", "Synesthesia.Library"], function () {
 
     window.Synesthesia = require("Synesthesia");
     
     MainSynesthesia = new Synesthesia();
-
-    MainKeyboard = new KeyboardInput();
-    MainKeyboard.attach(MainSynesthesia);
-
-    TestOsc1 = new Synesthesia.Instrument.Oscillator({
-      synesthesia: MainSynesthesia,
-      type: Synesthesia.Instrument.Oscillator.Type.SINE
-    });
-    TestOsc1.connect(MainSynesthesia.getDestination());
-
-    MainSynesthesia.mapInput(MainKeyboard, TestOsc1);
-
-    TestOsc2 = new Synesthesia.Instrument.Oscillator({
-      synesthesia: MainSynesthesia,
-      type: Synesthesia.Instrument.Oscillator.Type.SINE
-    });
-    TestOsc2.connect(MainSynesthesia.getDestination());
-
-    MainSynesthesia.mapInput(MainKeyboard, TestOsc2);
-
-    // UI
-
     MainUI = new Synesthesia.UI({
       node_canvas: document.getElementById("NodeCanvas"),
       node_div: document.getElementById("NodeDiv")
     });
-      MainUI.addNode(TestOsc1, {
-        x: 20, y: 10
-      });
-      MainUI.addNode(TestOsc2, {
-        x: 20, y: 170
-      });
+
+    MainOutput = new Synesthesia.Library.MainOutput({
+      synesthesia: MainSynesthesia
+    });
+    MainUI.addNode(MainOutput, {
+      x: 300, y: 10
+    });
+
+    MainKeyboard = new KeyboardInput();
+    MainKeyboard.attach(MainSynesthesia);
+
+    TestOsc1 = new Synesthesia.Library.Oscillator({
+      synesthesia: MainSynesthesia,
+      type: Synesthesia.Library.Oscillator.Type.SINE
+    });
+    MainSynesthesia.mapInput(MainKeyboard, TestOsc1);
+    MainUI.addNode(TestOsc1, {
+      x: 20, y: 10
+    });
+
+    TestOsc2 = new Synesthesia.Library.Oscillator({
+      synesthesia: MainSynesthesia,
+      type: Synesthesia.Library.Oscillator.Type.SINE
+    });
+    MainSynesthesia.mapInput(MainKeyboard, TestOsc2);
+    MainUI.addNode(TestOsc2, {
+      x: 20, y: 170
+    });
+
+    TestGain1 = new Synesthesia.Library.Gain({
+      synesthesia: MainSynesthesia
+    });
+    MainUI.addNode(TestGain1, {
+      x: 300, y: 170
+    });
+
+    TestDelay1 = new Synesthesia.Library.Delay({
+      synesthesia: MainSynesthesia
+    });
+    MainUI.addNode(TestDelay1, {
+      x: 300, y: 330
+    });
+
+    // UI
     MainUI.start();
 
   });

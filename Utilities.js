@@ -55,9 +55,41 @@ module("Utilities", [], function () {
     return Map;
   })();
 
+  var conforms = function (model_constructor, test_object) {
+    var model_object = model_constructor.prototype;
+
+    // Does the test object have properties of matching type to all the model object's properties?
+    for (var prop_name in model_object) {
+      if (!test_object[prop_name] || (typeof test_object[prop_name] != typeof model_object[prop_name])) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  var overrides = function (model_constructor, test_object) {
+    if (!conforms(model_constructor, test_object)) {
+      return false;
+    }
+
+    var model_object = model_constructor.prototype;
+
+    // Does the test object have a new implementation for all properties of the model?
+    for (var prop_name in model_object) {
+      if (test_object[prop_name] == model_constructor.prototype[prop_name]) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   return {
     extend: extend,
-    Map: Map
+    Map: Map,
+    conforms: conforms,
+    overrides: overrides
   };
 
 });

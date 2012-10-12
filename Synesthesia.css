@@ -3,5 +3,5 @@
   font-size: 12px;
   font-weight: lighter;
   -webkit-font-smoothing: subpixel-antialiased;
-  pointer: default;
+  cursor: default;
 }

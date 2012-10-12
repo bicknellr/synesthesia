@@ -1,5 +1,5 @@
 module("Synesthesia.UI",
-["Utilities", "Synesthesia", "Synesthesia.AudioNode"],
+["Utilities", "Synesthesia", "Synesthesia.Graph"],
 function () {
 
   var Utilities = require("Utilities");
@@ -147,21 +147,15 @@ function () {
 
       this.input_endpoints = this.node.getInputDescriptors().map((function (desc) {
         return new Synesthesia.UI.Endpoint({
-          parent_window: this,
-          node: this.node,
-          name: desc.name,
-          type: desc.type,
-          direction: "input"
+          descriptor: desc,
+          node: this.node
         });
       }).bind(this));
 
       this.output_endpoints = this.node.getOutputDescriptors().map((function (desc) {
         return new Synesthesia.UI.Endpoint({
-          parent_window: this,
-          node: this.node,
-          name: desc.name,
-          type: desc.type,
-          direction: "output"
+          descriptor: desc,
+          node: this.node
         });
       }).bind(this));
     }
@@ -296,11 +290,13 @@ function () {
     function Endpoint (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      this.node = params.node;
-      this.name = params.name;
+      this.descriptor = this.params.descriptor;
 
-      this.type = params.type;
-      this.direction = params.direction;
+      this.node = this.params.node;
+
+      this.name = (this.descriptor != undefined ? this.descriptor.getName() : this.params.name);
+      this.type = (this.descriptor != undefined ? this.descriptor.getType() : this.params.type);
+      this.direction = (this.descriptor != undefined ? this.descriptor.getDirection() : this.params.direction);
 
       this.x = 0;
       this.y = 0;
@@ -317,6 +313,10 @@ function () {
       AudioNode: "rgba(128, 128, 128, 1)",
       notes: "rgba(256, 128, 128, 1)",
       envelope: "rgba(128, 128, 256, 1)"
+    };
+
+    Endpoint.prototype.getDescriptor = function () {
+      return this.descriptor;
     };
 
     Endpoint.prototype.setPosition = function (x, y) {
@@ -358,11 +358,11 @@ function () {
           break;
         case "input":
           connection_ix = Math.floor((this.x - point.x) / this.width);
-          console.log("INPUT #" + connection_ix);
+          //console.log("INPUT #" + connection_ix);
           break;
       }
 
-      console.log("found connection " + connection_ix);
+      //console.log("found connection " + connection_ix);
       if (connection_ix === null || connection_ix < 0 || connection_ix > (this.connections.length - 1)) {
         return null;
       } else {
@@ -417,17 +417,25 @@ function () {
     // Connections
 
     Endpoint.prototype.canConnectTo = function (other_endpoint) {
-      return this.direction != other_endpoint.direction;
+      return this.descriptor.canConnectTo(other_endpoint.descriptor);
     };
 
     Endpoint.prototype.informConnected = function (new_connection) {
+      this.descriptor.informConnected(
+        new_connection.getDescriptor()
+      );
       this.connections.push(new_connection);
     };
 
     Endpoint.prototype.informDisconnected = function (rm_connection) {
       if (this.connections.indexOf(rm_connection) != -1) {
+        // TODO: COMPLETE AFTER FINISHING GRAPH.CONNECTION
+        this.descriptor.informDisconnected(
+          rm_connection.getDescriptor()
+        );
         this.connections.splice(
-          this.connections.indexOf(rm_connection), 1
+          this.connections.indexOf(rm_connection),
+          1
         );
       }
     };
@@ -442,35 +450,74 @@ function () {
         strokeStyle = Endpoint.ColorMap[this.type];
       }
 
-      context.save();
-        context.translate(this.x, this.y);
-        context.beginPath();
-        context.arc(
-          10, 10,
-          5,
-          0, 2 * Math.PI
-        );
-        context.strokeStyle = strokeStyle;
-        context.lineWidth = (this.hasState("hovering") ? 3 : 2);
-        context.stroke();
-      context.restore();
+      if (this.hasState("selecting") && this.connections.length > 0) {
+        context.save();
+          context.translate(this.x, this.y);
 
-      // Spread out circles when selecting.
-      if (this.hasState("selecting")) {
-        for (var conn_ix = 0; conn_ix < this.connections.length + 1; conn_ix++) {
-          context.save();
-            context.translate(this.x, this.y);
-            context.beginPath();
-            context.arc(
-              10 + (this.direction == "output" ? 1 : -1) * (this.width * conn_ix), 10,
-              5,
-              0, 2 * Math.PI
-            );
-            context.strokeStyle = strokeStyle;
-            context.lineWidth = (this.hasState("hovering") ? 3 : 2);
-            context.stroke();
-          context.restore();
-        }
+          // far semicircle
+          context.beginPath();
+          context.arc(
+            10 + (this.direction == "output" ? 1 : -1) * (this.width * this.connections.length),
+            10,
+            5,
+            (this.direction == "output" ? -1 : 1) * Math.PI / 2,
+            (this.direction == "output" ? 1 : -1) * Math.PI / 2
+          );
+          context.strokeStyle = strokeStyle;
+          context.lineWidth = (this.hasState("hovering") ? 3 : 2);
+          context.stroke();
+
+          // top line
+          context.beginPath();
+          context.moveTo(
+            10 + (this.direction == "output" ? 1 : -1) * (this.width * this.connections.length),
+            5
+          );
+          context.lineTo(
+            10 * ((this.direction == "output" ? 1 : -1) + (this.direction == "input" ? 2 : 0)),
+            5
+          );
+          context.stroke();
+
+          // bottom line
+          context.beginPath();
+          context.moveTo(
+            10 + (this.direction == "output" ? 1 : -1) * (this.width * this.connections.length),
+            15
+          );
+          context.lineTo(
+            10 * ((this.direction == "output" ? 1 : -1) + (this.direction == "input" ? 2 : 0)),
+            15
+          );
+          context.stroke();
+
+          // near semicircle
+          context.beginPath();
+          context.arc(
+            10,
+            10,
+            5,
+            (this.direction == "output" ? 1 : -1) * Math.PI / 2,
+            (this.direction == "output" ? -1 : 1) * Math.PI / 2
+          );
+          context.strokeStyle = strokeStyle;
+          context.lineWidth = (this.hasState("hovering") ? 3 : 2);
+          context.stroke();
+
+        context.restore();
+      } else {
+        context.save();
+          context.translate(this.x, this.y);
+          context.beginPath();
+          context.arc(
+            10, 10,
+            5,
+            0, 2 * Math.PI
+          );
+          context.strokeStyle = strokeStyle;
+          context.lineWidth = (this.hasState("hovering") ? 3 : 2);
+          context.stroke();
+        context.restore();
       }
     };
 
@@ -481,13 +528,45 @@ function () {
     function Connection (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      this.from_endpoint = params.from_endpoint;
-      this.to_endpoint = params.to_endpoint;
+      this.descriptor = this.params.descriptor;
+
+      this.from_endpoint = this.params.from_endpoint;
+      this.to_endpoint = this.params.to_endpoint;
       
+      /*
       console.log("UI.Connection created:");
       console.log(this.from_endpoint);
       console.log(this.to_endpoint);
+      */
     }
+
+    Connection.prototype.getDescriptor = function () {
+      return this.descriptor;
+    };
+
+    Connection.prototype.getOppositeEndpoint = function (endpoint) {
+      if (endpoint == this.from_endpoint) {
+        return this.to_endpoint;
+      } else if (endpoint == this.to_endpoint) {
+        return this.from_endpoint;
+      } else {
+        return null;
+      }
+    };
+
+    Connection.prototype.setFromEndpoint = function (from_endpoint) {
+      this.from_endpoint = from_endpoint;
+      this.descriptor.setFromEndpoint(
+        this.from_endpoint.getDescriptor()
+      );
+    };
+
+    Connection.prototype.setToEndpoint = function (to_endpoint) {
+      this.to_endpoint = to_endpoint;
+      this.descriptor.setToEndpoint(
+        this.to_endpoint.getDescriptor()
+      );
+    };
 
     Connection.prototype.draw = function (canvas) {
       var context = canvas.getContext("2d");
@@ -643,10 +722,12 @@ function () {
         var edit_connection = this.selected_endpoint.getConnectionForPoint({
           x: e.pageX, y: e.pageY
         });
+        /*
         console.log("edit connection:");
         console.log(edit_connection);
+        */
         if (edit_connection) { // are we attempting to edit a connection?
-          console.log("edit input");
+          //console.log("edit input");
 
           this.temporary_connection = edit_connection;
           edit_connection.from_endpoint.informDisconnected(edit_connection);
@@ -658,7 +739,7 @@ function () {
             });
             this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
             this.selected_endpoint = edit_connection.from_endpoint;
-            edit_connection.to_endpoint = this.temporary_endpoint;
+            edit_connection.setToEndpoint(this.temporary_endpoint);
           } else if (this.selected_endpoint.direction == "output") {
             this.temporary_endpoint = new Synesthesia.UI.Endpoint({
               type: null,
@@ -666,7 +747,7 @@ function () {
             });
             this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
             this.selected_endpoint = edit_connection.to_endpoint;
-            edit_connection.from_endpoint = this.temporary_endpoint;
+            edit_connection.setFromEndpoint(this.temporary_endpoint);
           }
         } else {
           // Correct direction.
@@ -678,7 +759,11 @@ function () {
             this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
             this.temporary_connection = new Synesthesia.UI.Connection({
               from_endpoint: this.temporary_endpoint,
-              to_endpoint: this.selected_endpoint
+              to_endpoint: this.selected_endpoint,
+              descriptor: new Synesthesia.Graph.Connection({
+                from_endpoint: this.temporary_endpoint.getDescriptor(),
+                to_endpoint: this.selected_endpoint.getDescriptor()
+              })
             });
           } else if (this.selected_endpoint.direction == "output") {
             this.temporary_endpoint = new Synesthesia.UI.Endpoint({
@@ -688,7 +773,11 @@ function () {
             this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
             this.temporary_connection = new Synesthesia.UI.Connection({
               from_endpoint: this.selected_endpoint,
-              to_endpoint: this.temporary_endpoint
+              to_endpoint: this.temporary_endpoint,
+              descriptor: new Synesthesia.Graph.Connection({
+                from_endpoint: this.selected_endpoint.getDescriptor(),
+                to_endpoint: this.temporary_endpoint.getDescriptor()
+              })
             });
           }
           this.connections.push(this.temporary_connection);
@@ -737,9 +826,9 @@ function () {
       var did_finalize_connection = false;
       if (selectable_endpoint && this.selected_endpoint && this.selected_endpoint.canConnectTo(selectable_endpoint)) {
         if (this.temporary_connection.to_endpoint == this.temporary_endpoint) {
-          this.temporary_connection.to_endpoint = selectable_endpoint;
+          this.temporary_connection.setToEndpoint(selectable_endpoint);
         } else if (this.temporary_connection.from_endpoint == this.temporary_endpoint) {
-          this.temporary_connection.from_endpoint = selectable_endpoint;
+          this.temporary_connection.setFromEndpoint(selectable_endpoint);
         }
         // Inform connected.
         this.temporary_connection.from_endpoint.informConnected(this.temporary_connection);
