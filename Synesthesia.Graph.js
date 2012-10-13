@@ -21,7 +21,14 @@ function () {
 
       this.type = this.params.type;
       if (Endpoint.Types.indexOf(this.type) == -1) {
-        throw new Error("Synesthesia.Graph.Endpoint: Invalid type.");
+        throw new Error("Synesthesia.Graph.Endpoint: Invalid type '" + this.type + "'.");
+      }
+
+      this.accepted_types = this.params.accepted_types;
+      for (var i = 0; i < this.accepted_types.length; i++) {
+        if (Endpoint.Types.indexOf(this.accepted_types[i]) == -1) {
+          throw new Error("Synesthesia.Graph.Endpoint: Invalid accepted type '" + this.accpeted_types[i] + "'.");
+        }
       }
 
       this.direction = this.params.direction;
@@ -29,13 +36,15 @@ function () {
         throw new Error("Synesthesia.Graph.Endpoint: Invalid direction.");
       }
 
+      this.max_connections = this.params.max_connections || Infinity;
+
       this.connections = [];
     }
 
     Endpoint.Types = [
       "notes",
-      "envelope",
       "AudioNode",
+      "AudioParam",
       "canvas" // Do audio first!
     ];
 
@@ -56,6 +65,14 @@ function () {
       return this.type;
     };
 
+    Endpoint.prototype.getAcceptedTypes = function () {
+      return this.accepted_types;
+    };
+
+    Endpoint.prototype.getMaxConnections = function () {
+      return this.max_connections;
+    };
+
     Endpoint.prototype.getDirection = function () {
       return this.direction;
     };
@@ -65,7 +82,20 @@ function () {
     };
 
     Endpoint.prototype.canConnectTo = function (other_endpoint) {
-      return this.direction != other_endpoint.direction;
+      // Can't be the same direction.
+      if (this.direction == other_endpoint.getDirection()) return false;
+      
+      // Other endpoint must accept this endpoint type.
+      if (other_endpoint.getAcceptedTypes().indexOf(this.type) == -1) return false;
+      // Other endpoint can't be maxed out.
+      if (other_endpoint.getConnections().length >= other_endpoint.getMaxConnections()) return false;
+
+      // This endpoint must accept other endpoint type.
+      if (this.accepted_types.indexOf(other_endpoint.getType()) == -1) return false;
+      // This endpoint can't be maxed out.
+      if (this.connections.length >= this.max_connections) return false;
+
+      return true;
     };
 
     Endpoint.prototype.informConnected = function (new_connection) {
@@ -92,10 +122,12 @@ function () {
 
       this.from_endpoint = this.params.from_endpoint;
       this.to_endpoint = this.params.to_endpoint;
+      /*
       console.log("from");
       console.log(this.from_endpoint);
       console.log("to");
       console.log(this.to_endpoint);
+      */
     }
 
     Connection.prototype.setFromEndpoint = function (from_endpoint) {
@@ -149,54 +181,8 @@ function () {
       throw new Error("Synesthesia.Graph.Node(.informDisconnected): Not implemented.");
     };
 
-    /*
-    // Asks if the node it is ever possible to connect the given connection to the given input / output.
-    Node.prototype.canConnectInput = function (input_name, connection) {
-      throw new Error("Synesthesia.Graph.Node(.canConnectInput): Not implemented.");
-    };
-
-    Node.prototype.canConnectOutput = function (output_name, connection) {
-      throw new Error("Synesthesia.Graph.Node(.canConnectOutput): Not implemented.");
-    };
-
-    // Asks if the node is able to connect the given connection to the given input / output at this moment.
-    Node.prototype.mayConnectInput = function (input_name, connection) {
-      throw new Error("Synesthesia.Graph.Node(.mayConnectInput): Not implemented.");
-    };
-
-    Node.prototype.mayConnectOutput = function (output_name, connection) {
-      throw new Error("Synesthesia.Graph.Node(.mayConnectOutput): Not implemented.");
-    };
-
-    // Connect the given connection to the given input / output.
-    Node.prototype.connectInput = function (input_name, connection) {
-      throw new Error("Synesthesia.Graph.Node(.connectInput): Not implemented.");
-    };
-
-    Node.prototype.connectOutput = function (output_name, connection) {
-      throw new Error("Synesthesia.Graph.Node(.connectOutput): Not implemented.");
-    };
-
-    // Disconnect the given connection from the given input / output.
-    Node.prototype.disconnectInput = function (input_name, connection) {
-      throw new Error("Synesthesia.Graph.Node(.disconnectInput): Not implemented.");
-    };
-
-    Node.prototype.disconnectOutput = function (output_name, connection) {
-      throw new Error("Synesthesia.Graph.Node(.disconnectOutput): Not implemeneted.");
-    };
-
-    // Asks the node to produce the given input / output.
-    Node.prototype.getInput = function (connection) {
-      throw new Error("Synesthesia.Graph.Node(.getInput): Not implemented.");
-    };
-
-    Node.prototype.getOutput = function (connection) {
-      throw new Error("Synesthesia.Graph.Node(.getOutput): Not implemented.");
-    };
-    */
-
-    //
+    // UI
+    // TODO: Should this method be part of a UI class?
 
     Node.prototype.draw = function () {
       throw new Error("Synesthesia.Graph.Node(.draw): Not implemented.");

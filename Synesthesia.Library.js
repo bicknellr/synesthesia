@@ -21,6 +21,9 @@ function () {
           node: this,
           name: "waveform",
           type: "AudioNode",
+          accepted_types: [
+            "AudioNode"
+          ],
           direction: "input"
         })
       };
@@ -153,6 +156,9 @@ function () {
           node: this,
           name: "notes",
           type: "notes",
+          accepted_types: [
+            "notes"
+          ],
           direction: "output"
         })
       };
@@ -262,6 +268,9 @@ function () {
           node: this,
           name: "waveform",
           type: "AudioNode",
+          accepted_types: [
+            "AudioNode"
+          ],
           direction: "input"
         })
       };
@@ -271,6 +280,9 @@ function () {
           node: this,
           name: "waveform",
           type: "AudioNode",
+          accepted_types: [
+            "AudioNode"
+          ],
           direction: "output"
         })
       };
@@ -390,6 +402,9 @@ function () {
           node: this,
           name: "waveform",
           type: "AudioNode",
+          accepted_types: [
+            "AudioNode"
+          ],
           direction: "input"
         })
       };
@@ -399,6 +414,9 @@ function () {
           node: this,
           name: "waveform",
           type: "AudioNode",
+          accepted_types: [
+            "AudioNode"
+          ],
           direction: "output"
         })
       };
@@ -525,20 +543,29 @@ function () {
           node: this,
           name: "notes",
           type: "notes",
+          accepted_types: [
+            "notes"
+          ],
           direction: "input"
         }),
 
         "frequency": new Synesthesia.Graph.Endpoint({
           node: this,
           name: "frequency",
-          type: "envelope",
+          type: "AudioParam",
+          accepted_types: [
+            "AudioParam"
+          ],
           direction: "input"
         }),
 
         "detune": new Synesthesia.Graph.Endpoint({
           node: this,
           name: "detune",
-          type: "envelope",
+          type: "AudioParam",
+          accepted_types: [
+            "AudioParam"
+          ],
           direction: "input"
         })
       };
@@ -548,6 +575,9 @@ function () {
           node: this,
           name: "waveform",
           type: "AudioNode",
+          accepted_types: [
+            "AudioNode"
+          ],
           direction: "output"
         })
       };
