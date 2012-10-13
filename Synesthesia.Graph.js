@@ -205,6 +205,74 @@ function () {
     return Node;
   })();
 
+  Synesthesia.Graph.Node.NoteSourceNode = (function () {
+    function NoteSourceNode (params) {
+      if (!params) return;
+
+      Synesthesia.Graph.Node.apply(this, arguments);
+
+      if (!Utilities.overrides(Synesthesia.Graph.Node.NoteSourceNode, this)) {
+        console.error("Synesthesia.Graph.Node.NoteSourceNode: Subclass does not override.");
+      }
+    }
+
+    NoteSourceNode.GlobalConnectionMap = new Utilities.Map();
+
+    NoteSourceNode.prototype = Utilities.extend(
+      new Synesthesia.Graph.Node()
+    );
+
+    NoteSourceNode.prototype.connectToNoteDestination = function (destination_node) {
+      var connections = NoteSourceNode.GlobalConnectionMap.get(this);
+      if (!connections) {
+        connections = [];
+        NoteSourceNode.GlobalConnectionMap.set(this, connections);
+      }
+      if (connections.indexOf(destination_node) == -1) {
+        connections.push(destination_node);
+      } else {
+        console.warn("Synesthesia.Graph.Node.NoteSourceNode(.connectToNoteDestination): Already connected to the requested node.");
+      }
+    };
+
+    NoteSourceNode.prototype.disconnectFromNoteDestination = function (destination_node) {
+      var connections = NoteSourceNode.GlobalConnectionMap.get(this);
+      if (!connections) {
+        throw new Error("Synesthesia.Graph.Node.NoteSourceNode(.disconnectFromNoteDestination): Disconnect requested on a node that was not known to be connected.");
+      }
+      while (connections.indexOf(destination_node) != -1) {
+        connections.splice(connections.indexOf(destination_node), 1);
+      }
+    };
+
+    NoteSourceNode.prototype.distributeNotes = function (notes) {
+      var connections = NoteSourceNode.GlobalConnectionMap.get(this);
+      if (!connections) return;
+      
+      for (var i = 0; i < connections.length; i++) {
+        connections[i].handleNotes(notes);
+      }
+    };
+
+    return NoteSourceNode;
+  })();
+
+  Synesthesia.Graph.Node.NoteDestinationNode = (function () {
+    function NoteDestinationNode (params) {
+      if (!params) return;
+
+      if(!Utilities.overrides(Synesthesia.Graph.Node.NoteDestinationNode, this)) {
+        console.error("Synesthesia.Graph.Node.NoteDestinationNode: Subclass does not override.");
+      }
+    }
+
+    NoteDestinationNode.prototype.handleNotes = function (notes) {
+      throw new Error("Synesthesia.Graph.Node.NoteDestinationNode(.handleNotes): Not implemented.");
+    };
+
+    return NoteDestinationNode;
+  })();
+
   Synesthesia.Graph.Node.AudioNode = (function () {
     function AudioNode () {
       Synesthesia.Graph.Node.apply(this, arguments);

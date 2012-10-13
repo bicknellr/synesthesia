@@ -85,6 +85,165 @@ function () {
     return MainOutput;
   })();
 
+  Synesthesia.Library.KeyboardInput = (function () {
+    function KeyboardInput (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Synesthesia.Graph.Node.NoteSourceNode.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+      this.notes = {};
+
+      window.addEventListener("keydown", this.keydown.bind(this), false);
+      window.addEventListener("keyup", this.keyup.bind(this), false);
+
+      this.keyToFrequencyMapping = function (keyCode) {
+        var frequencies = {
+            /* bottom row */
+            90: 261.626, // Z
+            83: 277.183, // S
+            88: 293.665, // X
+            68: 311.127, // D
+            67: 329.628, // C
+            
+            86: 349.228, // V
+            71: 369.994, // G
+            66: 391.995, // B
+            72: 415.305, // H
+            78: 440.000, // N
+            74: 466.164, // J
+            77: 493.883, // M
+            
+            188: 523.251, // comma
+            76: 554.365, // L
+            190: 587.330, // period
+            186: 622.254, // semicolon
+            191: 659.255, // slash
+            
+            /* top row */
+            81: 523.251, // Q
+            50: 554.365, // 2
+            87: 587.330, // W
+            51: 622.254, // 3
+            69: 659.255, // E
+            
+            82: 698.456, // R
+            53: 739.989, // 5
+            84: 783.991, // T
+            54: 830.609, // 6
+            89: 880.000, // Y
+            55: 932.328, // &
+            85: 987.767, // U
+            
+            73: 1046.50, // I
+            57: 1108.73, // 9
+            79: 1174.66, // O
+            48: 1244.51, // 0
+            80: 1318.51 // P
+        };
+
+        return frequencies[keyCode];
+      };
+
+      this.input_endpoints = {
+      };
+
+      this.output_endpoints = {
+        "notes": new Synesthesia.Graph.Endpoint({
+          node: this,
+          name: "notes",
+          type: "notes",
+          direction: "output"
+        })
+      };
+
+      // DEFINE LAST
+      this.ui_window = new Synesthesia.UI.NodeWindow({
+        node: this,
+        title: "Keyboard &raquo; Notes"
+      });
+    }
+
+    KeyboardInput.prototype = Utilities.extend(
+      new Synesthesia.Graph.Node.NoteSourceNode()
+    );
+
+    KeyboardInput.prototype.getInputDescriptors = function () {
+      var endpoints = [];
+      for (var endpoint_name in this.input_endpoints) {
+        if (!this.input_endpoints.hasOwnProperty(endpoint_name)) continue;
+
+        endpoints.push(this.input_endpoints[endpoint_name]);
+      }
+      return endpoints;
+    };
+
+    KeyboardInput.prototype.getOutputDescriptors = function () {
+      var endpoints = [];
+      for (var endpoint_name in this.output_endpoints) {
+        if (!this.output_endpoints.hasOwnProperty(endpoint_name)) continue;
+
+        endpoints.push(this.output_endpoints[endpoint_name]);
+      }
+      return endpoints;
+    };
+
+    KeyboardInput.prototype.keydown = function (e) {
+      if (this.notes["" + e.keyCode]) return;
+
+      var frequency = this.keyToFrequencyMapping(e.keyCode);
+      if (!frequency) return;
+
+      var note = new Synesthesia.Note({
+        frequency: frequency
+      });
+
+      this.notes["" + e.keyCode] = note;
+
+      this.distributeNotes({
+        source: this,
+        on: [note]
+      });
+    };
+
+    KeyboardInput.prototype.keyup = function (e) {
+      if (!this.notes["" + e.keyCode]) return;
+
+      this.distributeNotes({
+        source: this,
+        off: [this.notes["" + e.keyCode]]
+      });
+
+      delete this.notes["" + e.keyCode];
+    };
+
+    KeyboardInput.prototype.informConnected = function (endpoint, new_connection) {
+      this.connectToNoteDestination(
+        new_connection.getOppositeEndpoint(endpoint).getNode()
+      );
+    };
+
+    KeyboardInput.prototype.informDisconnected = function (endpoint, rm_connection) {
+      this.disconnectFromNoteDestination(
+        rm_connection.getOppositeEndpoint(endpoint).getNode()
+      );
+    };
+
+    KeyboardInput.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    KeyboardInput.prototype.informWindowPrepared = function (div) {
+
+    };
+
+    KeyboardInput.prototype.draw = function () {
+
+    };
+
+    return KeyboardInput;
+  })();
+
   Synesthesia.Library.Gain = (function () {
     function Gain (params) {
       this.params = (typeof params !== "undefined" ? params : {});
@@ -292,6 +451,7 @@ function () {
     };
 
     Delay.prototype.informDisconnected = function (endpoint, connection) {
+      // TODO: META: Is this still valid?
       // TODO: Disconnect disconnects all nodes!
       // Write into AudioNode a set of methods to handle this.
       // Map from node to node?
@@ -345,6 +505,7 @@ function () {
     function Oscillator (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
+      Synesthesia.Graph.Node.NoteDestinationNode.apply(this, arguments);
       Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
 
       // BEGIN
@@ -409,21 +570,22 @@ function () {
     };
 
     Oscillator.prototype = Utilities.extend(
+      new Synesthesia.Graph.Node.NoteDestinationNode(),
       new Synesthesia.Graph.Node.AudioSourceNode()
     );
 
     // Synesthesia.Instrument
 
-    Oscillator.prototype.handleInput = function (input) {
+    Oscillator.prototype.handleNotes = function (notes) {
       /*
       Apply off notes first: if this node has connected
       nodes and the connection is removed, the catch
       for checking destination will prevent those notes
       from being turned off.
       */
-      if (input.off) {
-        for (var off_ix = 0; off_ix < input.off.length; off_ix++) {
-          var cur_note = input.off[off_ix];
+      if (notes.off) {
+        for (var off_ix = 0; off_ix < notes.off.length; off_ix++) {
+          var cur_note = notes.off[off_ix];
           var cur_osc = this.osc_map.get(cur_note);
           if (!cur_osc) return;
           cur_osc.disconnect();
@@ -435,9 +597,9 @@ function () {
       var destination = this.destination;
       if (!destination) return;
 
-      if (input.on) {
-        for (var on_ix = 0; on_ix < input.on.length; on_ix++) {
-          var cur_note = input.on[on_ix];
+      if (notes.on) {
+        for (var on_ix = 0; on_ix < notes.on.length; on_ix++) {
+          var cur_note = notes.on[on_ix];
           var new_osc = this.context.createOscillator();
           new_osc.type = this.type;
           new_osc.frequency.setValueAtTime(cur_note.frequency, 0);
