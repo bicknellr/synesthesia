@@ -155,21 +155,52 @@ function () {
     function Node (params) {
       if (!params) return; // INTERFACE
       
-      if (!Utilities.overrides(Synesthesia.Graph.Node, this)) {
-        console.error("Synesthesia.Graph.Node: Subclass does not override.");
-      }
+      this.input_descriptors = {};
+      this.output_descriptors = {};
     }
+
+    Node.prototype.setInputDescriptors = function (descriptors) {
+      this.input_descriptors = descriptors;
+    };
+
+    Node.prototype.setOutputDescriptors = function (descriptors) {
+      this.output_descriptors = descriptors;
+    };
 
     /*
     Requests an array containing objects describing the inputs / outputs.
     The objects in this array are of type Graph.EndpointDescriptor
     */
     Node.prototype.getInputDescriptors = function () {
-      throw new Error("Synesthesia.Graph.Node(.getInputDescriptors): Not implemented.");
+      var o = new Object();
+      Utilities.copy_properties(this.input_descriptors, o);
+      return o;
     };
 
     Node.prototype.getOutputDescriptors = function () {
-      throw new Error("Synesthesia.Graph.Node(.getOutputDescriptors): Not implemented.");
+      var o = new Object();
+      Utilities.copy_properties(this.output_descriptors, o);
+      return o;
+    };
+
+    Node.prototype.getInputDescriptorsArray = function () {
+      var descriptors = [];
+      for (var descriptor_name in this.input_descriptors) {
+        if (!this.input_descriptors.hasOwnProperty(descriptor_name)) continue;
+
+        descriptors.push(this.input_descriptors[descriptor_name]);
+      }
+      return descriptors;
+    };
+
+    Node.prototype.getOutputDescriptorsArray = function () {
+      var descriptors = [];
+      for (var descriptor_name in this.output_descriptors) {
+        if (!this.output_descriptors.hasOwnProperty(descriptor_name)) continue;
+
+        descriptors.push(this.output_descriptors[descriptor_name]);
+      }
+      return descriptors;
     };
 
     // Informs the node that a given connection has been connected to / disconnected from the given endpoint.
@@ -291,6 +322,11 @@ function () {
         AudioSourceNode.GlobalConnectionMap.set(source_node, connections);
       }
 
+      // Prevent copies of connections.
+      if (connections.indexOf(destination_node) != -1) {
+        return;
+      }
+
       connections.push(destination_node);
       source_node.connect(destination_node);
     };
@@ -301,8 +337,15 @@ function () {
         throw new Error("Synesthesia.Graph.Node.AudioSourceNode(.disconnectSourceFromDestination): Disconnect requested on a node that was not known to be connected.");
       }
 
-      connections.splice(connections.indexOf(destination_node), 1);
+      // Remove all copies (only one expected) of the connection.
+      while (connections.indexOf(destination_node) != -1) {
+        connections.splice(connections.indexOf(destination_node), 1);
+      }
+
+      // Disconnect the source node (from all).
       source_node.disconnect();
+
+      // Reconnect all other nodes.
       for (var i = 0; i < connections.length; i++) {
         source_node.connect(connections[i]);
       }
@@ -322,8 +365,8 @@ function () {
       new Synesthesia.Graph.Node.AudioNode()
     );
 
-    AudioDestinationNode.prototype.getDestination = function (source) {
-      throw new Error("Synesthesia.Graph.Node.AudioDestinationNode(.getDestination): Not implemented.");
+    AudioDestinationNode.prototype.getDestinationForInput = function (input_endpoint) {
+      throw new Error("Synesthesia.Graph.Node.AudioDestinationNode(.getDestinationForInput): Not implemented.");
     };
 
     return AudioDestinationNode;

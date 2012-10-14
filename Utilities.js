@@ -1,6 +1,18 @@
 module("Utilities", [], function () {
   // Utilities
 
+  var copy_properties = function (source, destination, properties) {
+    if (properties) {
+      for (var i = 0; i < properties.length; i++) {
+        destination[properties[i]] = source[properties[i]];
+      }
+    } else {
+      for (var prop_name in source) {
+        destination[prop_name] = source[prop_name];
+      }
+    }
+  };
+
   var extend = function () {
     var root = new Object();
     for (var i = 0; i < arguments.length; i++) {
@@ -19,6 +31,36 @@ module("Utilities", [], function () {
     };
 
     return root;
+  };
+
+  var conforms = function (model_constructor, test_object) {
+    var model_object = model_constructor.prototype;
+
+    // Does the test object have properties of matching type to all the model object's properties?
+    for (var prop_name in model_object) {
+      if (!test_object[prop_name] || (typeof test_object[prop_name] != typeof model_object[prop_name])) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  var overrides = function (model_constructor, test_object) {
+    if (!conforms(model_constructor, test_object)) {
+      return false;
+    }
+
+    var model_object = model_constructor.prototype;
+
+    // Does the test object have a new implementation for all properties of the model?
+    for (var prop_name in model_object) {
+      if (test_object[prop_name] == model_constructor.prototype[prop_name]) {
+        return false;
+      }
+    }
+
+    return true;
   };
 
   var Map = (function () {
@@ -55,41 +97,41 @@ module("Utilities", [], function () {
     return Map;
   })();
 
-  var conforms = function (model_constructor, test_object) {
-    var model_object = model_constructor.prototype;
-
-    // Does the test object have properties of matching type to all the model object's properties?
-    for (var prop_name in model_object) {
-      if (!test_object[prop_name] || (typeof test_object[prop_name] != typeof model_object[prop_name])) {
-        return false;
-      }
+  // Doesn't really work with a * rule...
+  var CursorManager = (function () {
+    function CursorManager () {
+      this.lock_key = null;
+      this.old_value = null;
     }
 
-    return true;
-  };
+    CursorManager.prototype.acquire = function (cursor_type) {
+      if (this.lock_key) return false;
+      this.lock_key = new Object();
+      this.old_value = document.body.style.getPropertyValue("cursor");
+      document.body.style.setProperty("cursor", "" + cursor_type, "important");
+      return this.lock_key;
+    };
 
-  var overrides = function (model_constructor, test_object) {
-    if (!conforms(model_constructor, test_object)) {
-      return false;
-    }
+    CursorManager.prototype.release = function (lock_key) {
+      if (this.lock_key != lock_key) return false;
+      document.body.style.setProperty("cursor", this.old_value);
+      this.lock_key = null;
+      this.old_value = null;
+    };
 
-    var model_object = model_constructor.prototype;
-
-    // Does the test object have a new implementation for all properties of the model?
-    for (var prop_name in model_object) {
-      if (test_object[prop_name] == model_constructor.prototype[prop_name]) {
-        return false;
-      }
-    }
-
-    return true;
-  };
+    return CursorManager;
+  })();
 
   return {
+    copy_properties: copy_properties,
+
     extend: extend,
-    Map: Map,
     conforms: conforms,
-    overrides: overrides
+    overrides: overrides,
+
+    Map: Map,
+
+    CursorManager: new CursorManager()
   };
 
 });

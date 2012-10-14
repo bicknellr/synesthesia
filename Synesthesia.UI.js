@@ -127,6 +127,106 @@ function () {
     return Draggable;
   })();
 
+  Synesthesia.UI.DragValue = (function () {
+    function DragValue (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.element = document.createElement("div");
+        this.element.className = "Synesthesia_UI_DragValue__main";
+        this.value_span = document.createElement("span");
+        this.element.appendChild(this.value_span);
+      this.draggable = new Synesthesia.UI.Draggable({
+        handle: this.element,
+        callback: this.handle_drag.bind(this)
+      });
+      this.element.addEventListener("dblclick", this.handle_dblclick.bind(this), false);
+
+      this.min_value = this.params.min_value || 0;
+      this.max_value = (this.params.max_value !== "undefined" ? this.params.max_value : 1);
+      this.value = this.params.value || 0;
+      this.true_value = this.params.value || 0;
+      this.digits = this.params.digits || 0;
+
+      this.sensitivity = this.params.sensitivity || 0.01;
+      this.direction_lock = this.params.direction_lock || "horizontal";
+
+      this.element.style.cursor = (this.direction_lock == "vertical" ? "ns-resize" : "ew-resize");
+      
+      this.callback = this.params.callback || function () {};
+      this.string_format = this.params.string_format || function (str) { return "" + str; };
+
+      this.setValue(this.value);
+    }
+
+    DragValue.prototype.getElement = function () {
+      return this.element;
+    };
+
+    DragValue.prototype.handle_drag = function (e) {
+      //console.log("dx " + e.dx + " dy " + e.dy);
+      this.true_value = this.sensitivity * (this.direction_lock == "vertical" ? -e.dy : e.dx) + this.true_value;
+      this.true_value = Math.min(this.max_value, this.true_value);
+      this.true_value = Math.max(this.min_value, this.true_value);
+      this.setValue(
+        this.true_value
+      );
+      this.callback(this.value);
+    };
+
+    DragValue.prototype.handle_dblclick = function (e) {
+      this.element_input = document.createElement("div");
+
+      var style = window.getComputedStyle(this.element);
+      var value_input = document.createElement("input");
+      value_input.maxLength = this.digits + 2;
+        Utilities.copy_properties(
+          style, value_input.style,
+          [ "fontFamily",
+            "fontSize",
+            "color",
+            "width"
+          ]
+        );
+      value_input.style.borderWidth = "0px";
+      value_input.style.margin = "0px";
+      value_input.style.padding = "0px";
+      value_input.style.backgroundColor = "#ffffff";
+      var confirm_listener = function (e) {
+        this.setValue(parseFloat(value_input.value));
+        this.element.replaceChild(
+          this.value_span,
+          this.element_input
+        );
+      };
+      value_input.addEventListener("blur", confirm_listener.bind(this), false);
+      value_input.value = this.value;
+      this.element_input.appendChild(
+        value_input
+      );
+      this.element.replaceChild(
+        this.element_input,
+        this.value_span
+      );
+
+      value_input.select();
+    };
+
+    DragValue.prototype.getValue = function () {
+      return this.value;
+    };
+
+    DragValue.prototype.setValue = function (new_value) {
+      new_value = Math.min(this.max_value, new_value);
+      new_value = Math.max(this.min_value, new_value);
+      new_value = Math.round(new_value * Math.pow(10, this.digits)) / Math.pow(10, this.digits);
+
+      this.value = new_value;
+      this.value_span.innerHTML = "" + this.string_format(new_value.toFixed(this.digits));
+    };
+
+    return DragValue;
+  })();
+
   Synesthesia.UI.NodeWindow = (function () {
     function NodeWindow (params) {
       if (!params) return; // INTERFACE
@@ -140,19 +240,24 @@ function () {
       this.x = this.params.x || 0;
       this.y = this.params.y || 0;
 
-      this.width = this.params.width || 200;
-      this.height = this.params.height || 150;
+      this.width = this.params.width || 100;
+      this.min_width = this.params.min_width || 100;
+      this.max_width = this.params.max_width || Infinity;
+
+      this.height = this.params.height || 100;
+      this.min_height = this.params.min_height || 100;
+      this.max_height = this.params.max_height || Infinity;
 
       this.title = this.params.title || "Node";
 
-      this.input_endpoints = this.node.getInputDescriptors().map((function (desc) {
+      this.input_endpoints = this.node.getInputDescriptorsArray().map((function (desc) {
         return new Synesthesia.UI.Endpoint({
           descriptor: desc,
           node: this.node
         });
       }).bind(this));
 
-      this.output_endpoints = this.node.getOutputDescriptors().map((function (desc) {
+      this.output_endpoints = this.node.getOutputDescriptorsArray().map((function (desc) {
         return new Synesthesia.UI.Endpoint({
           descriptor: desc,
           node: this.node
@@ -237,8 +342,14 @@ function () {
 
     NodeWindow.prototype.handle_resize = function (params) {
       var div_style = window.getComputedStyle(this._container);
-      this.width = Math.max(parseInt(div_style.width) + params.dx, 100);
-      this.height = Math.max(parseInt(div_style.height) + params.dy, 100);
+      var new_width = parseInt(div_style.width) + params.dx;
+        new_width = Math.max(new_width, this.min_width);
+        new_width = Math.min(new_width, this.max_width);
+      this.width = new_width;
+      var new_height = parseInt(div_style.height) + params.dy;
+        new_height = Math.max(new_height, this.min_height);
+        new_height = Math.min(new_height, this.max_height);
+      this.height = new_height;
 
       this.reflow();
 
@@ -417,7 +528,7 @@ function () {
     // Connections
 
     Endpoint.prototype.canConnectTo = function (other_endpoint) {
-      return this.descriptor.canConnectTo(other_endpoint.descriptor);
+      return this.descriptor.canConnectTo(other_endpoint.getDescriptor());
     };
 
     Endpoint.prototype.informConnected = function (new_connection) {

@@ -16,7 +16,7 @@ function () {
 
       this.synesthesia = this.params.synesthesia;
 
-      this.input_endpoints = {
+      this.setInputDescriptors({
         "waveform": new Synesthesia.Graph.Endpoint({
           node: this,
           name: "waveform",
@@ -26,9 +26,9 @@ function () {
           ],
           direction: "input"
         })
-      };
+      });
 
-      this.output_endpoints = {};
+      this.setOutputDescriptors({});
 
       // MUST BE DEFINED AFTER ENDPOINTS
       this.ui_window = new Synesthesia.UI.NodeWindow({
@@ -45,26 +45,6 @@ function () {
       return this.ui_window;
     };
 
-    MainOutput.prototype.getInputDescriptors = function () {
-      var endpoints = [];
-      for (var endpoint_name in this.input_endpoints) {
-        if (!this.input_endpoints.hasOwnProperty(endpoint_name)) continue;
-
-        endpoints.push(this.input_endpoints[endpoint_name]);
-      }
-      return endpoints;
-    };
-
-    MainOutput.prototype.getOutputDescriptors = function () {
-      var endpoints = [];
-      for (var endpoint_name in this.output_endpoints) {
-        if (!this.output_endpoints.hasOwnProperty(endpoint_name)) continue;
-
-        endpoints.push(this.output_endpoints[endpoint_name]);
-      }
-      return endpoints;
-    };
-
     MainOutput.prototype.informConnected = function (endpoint, connection) {
 
     };
@@ -73,8 +53,11 @@ function () {
 
     };
 
-    MainOutput.prototype.getDestination = function () {
-      return this.synesthesia.getDestination();
+    MainOutput.prototype.getDestinationForInput = function (input_endpoint) {
+      switch (input_endpoint) {
+        case this.getInputDescriptors()["waveform"]:
+          return this.synesthesia.getDestination();
+      }
     };
 
     MainOutput.prototype.informWindowPrepared = function (div) {
@@ -148,10 +131,9 @@ function () {
         return frequencies[keyCode];
       };
 
-      this.input_endpoints = {
-      };
+      this.setInputDescriptors({});
 
-      this.output_endpoints = {
+      this.setOutputDescriptors({
         "notes": new Synesthesia.Graph.Endpoint({
           node: this,
           name: "notes",
@@ -161,38 +143,18 @@ function () {
           ],
           direction: "output"
         })
-      };
+      });
 
       // DEFINE LAST
       this.ui_window = new Synesthesia.UI.NodeWindow({
         node: this,
-        title: "Keyboard &raquo; Notes"
+        title: "Keyboard"
       });
     }
 
     KeyboardInput.prototype = Utilities.extend(
       new Synesthesia.Graph.Node.NoteSourceNode()
     );
-
-    KeyboardInput.prototype.getInputDescriptors = function () {
-      var endpoints = [];
-      for (var endpoint_name in this.input_endpoints) {
-        if (!this.input_endpoints.hasOwnProperty(endpoint_name)) continue;
-
-        endpoints.push(this.input_endpoints[endpoint_name]);
-      }
-      return endpoints;
-    };
-
-    KeyboardInput.prototype.getOutputDescriptors = function () {
-      var endpoints = [];
-      for (var endpoint_name in this.output_endpoints) {
-        if (!this.output_endpoints.hasOwnProperty(endpoint_name)) continue;
-
-        endpoints.push(this.output_endpoints[endpoint_name]);
-      }
-      return endpoints;
-    };
 
     KeyboardInput.prototype.keydown = function (e) {
       if (this.notes["" + e.keyCode]) return;
@@ -261,9 +223,7 @@ function () {
       this.context = this.synesthesia.getContext();
       this.node = this.context.createGainNode();
 
-      this.connection_to_destination_map = new Utilities.Map();
-
-      this.input_endpoints = {
+      this.setInputDescriptors({
         "waveform": new Synesthesia.Graph.Endpoint({
           node: this,
           name: "waveform",
@@ -272,20 +232,31 @@ function () {
             "AudioNode"
           ],
           direction: "input"
-        })
-      };
+        }),
+        "gain": new Synesthesia.Graph.Endpoint({
+          node: this,
+          name: "gain",
+          type: "AudioParam",
+          accepted_types: [
+            "AudioParam",
+            "AudioNode"
+          ],
+          direction: "input"
+        }),
+      });
 
-      this.output_endpoints = {
+      this.setOutputDescriptors({
         "waveform": new Synesthesia.Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
           accepted_types: [
-            "AudioNode"
+            "AudioNode",
+            "AudioParam"
           ],
           direction: "output"
         })
-      };
+      });
 
       // MUST BE DEFINED AFTER ENDPOINTS
       this.ui_window = new Synesthesia.UI.NodeWindow({
@@ -303,54 +274,60 @@ function () {
       return this.ui_window;
     };
 
-    Gain.prototype.getInputDescriptors = function () {
-      var endpoints = [];
-      for (var endpoint_name in this.input_endpoints) {
-        if (!this.input_endpoints.hasOwnProperty(endpoint_name)) continue;
-
-        endpoints.push(this.input_endpoints[endpoint_name]);
-      }
-      return endpoints;
-    };
-
-    Gain.prototype.getOutputDescriptors = function () {
-      var endpoints = [];
-      for (var endpoint_name in this.output_endpoints) {
-        if (!this.output_endpoints.hasOwnProperty(endpoint_name)) continue;
-
-        endpoints.push(this.output_endpoints[endpoint_name]);
-      }
-      return endpoints;
-    };
-
     Gain.prototype.informConnected = function (endpoint, connection) {
       switch (endpoint) {
-        case this.output_endpoints["waveform"]:
+        case this.getInputDescriptors()["gain"]:
+          return;
+          // TODO: See informDisconnected.
+          if (this.div.contains(this.range_dragger.getElement())) {
+            this.range_dragger_replacement = document.createTextNode("<connected>");
+            this.div.replaceChild(
+              this.range_dragger_replacement,
+              this.range_dragger.getElement()
+            );
+          }
+          break;
+        case this.getOutputDescriptors()["waveform"]:
           var other_endpoint = connection.getOppositeEndpoint(endpoint);
           var other_node = other_endpoint.getNode();
-          this.connection_to_destination_map.set(connection, other_node.getDestination());
-          this.connectSourceToDestination(this.node, other_node.getDestination());
-          break;
-      }
-    };
-
-    Gain.prototype.informDisconnected = function (endpoint, connection) {
-      // TODO: Disconnect disconnects all nodes!
-      // Write into AudioNode a set of methods to handle this.
-      // Map from node to node?
-      // Call special AudioNode disconnect method with a destination node?
-      switch (endpoint) {
-        case this.output_endpoints["waveform"]:
-          this.disconnectSourceFromDestination(
+          this.connectSourceToDestination(
             this.node,
-            this.connection_to_destination_map.get(connection)
+            other_node.getDestinationForInput(other_endpoint)
           );
           break;
       }
     };
 
-    Gain.prototype.getDestination = function () {
-      return this.node;
+    Gain.prototype.informDisconnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getInputDescriptors()["gain"]:
+          return;
+          // TODO: This isn't working because the gain input can take more than one node.
+          if (this.div.contains(this.range_dragger_replacement)) {
+            this.div.replaceChild(
+              this.range_dragger.getElement(),
+              this.range_dragger_replacement
+            );
+          }
+          break;
+        case this.getOutputDescriptors()["waveform"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
+          this.disconnectSourceFromDestination(
+            this.node,
+            other_node.getDestinationForInput(other_endpoint)
+          );
+          break;
+      }
+    };
+
+    Gain.prototype.getDestinationForInput = function (input_endpoint) {
+      switch (input_endpoint) {
+        case this.getInputDescriptors()["waveform"]:
+          return this.node;
+        case this.getInputDescriptors()["gain"]:
+          return this.node.gain;
+      }
     };
 
     Gain.prototype.setGain = function (value) {
@@ -363,22 +340,25 @@ function () {
     Gain.prototype.informWindowPrepared = function (div) {
       this.div = div;
 
-      this.range_slider = document.createElement("input");
-        this.range_slider.type = "range";
-        this.range_slider.value = this.node.gain.value;
-        this.range_slider.min = "0";
-        this.range_slider.max = "1";
-        this.range_slider.step = "any";
-        this.range_slider.style.margin = "0px";
-        this.range_slider.style.width = "100%";
-      this.range_slider.addEventListener("change", (function (e) {
-        this.setGain(this.range_slider.value);
-      }).bind(this), false);
-      this.div.appendChild(this.range_slider);
+      this.range_dragger = new Synesthesia.UI.DragValue({
+        value: this.node.gain.value,
+        min_value: this.node.gain.minValue,
+        max_value: this.node.gain.maxValue,
+        digits: 3,
+        sensitivity: 0.005,
+        direction_lock: "vertical",
+        callback: (function (value) {
+          this.setGain(value);
+        }).bind(this)
+      });
+      //this.range_dragger.getElement().style.fontSize = "20px";
+      this.div.appendChild(
+        this.range_dragger.getElement()
+      );
     };
 
     Gain.prototype.draw = function () {
-
+      // TODO: This should handle the case that the audio param is connected.
     };
 
     return Gain;
@@ -395,9 +375,7 @@ function () {
       this.context = this.synesthesia.getContext();
       this.node = this.context.createDelayNode();
 
-      this.connection_to_destination_map = new Utilities.Map();
-
-      this.input_endpoints = {
+      this.setInputDescriptors({
         "waveform": new Synesthesia.Graph.Endpoint({
           node: this,
           name: "waveform",
@@ -407,19 +385,20 @@ function () {
           ],
           direction: "input"
         })
-      };
+      });
 
-      this.output_endpoints = {
+      this.setOutputDescriptors({
         "waveform": new Synesthesia.Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
           accepted_types: [
-            "AudioNode"
+            "AudioNode",
+            "AudioParam"
           ],
           direction: "output"
         })
-      };
+      });
 
       // MUST BE DEFINED AFTER ENDPOINTS
       this.ui_window = new Synesthesia.UI.NodeWindow({
@@ -437,33 +416,15 @@ function () {
       return this.ui_window;
     };
 
-    Delay.prototype.getInputDescriptors = function () {
-      var endpoints = [];
-      for (var endpoint_name in this.input_endpoints) {
-        if (!this.input_endpoints.hasOwnProperty(endpoint_name)) continue;
-
-        endpoints.push(this.input_endpoints[endpoint_name]);
-      }
-      return endpoints;
-    };
-
-    Delay.prototype.getOutputDescriptors = function () {
-      var endpoints = [];
-      for (var endpoint_name in this.output_endpoints) {
-        if (!this.output_endpoints.hasOwnProperty(endpoint_name)) continue;
-
-        endpoints.push(this.output_endpoints[endpoint_name]);
-      }
-      return endpoints;
-    };
-
     Delay.prototype.informConnected = function (endpoint, connection) {
       switch (endpoint) {
-        case this.output_endpoints["waveform"]:
+        case this.getOutputDescriptors()["waveform"]:
           var other_endpoint = connection.getOppositeEndpoint(endpoint);
           var other_node = other_endpoint.getNode();
-          this.connection_to_destination_map.set(connection, other_node.getDestination());
-          this.connectSourceToDestination(this.node, other_node.getDestination());
+          this.connectSourceToDestination(
+            this.node,
+            other_node.getDestinationForInput(other_endpoint)
+          );
           break;
       }
     };
@@ -475,17 +436,22 @@ function () {
       // Map from node to node?
       // Call special AudioNode disconnect method with a destination node?
       switch (endpoint) {
-        case this.output_endpoints["waveform"]:
+        case this.getOutputDescriptors()["waveform"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
           this.disconnectSourceFromDestination(
             this.node,
-            this.connection_to_destination_map.get(connection)
+            other_node.getDestinationForInput(other_endpoint)
           );
           break;
       }
     };
 
-    Delay.prototype.getDestination = function () {
-      return this.node;
+    Delay.prototype.getDestinationForInput = function (input_endpoint) {
+      switch (input_endpoint) {
+        case this.getInputDescriptors()["waveform"]:
+          return this.node;
+      }
     };
 
     Delay.prototype.setDelay = function (value) {
@@ -498,18 +464,25 @@ function () {
     Delay.prototype.informWindowPrepared = function (div) {
       this.div = div;
 
-      this.range_slider = document.createElement("input");
-        this.range_slider.type = "range";
-        this.range_slider.value = this.node.delayTime.value;
-        this.range_slider.min = "0";
-        this.range_slider.max = "1";
-        this.range_slider.step = "any";
-        this.range_slider.style.margin = "0px";
-        this.range_slider.style.width = "100%";
-      this.range_slider.addEventListener("change", (function (e) {
-        this.setDelay(this.range_slider.value);
-      }).bind(this), false);
-      this.div.appendChild(this.range_slider);
+      this.range_dragger = new Synesthesia.UI.DragValue({
+        value: this.node.delayTime.value,
+        min_value: this.node.delayTime.minValue,
+        max_value: this.node.delayTime.maxValue,
+        sensitivity: 0.001,
+        digits: 3,
+        direction_lock: "vertical",
+        string_format: function (str) {
+          return "" + str + "s";
+        },
+        callback: (function (value) {
+          this.setDelay(value);
+        }).bind(this)
+      });
+      var dragger_element = this.range_dragger.getElement();
+      //dragger_element.style.fontSize = "20px";
+      this.div.appendChild(
+        this.range_dragger.getElement()
+      );
     };
 
     Delay.prototype.draw = function () {
@@ -532,13 +505,12 @@ function () {
       this.context = this.synesthesia.getContext();
 
       this.destination = this.context.createGainNode();
-      this.connection_to_destination_map = new Utilities.Map();
 
       this.type = this.params.type || Oscillator.Type.SINE;
 
       this.osc_map = new Utilities.Map();
 
-      this.input_endpoints = {
+      this.setInputDescriptors({
         "notes": new Synesthesia.Graph.Endpoint({
           node: this,
           name: "notes",
@@ -547,7 +519,7 @@ function () {
             "notes"
           ],
           direction: "input"
-        }),
+        })/*,
 
         "frequency": new Synesthesia.Graph.Endpoint({
           node: this,
@@ -568,19 +540,21 @@ function () {
           ],
           direction: "input"
         })
-      };
+        */
+      });
 
-      this.output_endpoints = {
+      this.setOutputDescriptors({
         "waveform": new Synesthesia.Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
           accepted_types: [
-            "AudioNode"
+            "AudioNode",
+            "AudioParam"
           ],
           direction: "output"
         })
-      };
+      });
 
       // UI
 
@@ -642,43 +616,30 @@ function () {
 
     // Synesthesia.GraphNode
 
-    Oscillator.prototype.getInputDescriptors = function () {
-      var endpoints = [];
-      for (var endpoint_name in this.input_endpoints) {
-        if (!this.input_endpoints.hasOwnProperty(endpoint_name)) continue;
-
-        endpoints.push(this.input_endpoints[endpoint_name]);
-      }
-      return endpoints;
-    };
-
-    Oscillator.prototype.getOutputDescriptors = function () {
-      var endpoints = [];
-      for (var endpoint_name in this.output_endpoints) {
-        if (!this.output_endpoints.hasOwnProperty(endpoint_name)) continue;
-
-        endpoints.push(this.output_endpoints[endpoint_name]);
-      }
-      return endpoints;
-    };
-
     Oscillator.prototype.informConnected = function (endpoint, connection) {
       switch (endpoint) {
-        case this.output_endpoints["waveform"]:
+        case this.getOutputDescriptors()["waveform"]:
           var other_endpoint = connection.getOppositeEndpoint(endpoint);
           var other_node = other_endpoint.getNode();
-          this.connection_to_destination_map.set(connection, other_node.getDestination());
-          this.connectSourceToDestination(this.destination, other_node.getDestination());
+          this.connectSourceToDestination(
+            this.destination,
+            other_node.getDestinationForInput(other_endpoint)
+          );
+          break;
+        default:
+          console.warn(endpoint);
           break;
       }
     };
 
     Oscillator.prototype.informDisconnected = function (endpoint, connection) {
       switch (endpoint) {
-        case this.output_endpoints["waveform"]:
+        case this.getOutputDescriptors()["waveform"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
           this.disconnectSourceFromDestination(
             this.destination,
-            this.connection_to_destination_map.get(connection)
+            other_node.getDestinationForInput(other_endpoint)
           );
           break;
       }
@@ -742,6 +703,146 @@ function () {
     };
 
     return Oscillator;
+  })();
+
+  // TODO: Write this! Good for debugging.
+  Synesthesia.Library.WaveDisplay = (function () {
+    function WaveDisplay (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
+      Synesthesia.Graph.Node.AudioDestinationNode.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+      this.context = this.synesthesia.getContext();
+
+      // This feels pretty hacky... is there a better way?
+      // Connect to a 0 gain node that is connected to the main out.
+      // Effectively kills the sound but still causes AudioProcessingEvents to occur.
+      this.audio_sink = this.context.createGainNode();
+        this.audio_sink.gain.value = 0;
+        this.audio_sink.connect(this.synesthesia.getDestination());
+      this.node = this.context.createJavaScriptNode(2048);
+        this.node.onaudioprocess = this.handle_AudioProcessingEvent.bind(this);
+        this.node.connect(this.audio_sink);
+
+      this.setInputDescriptors({
+        "waveform": new Synesthesia.Graph.Endpoint({
+          node: this,
+          name: "waveform",
+          type: "AudioNode",
+          accepted_types: [
+            "AudioNode",
+            "AudioParam"
+          ],
+          direction: "input"
+        })
+      });
+
+      this.setOutputDescriptors({});
+
+      this.channel_data = [];
+      this.channel_colors = [
+        "rgba(255, 0, 0, 1)",
+        "rgba(0, 255, 0, 1)",
+        "rgba(0, 0, 255, 1)",
+        "rgba(192, 192, 192, 1)"
+      ];
+
+      this.canvas = document.createElement("canvas");
+        this.canvas.width = 640;
+        this.canvas.height = 480;
+      this.context = this.canvas.getContext("2d");
+
+      this.ui_window = new Synesthesia.UI.NodeWindow({
+        node: this,
+        title: "Wave Display",
+        max_width: 640, max_height: 498
+      });
+    }
+
+    WaveDisplay.prototype = Utilities.extend(
+      new Synesthesia.Graph.Node.AudioSourceNode(),
+      new Synesthesia.Graph.Node.AudioDestinationNode()
+    );
+
+    WaveDisplay.prototype.getDestinationForInput = function (input_endpoint) {
+      switch (input_endpoint) {
+        case this.getInputDescriptors()["waveform"]:
+          return this.node;
+      }
+    };
+
+    WaveDisplay.prototype.informConnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getInputDescriptors()["waveform"]:
+          break;
+      }
+    };
+
+    WaveDisplay.prototype.informDisconnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getInputDescriptors()["waveform"]:
+          break;
+      }
+    };
+
+    WaveDisplay.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    WaveDisplay.prototype.informWindowPrepared = function (div) {
+      this.div = div;
+      this.div.appendChild(this.canvas);
+    };
+
+    WaveDisplay.prototype.handle_AudioProcessingEvent = function (e) {
+      if (this.context) {
+        this.context.fillStyle = "rgba(0, 0, 0, 1)";
+        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      }
+      for (var channel_ix = 0; channel_ix < e.inputBuffer.numberOfChannels; channel_ix++) {
+        if (!this.channel_data[channel_ix]) {
+          this.channel_data[channel_ix] = [];
+        }
+        this.channel_data[channel_ix] = this.channel_data[channel_ix].concat(Array.prototype.slice.apply(e.inputBuffer.getChannelData(channel_ix)));
+        if (this.channel_data[channel_ix].length > this.canvas.width) {
+          this.channel_data[channel_ix].splice(
+            0,
+            this.channel_data[channel_ix].length - this.canvas.width
+          );
+        }
+
+        e.outputBuffer.getChannelData(channel_ix).set(e.inputBuffer.getChannelData(channel_ix));
+
+        if (this.context) {
+          this.context.save();
+
+            this.context.beginPath();
+
+            for (var sample_ix = 0; sample_ix < this.channel_data[channel_ix].length; sample_ix++) {
+              var cur_sample = this.channel_data[channel_ix][sample_ix];
+              var true_y = (cur_sample + 1) / 2 * this.canvas.height;
+              if (sample_ix == 0) {
+                this.context.moveTo(sample_ix, true_y);
+              } else {
+                this.context.lineTo(sample_ix, true_y);
+              }
+            }
+            
+            this.context.strokeStyle = this.channel_colors[channel_ix % this.channel_colors.length];
+            this.context.stroke();
+
+          this.context.restore();
+        }
+      }
+    };
+
+    WaveDisplay.prototype.draw = function () {
+      // Drawing is done in handle_AudioProcessingEvent.
+    };
+
+    return WaveDisplay;
   })();
 
 });

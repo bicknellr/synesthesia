@@ -19,6 +19,14 @@
   pointer-events: auto;
 }
 
+.Synesthesia_UI_DragValue__main {
+  display: inline-block;
+  margin: 1px;
+  border: 1px solid #808080;
+  border-radius: 3px;
+  padding: 2px;
+}
+
 .Synesthesia_UI_NodeWindow__main {
   -webkit-user-select: none;
 
@@ -50,22 +58,17 @@
   cursor: move;
 
   background-color: #ffffff;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#FDFDFD), to(#D0D0D0));
   border-bottom: 1px solid #808080;
   padding: 3px;
   color: #404040;
 
   -webkit-transition:
-    background ease-in-out 0.4s,
-    color ease-in-out 0.4s;
-}
-
-.Synesthesia_UI_NodeWindow__main:hover .title {
-  background-color: #e0e0e0;
+    background-image ease-in-out 0.4s,
 }
 
 .Synesthesia_UI_NodeWindow__main .title:hover {
-  color: #e0e0e0;
-  background-color: #444444;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#E6E9EE), to(#B2B4B9));
 }
 
 .Synesthesia_UI_NodeWindow__main .resize_grabber {

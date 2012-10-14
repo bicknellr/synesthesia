@@ -31,8 +31,9 @@ window.addEventListener("load", function () {
       x: 300, y: 10
     });
 
-    MainKeyboard = new Synesthesia.Library.KeyboardInput();
-    //MainKeyboard.attach(MainSynesthesia);
+    MainKeyboard = new Synesthesia.Library.KeyboardInput({
+      synesthesia: MainSynesthesia
+    });
     MainUI.addNode(MainKeyboard, {
       x: 20, y: 330
     });
@@ -59,6 +60,13 @@ window.addEventListener("load", function () {
       synesthesia: MainSynesthesia
     });
     MainUI.addNode(TestGain1, {
+      x: 160, y: 170
+    });
+
+    TestGain2 = new Synesthesia.Library.Gain({
+      synesthesia: MainSynesthesia
+    });
+    MainUI.addNode(TestGain2, {
       x: 300, y: 170
     });
 
@@ -67,6 +75,13 @@ window.addEventListener("load", function () {
     });
     MainUI.addNode(TestDelay1, {
       x: 300, y: 330
+    });
+
+    TestWaveDisplay = new Synesthesia.Library.WaveDisplay({
+      synesthesia: MainSynesthesia
+    });
+    MainUI.addNode(TestWaveDisplay, {
+      x: 160, y: 10,
     });
 
     // UI
