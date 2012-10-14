@@ -706,8 +706,8 @@ function () {
   })();
 
   // TODO: Write this! Good for debugging.
-  Synesthesia.Library.WaveDisplay = (function () {
-    function WaveDisplay (params) {
+  Synesthesia.Library.Oscilloscope = (function () {
+    function Oscilloscope (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
       Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
@@ -756,47 +756,47 @@ function () {
 
       this.ui_window = new Synesthesia.UI.NodeWindow({
         node: this,
-        title: "Wave Display",
+        title: "Oscilloscope",
         max_width: 640, max_height: 498
       });
     }
 
-    WaveDisplay.prototype = Utilities.extend(
+    Oscilloscope.prototype = Utilities.extend(
       new Synesthesia.Graph.Node.AudioSourceNode(),
       new Synesthesia.Graph.Node.AudioDestinationNode()
     );
 
-    WaveDisplay.prototype.getDestinationForInput = function (input_endpoint) {
+    Oscilloscope.prototype.getDestinationForInput = function (input_endpoint) {
       switch (input_endpoint) {
         case this.getInputDescriptors()["waveform"]:
           return this.node;
       }
     };
 
-    WaveDisplay.prototype.informConnected = function (endpoint, connection) {
+    Oscilloscope.prototype.informConnected = function (endpoint, connection) {
       switch (endpoint) {
         case this.getInputDescriptors()["waveform"]:
           break;
       }
     };
 
-    WaveDisplay.prototype.informDisconnected = function (endpoint, connection) {
+    Oscilloscope.prototype.informDisconnected = function (endpoint, connection) {
       switch (endpoint) {
         case this.getInputDescriptors()["waveform"]:
           break;
       }
     };
 
-    WaveDisplay.prototype.getWindow = function () {
+    Oscilloscope.prototype.getWindow = function () {
       return this.ui_window;
     };
 
-    WaveDisplay.prototype.informWindowPrepared = function (div) {
+    Oscilloscope.prototype.informWindowPrepared = function (div) {
       this.div = div;
       this.div.appendChild(this.canvas);
     };
 
-    WaveDisplay.prototype.handle_AudioProcessingEvent = function (e) {
+    Oscilloscope.prototype.handle_AudioProcessingEvent = function (e) {
       if (this.context) {
         this.context.fillStyle = "rgba(0, 0, 0, 1)";
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -838,11 +838,11 @@ function () {
       }
     };
 
-    WaveDisplay.prototype.draw = function () {
+    Oscilloscope.prototype.draw = function () {
       // Drawing is done in handle_AudioProcessingEvent.
     };
 
-    return WaveDisplay;
+    return Oscilloscope;
   })();
 
 });

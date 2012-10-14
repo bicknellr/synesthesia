@@ -135,10 +135,6 @@ function () {
         this.element.className = "Synesthesia_UI_DragValue__main";
         this.value_span = document.createElement("span");
         this.element.appendChild(this.value_span);
-      this.draggable = new Synesthesia.UI.Draggable({
-        handle: this.element,
-        callback: this.handle_drag.bind(this)
-      });
       this.element.addEventListener("dblclick", this.handle_dblclick.bind(this), false);
 
       this.min_value = this.params.min_value || 0;
@@ -154,6 +150,11 @@ function () {
       
       this.callback = this.params.callback || function () {};
       this.string_format = this.params.string_format || function (str) { return "" + str; };
+
+      this.draggable = new Synesthesia.UI.Draggable({
+        handle: this.element,
+        callback: this.handle_drag.bind(this)
+      });
 
       this.setValue(this.value);
     }
@@ -190,9 +191,12 @@ function () {
       value_input.style.borderWidth = "0px";
       value_input.style.margin = "0px";
       value_input.style.padding = "0px";
-      value_input.style.backgroundColor = "#ffffff";
       var confirm_listener = function (e) {
-        this.setValue(parseFloat(value_input.value));
+        var new_value = parseFloat(value_input.value);
+        if (isNaN(new_value)) {
+          new_value = this.min_value;
+        }
+        this.setValue(new_value);
         this.element.replaceChild(
           this.value_span,
           this.element_input
@@ -555,6 +559,7 @@ function () {
 
     Endpoint.prototype.draw = function (canvas) {
       var context = canvas.getContext("2d");
+      context.save();
 
       var strokeStyle = Endpoint.ColorMap.initial;
       if (Endpoint.ColorMap[this.type]) {
@@ -562,74 +567,71 @@ function () {
       }
 
       if (this.hasState("selecting") && this.connections.length > 0) {
-        context.save();
-          context.translate(this.x, this.y);
+        context.translate(this.x, this.y);
 
-          // far semicircle
-          context.beginPath();
-          context.arc(
-            10 + (this.direction == "output" ? 1 : -1) * (this.width * this.connections.length),
-            10,
-            5,
-            (this.direction == "output" ? -1 : 1) * Math.PI / 2,
-            (this.direction == "output" ? 1 : -1) * Math.PI / 2
-          );
-          context.strokeStyle = strokeStyle;
-          context.lineWidth = (this.hasState("hovering") ? 3 : 2);
-          context.stroke();
+        // far semicircle
+        context.beginPath();
+        context.arc(
+          10 + (this.direction == "output" ? 1 : -1) * (this.width * this.connections.length),
+          10,
+          5,
+          (this.direction == "output" ? -1 : 1) * Math.PI / 2,
+          (this.direction == "output" ? 1 : -1) * Math.PI / 2
+        );
+        context.strokeStyle = strokeStyle;
+        context.lineWidth = (this.hasState("hovering") ? 3 : 2);
+        context.stroke();
 
-          // top line
-          context.beginPath();
-          context.moveTo(
-            10 + (this.direction == "output" ? 1 : -1) * (this.width * this.connections.length),
-            5
-          );
-          context.lineTo(
-            10 * ((this.direction == "output" ? 1 : -1) + (this.direction == "input" ? 2 : 0)),
-            5
-          );
-          context.stroke();
+        // top line
+        context.beginPath();
+        context.moveTo(
+          10 + (this.direction == "output" ? 1 : -1) * (this.width * this.connections.length),
+          5
+        );
+        context.lineTo(
+          10 * ((this.direction == "output" ? 1 : -1) + (this.direction == "input" ? 2 : 0)),
+          5
+        );
+        context.stroke();
 
-          // bottom line
-          context.beginPath();
-          context.moveTo(
-            10 + (this.direction == "output" ? 1 : -1) * (this.width * this.connections.length),
-            15
-          );
-          context.lineTo(
-            10 * ((this.direction == "output" ? 1 : -1) + (this.direction == "input" ? 2 : 0)),
-            15
-          );
-          context.stroke();
+        // bottom line
+        context.beginPath();
+        context.moveTo(
+          10 + (this.direction == "output" ? 1 : -1) * (this.width * this.connections.length),
+          15
+        );
+        context.lineTo(
+          10 * ((this.direction == "output" ? 1 : -1) + (this.direction == "input" ? 2 : 0)),
+          15
+        );
+        context.stroke();
 
-          // near semicircle
-          context.beginPath();
-          context.arc(
-            10,
-            10,
-            5,
-            (this.direction == "output" ? 1 : -1) * Math.PI / 2,
-            (this.direction == "output" ? -1 : 1) * Math.PI / 2
-          );
-          context.strokeStyle = strokeStyle;
-          context.lineWidth = (this.hasState("hovering") ? 3 : 2);
-          context.stroke();
-
-        context.restore();
+        // near semicircle
+        context.beginPath();
+        context.arc(
+          10,
+          10,
+          5,
+          (this.direction == "output" ? 1 : -1) * Math.PI / 2,
+          (this.direction == "output" ? -1 : 1) * Math.PI / 2
+        );
+        context.strokeStyle = strokeStyle;
+        context.lineWidth = (this.hasState("hovering") ? 3 : 2);
+        context.stroke();
       } else {
-        context.save();
-          context.translate(this.x, this.y);
-          context.beginPath();
-          context.arc(
-            10, 10,
-            5,
-            0, 2 * Math.PI
-          );
-          context.strokeStyle = strokeStyle;
-          context.lineWidth = (this.hasState("hovering") ? 3 : 2);
-          context.stroke();
-        context.restore();
+        context.translate(this.x, this.y);
+        context.beginPath();
+        context.arc(
+          10, 10,
+          5,
+          0, 2 * Math.PI
+        );
+        context.strokeStyle = strokeStyle;
+        context.lineWidth = (this.hasState("hovering") ? 3 : 2);
+        context.stroke();
       }
+
+      context.restore();
     };
 
     return Endpoint;

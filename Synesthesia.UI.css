@@ -22,9 +22,15 @@
 .Synesthesia_UI_DragValue__main {
   display: inline-block;
   margin: 1px;
-  border: 1px solid #808080;
-  border-radius: 3px;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(128, 128, 128, 0)), to(rgba(128, 128, 128, 0.1)));
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-radius: 2px;
+  box-shadow: inset 0px 0px 2px rgba(0, 0, 0, 0.4);
   padding: 2px;
+}
+.Synesthesia_UI_DragValue__main input {
+  outline: none;
+  background-color: transparent;
 }
 
 .Synesthesia_UI_NodeWindow__main {
@@ -67,9 +73,11 @@
     background-image ease-in-out 0.4s,
 }
 
+/*
 .Synesthesia_UI_NodeWindow__main .title:hover {
   background-image: -webkit-gradient(linear, left top, left bottom, from(#E6E9EE), to(#B2B4B9));
 }
+*/
 
 .Synesthesia_UI_NodeWindow__main .resize_grabber {
   cursor: nwse-resize;
