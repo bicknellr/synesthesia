@@ -2,14 +2,14 @@
 <head>
 
 
-<script type="application/javascript" src="./module.js"></script>
-<script type="application/javascript" src="./Utilities.js"></script>
-<script type="application/javascript" src="./Synesthesia.js"></script>
-  <link rel="stylesheet" type="text/css" href="./Synesthesia.css" />
-<script type="application/javascript" src="./Synesthesia.Graph.js"></script>
-<script type="application/javascript" src="./Synesthesia.UI.js"></script>
-  <link rel="stylesheet" type="text/css" href="./Synesthesia.UI.css" />
-<script type="application/javascript" src="./Synesthesia.Library.js"></script>
+<script src="./module.js"></script>
+<script src="./Utilities.js"></script>
+<script src="./Synesthesia.js"></script>
+  <link rel="stylesheet" href="./Synesthesia.css" />
+<script src="./Synesthesia.Graph.js"></script>
+<script src="./Synesthesia.UI.js"></script>
+  <link rel="stylesheet" href="./Synesthesia.UI.css" />
+<script src="./Synesthesia.Library.js"></script>
 
 <script type="application/javascript">
 
@@ -35,7 +35,7 @@ window.addEventListener("load", function () {
       synesthesia: MainSynesthesia
     });
     MainUI.addNode(MainKeyboard, {
-      x: 20, y: 330
+      x: 20, y: 10
     });
 
     TestOsc1 = new Synesthesia.Library.Oscillator({
@@ -44,7 +44,7 @@ window.addEventListener("load", function () {
     });
     //MainSynesthesia.mapInput(MainKeyboard, TestOsc1);
     MainUI.addNode(TestOsc1, {
-      x: 20, y: 10
+      x: 20, y: 130
     });
 
     TestOsc2 = new Synesthesia.Library.Oscillator({
@@ -53,39 +53,47 @@ window.addEventListener("load", function () {
     });
     //MainSynesthesia.mapInput(MainKeyboard, TestOsc2);
     MainUI.addNode(TestOsc2, {
-      x: 20, y: 170
+      x: 20, y: 200
     });
 
     TestGain1 = new Synesthesia.Library.Gain({
       synesthesia: MainSynesthesia
     });
     MainUI.addNode(TestGain1, {
-      x: 160, y: 170
+      x: 160, y: 10
     });
 
     TestGain2 = new Synesthesia.Library.Gain({
       synesthesia: MainSynesthesia
     });
     MainUI.addNode(TestGain2, {
-      x: 300, y: 170
+      x: 160, y: 70
     });
 
     TestDelay1 = new Synesthesia.Library.Delay({
       synesthesia: MainSynesthesia
     });
     MainUI.addNode(TestDelay1, {
-      x: 300, y: 330
+      x: 300, y: 250
     });
 
     TestOscilloscope = new Synesthesia.Library.Oscilloscope({
       synesthesia: MainSynesthesia
     });
     MainUI.addNode(TestOscilloscope, {
-      x: 160, y: 10,
+      x: 300, y: 130,
+    });
+
+    TestBiquadFilter = new Synesthesia.Library.BiquadFilter({
+      synesthesia: MainSynesthesia
+    });
+    MainUI.addNode(TestBiquadFilter, {
+      x: 20, y: 370
     });
 
     // UI
-    MainUI.start();
+    //MainUI.start();
+    MainUI.draw();
 
   });
 }, false);

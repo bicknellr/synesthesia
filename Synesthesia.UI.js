@@ -49,8 +49,11 @@ function () {
       this.nodes.push(
         this.nodes.splice(index, 1)[0]
       );
+      this.draw();
     };
 
+    // PHASING OUT THE DRAW LOOP
+    /*
     UI.prototype.start = function () {
       this.running = true;
       this.step();
@@ -66,6 +69,7 @@ function () {
     UI.prototype.stop = function () {
       this.running = false;
     };
+    */
 
     UI.prototype.draw = function () {
       for (var node_ix = 0; node_ix < this.nodes.length; node_ix++) {
@@ -82,7 +86,12 @@ function () {
       this.params = (typeof params !== "undefined" ? params : {});
 
       this.handle = this.params.handle;
-      this.callback = this.params.callback;
+      this.callback = this.params.callback || function () {};
+      this.callback_mousedown = this.params.callback_mousedown || function () {};
+      this.callback_mousemove = this.params.callback_mousemove || function () {};
+      this.callback_mouseup = this.params.callback_mouseup || function () {};
+
+      this.cursor = this.params.cursor || null;
 
       this.init();
     }
@@ -97,6 +106,15 @@ function () {
       this.last_pageX = e.pageX;
       this.last_pageY = e.pageY;
 
+      if (this.cursor) {
+        this.cursor_lock_key = Utilities.CursorManager.acquire(this.cursor);
+      }
+
+      this.callback_mousedown({
+        e: e,
+        x: e.pageX, y: e.pageY
+      })
+
       this.isMousedown = true;
     };
 
@@ -104,10 +122,18 @@ function () {
       if (!this.isMousedown) return;
 
       this.callback({
-        event: e,
+        e: e,
+        x: e.pageX, y: e.pageY,
         dx: e.pageX - this.last_pageX,
         dy: e.pageY - this.last_pageY
       });
+      this.callback_mousemove({
+        e: e,
+        x: e.pageX, y: e.pageY,
+        dx: e.pageX - this.last_pageX,
+        dy: e.pageY - this.last_pageY
+      });
+
 
       this.last_pageX = e.pageX;
       this.last_pageY = e.pageY;
@@ -119,7 +145,19 @@ function () {
       this.last_pageX = e.pageX;
       this.last_pageY = e.pageY;
 
+      if (this.cursor_lock_key) {
+        Utilities.CursorManager.release(this.cursor_lock_key);
+        this.cursor_lock_key = null;
+      }
+
       this.isMousedown = false;
+
+      this.callback_mouseup({
+        e: e,
+        x: e.pageX, y: e.pageY,
+        dx: e.pageX - this.last_pageX,
+        dy: e.pageY - this.last_pageY
+      });
 
       e.stopPropagation();
     };
@@ -131,6 +169,8 @@ function () {
     function DragValue (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
+      Utilities.Flaggable.apply(this, arguments);
+
       this.element = document.createElement("div");
         this.element.className = "Synesthesia_UI_DragValue__main";
         this.value_span = document.createElement("span");
@@ -140,24 +180,36 @@ function () {
       this.min_value = this.params.min_value || 0;
       this.max_value = (this.params.max_value !== "undefined" ? this.params.max_value : 1);
       this.value = this.params.value || 0;
-      this.true_value = this.params.value || 0;
+      this.unbounded_value = this.params.value || 0;
       this.digits = this.params.digits || 0;
 
       this.sensitivity = this.params.sensitivity || 0.01;
       this.direction_lock = this.params.direction_lock || "horizontal";
+      this.align = this.params.align || "left";
 
-      this.element.style.cursor = (this.direction_lock == "vertical" ? "ns-resize" : "ew-resize");
+      this.cursor = this.params.cursor || (this.direction_lock == "vertical" ? "ns-resize" : "ew-resize");
+      this.element.style.cursor = this.cursor;
       
       this.callback = this.params.callback || function () {};
       this.string_format = this.params.string_format || function (str) { return "" + str; };
 
       this.draggable = new Synesthesia.UI.Draggable({
         handle: this.element,
-        callback: this.handle_drag.bind(this)
+        cursor: this.cursor,
+        callback_mousemove: this.handle_drag.bind(this),
       });
 
-      this.setValue(this.value);
+      this.sync_value = null;
+      if (this.params.sync_value) {
+        this.setSyncValue(this.params.sync_value);
+      } else {
+        this.setValue(this.value);
+      }
     }
+
+    DragValue.prototype = Utilities.extend(
+      new Utilities.Flaggable()
+    );
 
     DragValue.prototype.getElement = function () {
       return this.element;
@@ -165,21 +217,22 @@ function () {
 
     DragValue.prototype.handle_drag = function (e) {
       //console.log("dx " + e.dx + " dy " + e.dy);
-      this.true_value = this.sensitivity * (this.direction_lock == "vertical" ? -e.dy : e.dx) + this.true_value;
-      this.true_value = Math.min(this.max_value, this.true_value);
-      this.true_value = Math.max(this.min_value, this.true_value);
+      this.unbounded_value = this.sensitivity * (this.direction_lock == "vertical" ? -e.dy : e.dx) + this.unbounded_value;
+      this.unbounded_value = Math.min(this.max_value, this.unbounded_value);
+      this.unbounded_value = Math.max(this.min_value, this.unbounded_value);
       this.setValue(
-        this.true_value
+        this.unbounded_value
       );
-      this.callback(this.value);
     };
 
     DragValue.prototype.handle_dblclick = function (e) {
+      if (this.hasFlag("editing")) return;
+      this.setFlag("editing");
+
       this.element_input = document.createElement("div");
 
       var style = window.getComputedStyle(this.element);
       var value_input = document.createElement("input");
-      value_input.maxLength = this.digits + 2;
         Utilities.copy_properties(
           style, value_input.style,
           [ "fontFamily",
@@ -191,7 +244,10 @@ function () {
       value_input.style.borderWidth = "0px";
       value_input.style.margin = "0px";
       value_input.style.padding = "0px";
+      // TODO: Accept enter as completion of editing.
       var confirm_listener = function (e) {
+        if (!this.hasFlag("editing")) return;
+
         var new_value = parseFloat(value_input.value);
         if (isNaN(new_value)) {
           new_value = this.min_value;
@@ -201,6 +257,7 @@ function () {
           this.value_span,
           this.element_input
         );
+        this.unsetFlag("editing");
       };
       value_input.addEventListener("blur", confirm_listener.bind(this), false);
       value_input.value = this.value;
@@ -215,26 +272,255 @@ function () {
       value_input.select();
     };
 
-    DragValue.prototype.getValue = function () {
-      return this.value;
+    DragValue.prototype.setSyncValue = function (new_sync_value) {
+      this.sync_value = new_sync_value;
+      this.sync_value.addListener(this, (function (new_value) {
+        this.setValue(new_value);
+      }).bind(this));
+      this.setValue(this.sync_value.getValue());
     };
 
     DragValue.prototype.setValue = function (new_value) {
+      this.unbounded_value = new_value;
       new_value = Math.min(this.max_value, new_value);
       new_value = Math.max(this.min_value, new_value);
       new_value = Math.round(new_value * Math.pow(10, this.digits)) / Math.pow(10, this.digits);
 
-      this.value = new_value;
       this.value_span.innerHTML = "" + this.string_format(new_value.toFixed(this.digits));
+      if (this.sync_value) {
+        this.sync_value.setValue(this, new_value);
+      } else {
+        this.value = new_value;
+      }
+      this.callback(this.value);
+    };
+
+    DragValue.prototype.getValue = function () {
+      return this.value;
     };
 
     return DragValue;
   })();
 
+  /*
+    Does this really need to be called DragValueTable?
+    Maybe it should just be a generic table building object.
+  */
+  Synesthesia.UI.DragValueTable = (function () {
+    function DragValueTable (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.values = this.params.values;
+
+      this.stack = this.params.stack || false;
+
+      this.element = (this.stack && this.stack == "horizontal" ? document.createElement("div") : document.createElement("table"));
+
+      for (var i = 0; i < this.values.length; i++) {
+        this.pushValue(this.values[i].label, this.values[i].drag_value);
+      }
+    }
+
+    DragValueTable.prototype.getElement = function () {
+      return this.element;
+    };
+
+    DragValueTable.prototype.pushValue = function (label, drag_value) {
+      if (!this.stack) {
+        var new_row = document.createElement("tr");
+          
+          var label_td = document.createElement("td");
+            label_td.style.padding = "4px";
+            label_td.style.width = "50%";
+            label_td.appendChild(document.createTextNode(label));
+          new_row.appendChild(label_td);
+
+          var drag_value_td = document.createElement("td");
+            drag_value_td.style.width = "50%";
+            var drag_value_element = drag_value.getElement();
+              drag_value_element.style.width = "-webkit-calc(100% - 8px)";
+            drag_value_td.appendChild(drag_value_element);
+          new_row.appendChild(drag_value_td);
+
+        this.element.appendChild(new_row);
+      } else if (this.stack == "vertical") {
+        var label_tr = document.createElement("tr");
+          var label_td = document.createElement("td");
+            label_td.style.padding = "4px";
+            label_td.style.width = "100%";
+            label_td.appendChild(document.createTextNode(label));
+          label_tr.appendChild(label_td);
+        this.element.appendChild(label_tr);
+
+        var drag_value_tr = document.createElement("tr");
+          var drag_value_td = document.createElement("td");
+            drag_value_td.style.width = "100%";
+            var drag_value_element = drag_value.getElement();
+              drag_value_element.style.width = "-webkit-calc(100% - 8px)";
+            drag_value_td.appendChild(drag_value_element);
+          drag_value_tr.appendChild(drag_value_td);
+        this.element.appendChild(drag_value_tr);
+      } else if (this.stack == "horizontal") {
+        this.element.style.display = "-webkit-flex";
+
+        var label_div = document.createElement("div");
+          label_div.style.webkitFlex = "1 0 0";
+          label_div.style.padding = "4px";
+          label_div.style.width = "100%";
+          label_div.style.textAlign = "right";
+          label_div.appendChild(document.createTextNode(label));
+        this.element.appendChild(label_div);
+
+        var drag_value_element = drag_value.getElement();
+          drag_value_element.style.webkitFlex = "1 0 0";
+        this.element.appendChild(drag_value_element);
+      }
+    };
+
+    return DragValueTable;
+  })();
+
+  Synesthesia.UI.RadioGroup = (function () {
+    function RadioGroup (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+      
+      this.element = document.createElement("div");
+        this.element.className = "Synesthesia_UI_RadioGroup__main";
+
+      this.callback_select = this.params.callback_select || function () {};
+
+      this.options = [];
+      if (this.options) {
+        for (var i = 0; i < this.params.options.length; i++) {
+          this.addOption(this.params.options[i]);  
+        }
+      }
+    }
+
+    RadioGroup.prototype.getElement = function () {
+      return this.element;
+    };
+
+    RadioGroup.prototype.getOptions = function () {
+      return [].concat(this.options);
+    };
+
+    RadioGroup.prototype.addOption = function (new_option) {
+      this.options.push(new_option);
+      
+      var option_element = document.createElement("div");
+        if (!!new_option.selected) {
+          option_element.className = "radio_option selected";
+        } else {
+          option_element.className = "radio_option";
+        };
+        option_element.appendChild(document.createTextNode(new_option.label));
+        option_element.addEventListener("click", (function () {
+          this.selectOption(new_option);
+        }).bind(this), false);
+      new_option.element = option_element;
+      this.element.appendChild(option_element);
+    };
+
+    RadioGroup.prototype.selectOption = function (option_to_select) {
+      this.options.forEach(function (option) {
+        if (option != option_to_select) {
+          option.selected = false;
+          option.element.className = "radio_option";
+        }
+      });
+      option_to_select.selected = true;
+      option_to_select.element.className = "radio_option selected";
+      this.callback_select(option_to_select);
+    };
+
+    RadioGroup.prototype.getSelectedOption = function () {
+      return this.options.filter(function (option) {
+        return option.selected;
+      })[0];
+    };
+
+    return RadioGroup;
+  })();
+
+  Synesthesia.UI.ScalableGraph = (function () {
+    function ScalableGraph (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Utilities.Flaggable.apply(this, arguments);
+
+      this.canvas = document.createElement("canvas");
+      this.context = this.canvas.getContext("2d");
+
+      this.x_min = this.params.x_min || 0;
+      this.x_max = this.params.x_max || 0;
+      this.y_min = this.params.y_min || 0;
+      this.y_max = this.params.y_max || 0;
+
+      this.graph_function = this.params.graph_function || function (a) {
+        return Utilities.range(a.length);
+      };
+
+      this.scale_x_func = this.params.scale_x_func || function (x) { return x; };
+      this.scale_x_func_inv = this.params.scale_x_func_inv || function (x) { return x; };
+      this.scale_y_func = this.params.scale_y_func || function (y) { return y; };
+      this.scale_y_func_inv = this.params.scale_y_func_inv || function (y) { return y; };
+
+      this.draw();
+    }
+
+    ScalableGraph.prototype = Utilities.extend(
+      new Utilities.Flaggable()
+    );
+
+    ScalableGraph.prototype.getElement = function () {
+      return this.canvas;
+    };
+
+    ScalableGraph.prototype.setDimensions = function (width, height) {
+      this.canvas.width = width;
+      this.canvas.height = height;
+      this.draw();
+    };
+
+    ScalableGraph.prototype.draw = function () {
+      var context = this.context;
+      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      // Draw grid.
+      context.save();
+        var x_points = Utilities.range(this.canvas.width).map(
+          (function (x) {
+            return this.scale_x_func(x / parseInt(this.canvas.width));
+          }).bind(this)
+        );
+        var frame_points = this.graph_function(x_points);
+        context.beginPath();
+          for (var x = 0; x < frame_points.length; x++) {
+            if (isNaN(frame_points[x])) continue;
+
+            var y = this.scale_y_func_inv(frame_points[x]);
+            y = (-1 * y + this.y_max) / (this.y_max - this.y_min) * this.canvas.height;
+
+            if (x == 0) {
+              context.moveTo(-0.5, y);
+              context.lineTo(0.5, y);
+            } else if (x == frame_points.length - 1) {
+              context.lineTo(x + 1.5, y);
+            } else {
+              context.lineTo(x + 0.5, y);
+            }
+          }
+        context.lineWidth = 2;
+        context.strokeStyle = "rgba(128, 128, 128, 1)";
+        context.stroke();
+      context.restore();
+    };
+
+    return ScalableGraph;
+  })();
+
   Synesthesia.UI.NodeWindow = (function () {
     function NodeWindow (params) {
-      if (!params) return; // INTERFACE
-
       this.params = (typeof params !== "undefined" ? params : {});
 
       this.UI = null
@@ -247,10 +533,16 @@ function () {
       this.width = this.params.width || 100;
       this.min_width = this.params.min_width || 100;
       this.max_width = this.params.max_width || Infinity;
+      this.unbounded_width = this.width;
 
       this.height = this.params.height || 100;
       this.min_height = this.params.min_height || 100;
       this.max_height = this.params.max_height || Infinity;
+      this.unbounded_height = this.height;
+
+      // TODO: If use_flex is false, the window can't be resized even if resizable is set.
+      this.use_flex = (typeof this.params.use_flex !== "undefined" ? !!this.params.use_flex : true);
+      this.resizable = (typeof this.params.resizable !== "undefined" ? !!this.params.resizable : true);
 
       this.title = this.params.title || "Node";
 
@@ -301,6 +593,9 @@ function () {
     NodeWindow.prototype.setContainer = function (div) {
       this._container = div;
         this._container.className = "Synesthesia_UI_NodeWindow__main";
+        if (!this.flex) {
+          this._container.style.display = "block";
+        }
         this._container.style.left = "" + this.x + "px";
         this._container.style.top = "" + this.y + "px";
         this._container.addEventListener("mousedown", (function () {
@@ -313,21 +608,34 @@ function () {
       this._container.appendChild(this.title_div);
 
       this.div = document.createElement("div");
+        this.div.className = "content";
       this._container.appendChild(this.div);
-
-      this.resize_grabber = document.createElement("div");
-        this.resize_grabber.className = "resize_grabber";
-      this._container.appendChild(this.resize_grabber);
 
       this._draggable = new Synesthesia.UI.Draggable({
         handle: this.title_div,
+        cursor: "-webkit-grabbing",
         callback: this.handle_drag.bind(this)
       });
 
-      this._resizeable = new Synesthesia.UI.Draggable({
-        handle: this.resize_grabber,
-        callback: this.handle_resize.bind(this)
-      });
+
+      if (this.resizable) {
+        this.resize_grabber = document.createElement("div");
+          this.resize_grabber.className = "resize_grabber";
+        this._container.appendChild(this.resize_grabber);
+
+        this._resizeable = new Synesthesia.UI.Draggable({
+          handle: this.resize_grabber,
+          cursor: "nwse-resize",
+          callback_mousedown: this.handle_resize_mousedown.bind(this),
+          callback_mousemove: this.handle_resize_mousemove.bind(this),
+          callback_mouseup: this.handle_resize_mouseup.bind(this)
+        });
+      }
+
+      // HACK: Work around for Chrome flex-box css width/height reporting bug.
+      //var title_style = window.getComputedStyle(this.title_div);
+      this.div.setAttribute("data-width", this.width);
+      this.div.setAttribute("data-height", this.height - this.title_div.offsetHeight);
 
       this.node.informWindowPrepared(this.div);
     };
@@ -341,23 +649,40 @@ function () {
 
       this.reflow();
 
-      params.event.preventDefault();
+      params.e.preventDefault();
     };
 
-    NodeWindow.prototype.handle_resize = function (params) {
+    NodeWindow.prototype.handle_resize_mousedown = function (params) {
       var div_style = window.getComputedStyle(this._container);
-      var new_width = parseInt(div_style.width) + params.dx;
+      this.unbounded_width = parseInt(div_style.width);
+      this.unbounded_height = parseInt(div_style.height);
+    };
+
+    NodeWindow.prototype.handle_resize_mousemove = function (params) {
+      this.unbounded_width += params.dx;
+      this.unbounded_height += params.dy;
+
+      var new_width = this.unbounded_width;
         new_width = Math.max(new_width, this.min_width);
         new_width = Math.min(new_width, this.max_width);
       this.width = new_width;
-      var new_height = parseInt(div_style.height) + params.dy;
+      var new_height = this.unbounded_height;
         new_height = Math.max(new_height, this.min_height);
         new_height = Math.min(new_height, this.max_height);
       this.height = new_height;
 
+      // HACK: Work around for Chrome flex-box css width/height reporting bug.
+      //var title_style = window.getComputedStyle(this.title_div);
+      this.div.setAttribute("data-width", this.width);
+      this.div.setAttribute("data-height", this.height - this.title_div.offsetHeight);
+
       this.reflow();
 
-      params.event.preventDefault();
+      params.e.preventDefault();
+    };
+
+    NodeWindow.prototype.handle_resize_mouseup = function (params) {
+      this.handle_resize_mousedown.apply(this, arguments);
     };
 
     NodeWindow.prototype.setZIndex = function (index) {
@@ -367,8 +692,16 @@ function () {
     NodeWindow.prototype.reflow = function () {
       this._container.style.left = "" + this.x + "px";
       this._container.style.top = "" + this.y + "px";
-      this._container.style.width = "" + this.width + "px";
-      this._container.style.height = "" + this.height + "px";
+      if (this.use_flex) {
+        this._container.style.width = "" + this.width + "px";
+        this._container.style.height = "" + this.height + "px";
+      } else {
+        var container_style = window.getComputedStyle(this._container);
+        this.width = parseInt(container_style.getPropertyValue("width"));
+        this.height = parseInt(container_style.getPropertyValue("height"));
+      }
+
+      this.UI.draw();
     };
 
     NodeWindow.prototype.drawEndpoints = function (canvas) {
@@ -405,6 +738,8 @@ function () {
     function Endpoint (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
+      Utilities.Flaggable.apply(this, arguments);
+
       this.descriptor = this.params.descriptor;
 
       this.node = this.params.node;
@@ -418,10 +753,12 @@ function () {
       this.width = 20;
       this.height = 20;
 
-      this.states = [];
-
       this.connections = [];
     }
+
+    Endpoint.prototype = Utilities.extend(
+      new Utilities.Flaggable()
+    );
 
     Endpoint.ColorMap = {
       initial: "rgba(0, 0, 0, 1)",
@@ -444,7 +781,7 @@ function () {
     };
 
     Endpoint.prototype.getPointForConnection = function (connection) {
-      if (this.hasState("selecting")) {
+      if (this.hasFlag("selecting")) {
         var connection_ix = this.connections.indexOf(connection);
         if (this.direction == "output") {
           return {
@@ -486,7 +823,7 @@ function () {
     };
 
     Endpoint.prototype.isPointWithinBounds = function (point) {
-      if (!this.hasState("hovering")) {
+      if (!this.hasFlag("hovering")) {
         return this.distanceTo(point) < 10;
       } else {
         switch (this.direction) {
@@ -515,20 +852,6 @@ function () {
       );
     };
 
-    Endpoint.prototype.addState = function (new_state) {
-      this.states.push(new_state);
-    };
-
-    Endpoint.prototype.hasState = function (check_state) {
-      return (this.states.indexOf(check_state) != -1);
-    };
-
-    Endpoint.prototype.removeState = function (rm_state) {
-      while (this.states.indexOf(rm_state) != -1) {
-        this.states.splice(this.states.indexOf(rm_state), 1);
-      }
-    };
-
     // Connections
 
     Endpoint.prototype.canConnectTo = function (other_endpoint) {
@@ -544,7 +867,6 @@ function () {
 
     Endpoint.prototype.informDisconnected = function (rm_connection) {
       if (this.connections.indexOf(rm_connection) != -1) {
-        // TODO: COMPLETE AFTER FINISHING GRAPH.CONNECTION
         this.descriptor.informDisconnected(
           rm_connection.getDescriptor()
         );
@@ -566,7 +888,7 @@ function () {
         strokeStyle = Endpoint.ColorMap[this.type];
       }
 
-      if (this.hasState("selecting") && this.connections.length > 0) {
+      if (this.hasFlag("selecting") && this.connections.length > 0) {
         context.translate(this.x, this.y);
 
         // far semicircle
@@ -579,7 +901,7 @@ function () {
           (this.direction == "output" ? 1 : -1) * Math.PI / 2
         );
         context.strokeStyle = strokeStyle;
-        context.lineWidth = (this.hasState("hovering") ? 3 : 2);
+        context.lineWidth = (this.hasFlag("hovering") ? 3 : 2);
         context.stroke();
 
         // top line
@@ -616,7 +938,7 @@ function () {
           (this.direction == "output" ? -1 : 1) * Math.PI / 2
         );
         context.strokeStyle = strokeStyle;
-        context.lineWidth = (this.hasState("hovering") ? 3 : 2);
+        context.lineWidth = (this.hasFlag("hovering") ? 3 : 2);
         context.stroke();
       } else {
         context.translate(this.x, this.y);
@@ -627,7 +949,7 @@ function () {
           0, 2 * Math.PI
         );
         context.strokeStyle = strokeStyle;
-        context.lineWidth = (this.hasState("hovering") ? 3 : 2);
+        context.lineWidth = (this.hasFlag("hovering") ? 3 : 2);
         context.stroke();
       }
 
@@ -728,7 +1050,7 @@ function () {
           };
         } else {
           control1 = {
-            x: start_point.x - 0.5 * (end_point.x - start_point.x),
+            x: start_point.x - 0.25 * (end_point.x - start_point.x),
             y: 0.5 * (end_point.y + start_point.y)
           };
           control2 = {
@@ -740,7 +1062,7 @@ function () {
             y: 0.5 * (end_point.y + start_point.y)
           };
           control4 = {
-            x: start_point.x + 1.5 * (end_point.x - start_point.x),
+            x: start_point.x + 1.25 * (end_point.x - start_point.x),
             y: 0.5 * (end_point.y + start_point.y)
           };
         }
@@ -785,7 +1107,13 @@ function () {
       this.params = (typeof params !== "undefined" ? params : {});
 
       this.canvas = this.params.canvas;
-      this.canvas.className = "Synesthesia_UI_NodeCanvas__canvas";
+        this.canvas.className = "Synesthesia_UI_NodeCanvas__canvas";
+        this.canvas.addEventListener("mousemove", (function (e) {
+          this.draw();
+        }).bind(this), false);
+        this.canvas.addEventListener("mouseout", (function (e) {
+          this.draw();
+        }).bind(this), false);
       this.context = this.canvas.getContext("2d");
 
       this.node_windows = [];
@@ -907,15 +1235,15 @@ function () {
       var selectable_endpoint = this.getSelectableEndpointForPoint({
         x: e.pageX, y: e.pageY
       });
-      this.removeStateAllEndpoints("hovering");
-      this.removeStateAllEndpoints("selecting");
+      this.unsetFlagAllEndpoints("hovering");
+      this.unsetFlagAllEndpoints("selecting");
       if (selectable_endpoint) {
         if (this.selected_endpoint && this.selected_endpoint.canConnectTo(selectable_endpoint)) {
-          selectable_endpoint.addState("hovering");
-          selectable_endpoint.addState("selecting");
+          selectable_endpoint.setFlag("hovering");
+          selectable_endpoint.setFlag("selecting");
         } else if (!this.selected_endpoint) {
-          selectable_endpoint.addState("hovering");
-          selectable_endpoint.addState("selecting");
+          selectable_endpoint.setFlag("hovering");
+          selectable_endpoint.setFlag("selecting");
         }
       }
 
@@ -933,6 +1261,8 @@ function () {
     NodeCanvas.prototype.handle_mouseup = function (e) {
       if (!this.isMousedown) return;
 
+      //if (e.toElement && e.toElement != document.childNodes[0]) return;
+
       var selectable_endpoint = this.getSelectableEndpointForPoint({
         x: e.pageX, y: e.pageY
       });
@@ -946,7 +1276,6 @@ function () {
         // Inform connected.
         this.temporary_connection.from_endpoint.informConnected(this.temporary_connection);
         this.temporary_connection.to_endpoint.informConnected(this.temporary_connection);
-        //console.log(this.temporary_connection);
         did_finalize_connection = true;
       }
 
@@ -998,13 +1327,13 @@ function () {
       return closest_endpoint;
     };
 
-    NodeCanvas.prototype.removeStateAllEndpoints = function (state_name) {
+    NodeCanvas.prototype.unsetFlagAllEndpoints = function (state_name) {
       for (var window_ix = 0; window_ix < this.node_windows.length; window_ix++) {
         var cur_window = this.node_windows[window_ix];
 
         var endpoints = cur_window.input_endpoints.concat(cur_window.output_endpoints);
         for (var i = 0; i < endpoints.length; i++) {
-          endpoints[i].removeState(state_name);
+          endpoints[i].unsetFlag(state_name);
         }
       }
     };

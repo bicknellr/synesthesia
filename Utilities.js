@@ -63,6 +63,18 @@ module("Utilities", [], function () {
     return true;
   };
 
+  var getPagePosition = function (element) {
+    var cur_element = element;
+    var cur_left = element.offsetLeft;
+    var cur_top = element.offsetTop;
+    while (cur_element.offsetParent != document.body) {
+      cur_element = cur_element.offsetParent;
+      cur_left += cur_element.offsetLeft;
+      cur_top += cur_element.offsetTop;
+    }
+    return { top: cur_top, left: cur_left };
+  };
+
   var Map = (function () {
     function Map () {
       this.keys = [];
@@ -97,6 +109,56 @@ module("Utilities", [], function () {
     return Map;
   })();
 
+  var range = function (n) {
+    var output = [];
+    for (var i = 0; i < n; i++) {
+      output.push(i);
+    }
+    return output;
+  };
+
+  /*
+    'source' refers to a key that should be associated with a listener.
+    When the value is updated, the source key indicates which listener not to call.
+    Generally, the source should be the object for which the listener does updating
+    for that object based upon the new value.
+  */
+  var SynchronizedValue = (function () {
+    function SynchronizedValue (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.value = null;
+
+      this.listeners = [];
+    }
+
+    SynchronizedValue.prototype.setValue = function (source, new_value) {
+      this.value = new_value;
+      for (var i = 0; i < this.listeners.length; i++) {
+        if (this.listeners[i].source == source) continue;
+
+        this.listeners[i].listener(this.value);
+      }
+    };
+
+    SynchronizedValue.prototype.getValue = function () {
+      return this.value;
+    };
+
+    SynchronizedValue.prototype.addListener = function (new_source, new_listener) {
+      this.listeners.push({
+        source: new_source,
+        listener: new_listener
+      });
+    };
+
+    SynchronizedValue.prototype.removeListener = function (rm_listener) {
+      this.listeners.splice(this.listeners.indexOf(rm_listener), 1);
+    };
+
+    return SynchronizedValue;
+  })();
+
   // Doesn't really work with a * rule...
   var CursorManager = (function () {
     function CursorManager () {
@@ -122,6 +184,31 @@ module("Utilities", [], function () {
     return CursorManager;
   })();
 
+  var Flaggable = (function () {
+    function Flaggable () {
+      this._flags = [];
+    }
+
+    Flaggable.prototype.setFlag = function (flag) {
+      this._flags.push(flag);
+    };
+
+    Flaggable.prototype.hasFlag = function (flag) {
+      return this._flags.indexOf(flag) != -1;
+    };
+
+    Flaggable.prototype.unsetFlag = function (flag) {
+      while (this._flags.indexOf(flag) != -1) {
+        this._flags.splice(
+          this._flags.indexOf(flag),
+          1
+        );
+      }
+    };
+
+    return Flaggable;
+  })();
+
   return {
     copy_properties: copy_properties,
 
@@ -129,7 +216,13 @@ module("Utilities", [], function () {
     conforms: conforms,
     overrides: overrides,
 
+    getPagePosition: getPagePosition,
+
+    Flaggable: Flaggable,
     Map: Map,
+    SynchronizedValue: SynchronizedValue,
+
+    range: range,
 
     CursorManager: new CursorManager()
   };

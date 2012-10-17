@@ -12,6 +12,9 @@ module("Synesthesia", ["Utilities"], function (exports) {
 
       this.instruments = [];
 
+      if (typeof Synesthesia.AudioContext === "undefined") {
+        throw new Error("Synesthesia: AudioContext not supported!");
+      }
       this.context = new Synesthesia.AudioContext();
     }
 

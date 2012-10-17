@@ -28,12 +28,12 @@
         cur_module.exports = cur_module.callback.apply(window);
       } catch (e) {
         if (e.stack) {
-          console.error("module: Processing '" + cur_module.name + "' failed:\n" + e.stack.toString());
+          console.error("module: Processing '" + cur_module.name + "' failed:\nStack:\n" + e.stack.toString() + "\nError:\n" + e.toString());
         } else {
           console.error("module: Processing '" + cur_module.name + "' failed:");
           console.error(e);
         }
-        continue;
+        continue to_next_module;
       };
 
       changes = true;

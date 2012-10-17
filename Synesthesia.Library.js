@@ -223,6 +223,12 @@ function () {
       this.context = this.synesthesia.getContext();
       this.node = this.context.createGainNode();
 
+      this.gain_sync = new Utilities.SynchronizedValue();
+      this.gain_sync.addListener(this, (function (new_value) {
+        this.node.gain.value = new_value;
+      }).bind(this));
+      this.gain_sync.setValue(this, this.node.gain.value);
+
       this.setInputDescriptors({
         "waveform": new Synesthesia.Graph.Endpoint({
           node: this,
@@ -261,7 +267,9 @@ function () {
       // MUST BE DEFINED AFTER ENDPOINTS
       this.ui_window = new Synesthesia.UI.NodeWindow({
         node: this,
-        title: "Gain"
+        title: "Gain",
+        resizable: false,
+        use_flex: false
       });
     }
 
@@ -331,6 +339,7 @@ function () {
     };
 
     Gain.prototype.setGain = function (value) {
+      // TODO: Why?
       if (value < 0.01) {
         value = 0;
       }
@@ -340,25 +349,33 @@ function () {
     Gain.prototype.informWindowPrepared = function (div) {
       this.div = div;
 
-      this.range_dragger = new Synesthesia.UI.DragValue({
-        value: this.node.gain.value,
+      this.gain_drag_value =  new Synesthesia.UI.DragValue({
+        sync_value: this.gain_sync,
         min_value: this.node.gain.minValue,
         max_value: this.node.gain.maxValue,
-        digits: 3,
-        sensitivity: 0.005,
-        direction_lock: "vertical",
-        callback: (function (value) {
-          this.setGain(value);
-        }).bind(this)
+        digits: 4,
+        sensitivity: 0.0025,
+        direction_lock: "vertical"
       });
-      //this.range_dragger.getElement().style.fontSize = "20px";
-      this.div.appendChild(
-        this.range_dragger.getElement()
-      );
+      this.gain_sync.addListener(this.gain_drag_value, (function (new_value) {
+        this.gain_drag_value.setValue(new_value);
+      }).bind(this));
+
+
+      this.drag_value_table = new Synesthesia.UI.DragValueTable({
+        values: [
+          { label: "Gain",
+            drag_value: this.gain_drag_value
+          }
+        ]
+      });
+
+      var table_element = this.drag_value_table.getElement();
+        table_element.style.width = "100%";
+      this.div.appendChild(table_element);
     };
 
     Gain.prototype.draw = function () {
-      // TODO: This should handle the case that the audio param is connected.
     };
 
     return Gain;
@@ -374,6 +391,12 @@ function () {
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
       this.node = this.context.createDelayNode();
+
+      this.delayTime_sync = new Utilities.SynchronizedValue();
+      this.delayTime_sync.addListener(this, (function (new_value) {
+        this.node.delayTime.value = new_value;
+      }).bind(this));
+      this.delayTime_sync.setValue(this, this.node.delayTime.value);
 
       this.setInputDescriptors({
         "waveform": new Synesthesia.Graph.Endpoint({
@@ -403,7 +426,9 @@ function () {
       // MUST BE DEFINED AFTER ENDPOINTS
       this.ui_window = new Synesthesia.UI.NodeWindow({
         node: this,
-        title: "Delay"
+        title: "Delay",
+        resizable: false,
+        use_flex: false
       });
     }
 
@@ -464,25 +489,33 @@ function () {
     Delay.prototype.informWindowPrepared = function (div) {
       this.div = div;
 
-      this.range_dragger = new Synesthesia.UI.DragValue({
-        value: this.node.delayTime.value,
+      this.delayTime_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.delayTime_sync,
         min_value: this.node.delayTime.minValue,
         max_value: this.node.delayTime.maxValue,
-        sensitivity: 0.001,
-        digits: 3,
+        sensitivity: 0.0001,
+        digits: 4,
         direction_lock: "vertical",
         string_format: function (str) {
           return "" + str + "s";
-        },
-        callback: (function (value) {
-          this.setDelay(value);
-        }).bind(this)
+        }
       });
-      var dragger_element = this.range_dragger.getElement();
-      //dragger_element.style.fontSize = "20px";
-      this.div.appendChild(
-        this.range_dragger.getElement()
-      );
+      this.delayTime_sync.addListener(this.delayTime_drag_value, (function (new_value) {
+        this.delayTime_drag_value.setValue(new_value);
+      }).bind(this));
+
+      var drag_value_table = new Synesthesia.UI.DragValueTable({
+        values: [
+          { label: "Time",
+            drag_value: this.delayTime_drag_value
+          }
+        ]
+      });
+
+      var table_element = drag_value_table.getElement();
+        table_element.style.width = "100%";
+
+      this.div.appendChild(table_element);
     };
 
     Delay.prototype.draw = function () {
@@ -490,6 +523,249 @@ function () {
     };
 
     return Delay;
+  })();
+
+  Synesthesia.Library.BiquadFilter = (function () {
+    function BiquadFilter (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
+      Synesthesia.Graph.Node.AudioDestinationNode.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+      this.context = this.synesthesia.getContext();
+      this.node = this.context.createBiquadFilter();
+      
+      this.type = this.params.type || BiquadFilter.Type.LOWPASS;
+      this.node.type = this.type;
+
+      // Set up synchronizable values.
+
+      this.frequency_sync = new Utilities.SynchronizedValue();
+      this.frequency_sync.addListener(this, (function (new_value) {
+        this.node.frequency.value = new_value;
+        if (this.filter_graph) {
+          this.filter_graph.draw();
+        }
+      }).bind(this));
+      this.frequency_sync.setValue(this, this.node.frequency.value);
+
+      this.Q_sync = new Utilities.SynchronizedValue();
+      this.Q_sync.addListener(this, (function (new_value) {
+        this.node.Q.value = new_value;
+        if (this.filter_graph) {
+          this.filter_graph.draw();
+        }
+      }).bind(this));
+      this.Q_sync.setValue(this, this.node.Q.value);
+
+      this.gain_sync = new Utilities.SynchronizedValue();
+      this.gain_sync.addListener(this, (function (new_value) {
+        this.node.gain.value = new_value;
+        if (this.filter_graph) {
+          this.filter_graph.draw();
+        }
+      }).bind(this));
+      this.gain_sync.setValue(this, this.node.gain.value);
+
+      // Set up endpoint descriptors.
+
+      this.setInputDescriptors({
+        "waveform": new Synesthesia.Graph.Endpoint({
+          node: this,
+          name: "waveform",
+          type: "AudioNode",
+          accepted_types: [
+            "AudioNode"
+          ],
+          direction: "input"
+        })
+      });
+
+      this.setOutputDescriptors({
+        "waveform": new Synesthesia.Graph.Endpoint({
+          node: this,
+          name: "waveform",
+          type: "AudioNode",
+          accepted_types: [
+            "AudioNode",
+            "AudioParam"
+          ],
+          direction: "output"
+        })
+      });
+
+      this.canvas = null;
+
+      // MUST BE DEFINED AFTER ENDPOINTS
+      this.ui_window = new Synesthesia.UI.NodeWindow({
+        node: this,
+        title: "Biquad Filter",
+        use_flex: false,
+        resizable: false
+      });
+    }
+
+    BiquadFilter.Type = {
+      LOWPASS: 0,
+      HIGHPASS: 1,
+      BANDPASS: 2,
+      LOWSHELF: 3,
+      HIGHSHELF: 4,
+      PEAKING: 5,
+      NOTCH: 6,
+      ALLPASS: 7
+    };
+
+    BiquadFilter.prototype = Utilities.extend(
+      new Synesthesia.Graph.Node.AudioSourceNode(),
+      new Synesthesia.Graph.Node.AudioDestinationNode()
+    );
+
+    BiquadFilter.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    BiquadFilter.prototype.informConnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["waveform"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
+          this.connectSourceToDestination(
+            this.node,
+            other_node.getDestinationForInput(other_endpoint)
+          );
+          break;
+      }
+    };
+
+    BiquadFilter.prototype.informDisconnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["waveform"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
+          this.disconnectSourceFromDestination(
+            this.node,
+            other_node.getDestinationForInput(other_endpoint)
+          );
+          break;
+      }
+    };
+
+    BiquadFilter.prototype.getDestinationForInput = function (input_endpoint) {
+      switch (input_endpoint) {
+        case this.getInputDescriptors()["waveform"]:
+          return this.node;
+      }
+    };
+
+    BiquadFilter.prototype.informWindowPrepared = function (div) {
+      this.div = div;
+
+      this.type_radio_group = new Synesthesia.UI.RadioGroup({
+        options: [
+          { label: "lowpass", value: BiquadFilter.Type.LOWPASS, selected: true },
+          { label: "highpass", value: BiquadFilter.Type.HIGHPASS },
+          { label: "bandpass", value: BiquadFilter.Type.BANDPASS },
+          { label: "lowshelf", value: BiquadFilter.Type.LOWSHELF },
+          { label: "highshelf", value: BiquadFilter.Type.HIGHSHELF },
+          { label: "peaking", value: BiquadFilter.Type.PEAKING },
+          { label: "notch", value: BiquadFilter.Type.NOTCH },
+          { label: "allpass", value: BiquadFilter.Type.ALLPASS }
+        ],
+        callback_select: (function (selected_option) {
+          this.type = selected_option.value;
+          this.node.type = this.type;
+          this.filter_graph.draw();
+        }).bind(this)
+      });
+
+      // Maybe?
+      this.type_radio_group.getElement().style.margin = "-1px -1px 1px -1px";
+
+      this.div.appendChild(this.type_radio_group.getElement());
+
+      this.frequency_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.frequency_sync,
+        min_value: this.node.frequency.minValue,
+        max_value: this.node.frequency.maxValue,
+        sensitivity: 10,
+        direction_lock: "vertical",
+        string_format: function (str) {
+          return "" + str + "Hz";
+        }
+      });
+
+      this.Q_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.Q_sync,
+        min_value: this.node.Q.minValue,
+        max_value: this.node.Q.maxValue,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical"
+      });
+
+      this.gain_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.gain_sync,
+        min_value: this.node.gain.minValue,
+        max_value: this.node.gain.maxValue,
+        sensitivity: 0.05,
+        digits: 2,
+        direction_lock: "vertical"
+      });
+
+      this.drag_value_table = new Synesthesia.UI.DragValueTable({
+        stack: "horizontal",
+        values: [
+          { label: "Frequency",
+            drag_value: this.frequency_drag_value
+          },
+          { label: "Q factor",
+            drag_value: this.Q_drag_value
+          },
+          { label: "Gain (dB)",
+            drag_value: this.gain_drag_value
+          }
+        ]
+      });
+      var table_element = this.drag_value_table.getElement();
+        table_element.style.width = "100%";
+      this.div.appendChild(table_element);
+
+      this.filter_graph = new Synesthesia.UI.ScalableGraph({
+        x_min: 0, x_max: 22050,
+        y_min: 0, y_max: 2,
+        scale_x_func: function (x) {
+          return Math.pow(22050, x);
+        },
+        scale_x_func_inv: function (x) {
+          return Math.log(x + 1) / Math.log(22050);
+        },
+        scale_y_func: function (y) {
+          return Math.pow(2, y);
+        },
+        scale_y_func_inv: function (y) {
+          return Math.log(y + 1) / Math.log(2);
+        },
+        graph_function: (function (arr) {
+          var frequencyHz = new Float32Array(arr);
+          var magResponse = new Float32Array(arr.length);
+          var phaseResponse = new Float32Array(arr.length);
+          this.node.getFrequencyResponse(frequencyHz, magResponse, phaseResponse);
+          return magResponse;
+        }).bind(this)
+      });
+      this.filter_graph.setDimensions(400, 200);
+      this.filter_graph.getElement().style.marginTop = "1px";
+      this.filter_graph.getElement().style.borderTop = "1px solid #808080";
+
+      this.div.appendChild(this.filter_graph.getElement());
+    };
+
+    BiquadFilter.prototype.draw = function () {
+    };
+
+    return BiquadFilter;
   })();
 
   Synesthesia.Library.Oscillator = (function () {
@@ -526,7 +802,8 @@ function () {
           name: "frequency",
           type: "AudioParam",
           accepted_types: [
-            "AudioParam"
+            "AudioParam",
+            "AudioNode"
           ],
           direction: "input"
         }),
@@ -536,7 +813,8 @@ function () {
           name: "detune",
           type: "AudioParam",
           accepted_types: [
-            "AudioParam"
+            "AudioParam",
+            "AudioNode"
           ],
           direction: "input"
         })
@@ -561,7 +839,9 @@ function () {
       // MUST BE DEFINED AFTER ENDPOINTS
       this.ui_window = new Synesthesia.UI.NodeWindow({
         node: this,
-        title: "Oscillator"
+        title: "Oscillator",
+        width: 200, height: 51,
+        min_width: 200, min_height: 51
       });
     }
 
@@ -626,9 +906,6 @@ function () {
             other_node.getDestinationForInput(other_endpoint)
           );
           break;
-        default:
-          console.warn(endpoint);
-          break;
       }
     };
 
@@ -654,52 +931,26 @@ function () {
     Oscillator.prototype.informWindowPrepared = function (div) {
       this.div = div;
 
-      // TEST
-      this.type_select = document.createElement("select");
-        for (var type_name in Oscillator.Type) {
-          if (!Oscillator.Type.hasOwnProperty(type_name)) continue;
-          var new_type = document.createElement("option");
-            new_type.innerHTML = type_name;
-            new_type.value = Oscillator.Type[type_name];
-          this.type_select.appendChild(new_type);
-        }
-        this.type_select.addEventListener("change", (function () {
-          this.type = parseInt(this.type_select.item(this.type_select.selectedIndex).value);
-        }).bind(this), false);
-      this.div.appendChild(this.type_select);
+      this.type_radio_group = new Synesthesia.UI.RadioGroup({
+        options: [
+          { label: "sine", value: Oscillator.Type.SINE, selected: true },
+          { label: "square", value: Oscillator.Type.SQUARE },
+          { label: "sawtooth", value: Oscillator.Type.SAWTOOTH },
+          { label: "triangle", value: Oscillator.Type.TRIANGLE },
+        ],
+        callback_select: (function (selected_option) {
+          this.type = selected_option.value;
+        }).bind(this)
+      });
 
-      this.div.appendChild(
-        document.createElement("br")
-      );
-      
-      this.canvas = document.createElement("canvas");
-        this.canvas.width = "300";
-        this.canvas.height = "300";
-      this.div.appendChild(this.canvas);
+      // Maybe?
+      this.type_radio_group.getElement().style.margin = "-1px -1px 1px -1px";
+
+      this.div.appendChild(this.type_radio_group.getElement());
     };
 
     Oscillator.prototype.draw = function () {
-      var ctx = this.canvas.getContext("2d");
 
-      ctx.save();
-
-        ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
-        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        var notes = this.osc_map.getKeys();
-        for (var i = 0; i < notes.length; i++) {
-          ctx.beginPath();
-          ctx.arc(
-            this.canvas.width / 2, this.canvas.height / 2,
-            notes[i].frequency / 10,
-            0, 2 * Math.PI
-          );
-          ctx.lineWidth = 1;
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-          ctx.stroke();
-        }
-
-      ctx.restore();
     };
 
     return Oscillator;
@@ -746,18 +997,21 @@ function () {
         "rgba(255, 0, 0, 1)",
         "rgba(0, 255, 0, 1)",
         "rgba(0, 0, 255, 1)",
-        "rgba(192, 192, 192, 1)"
+        "rgba(255, 0, 255, 1)",
+        "rgba(255, 255, 0, 1)",
+        "rgba(0, 255, 255, 1)",
+        "rgba(255, 255, 255, 1)",
+        "rgba(255, 192, 192, 1)"
       ];
 
       this.canvas = document.createElement("canvas");
-        this.canvas.width = 640;
-        this.canvas.height = 480;
+        this.canvas.width = 0;
+        this.canvas.height = 0;
       this.context = this.canvas.getContext("2d");
 
       this.ui_window = new Synesthesia.UI.NodeWindow({
         node: this,
-        title: "Oscilloscope",
-        max_width: 640, max_height: 498
+        title: "Oscilloscope"
       });
     }
 
@@ -793,6 +1047,7 @@ function () {
 
     Oscilloscope.prototype.informWindowPrepared = function (div) {
       this.div = div;
+        this.div.style.backgroundColor = "rgba(0, 0, 0, 1)";
       this.div.appendChild(this.canvas);
     };
 
@@ -824,9 +1079,9 @@ function () {
               var cur_sample = this.channel_data[channel_ix][sample_ix];
               var true_y = (cur_sample + 1) / 2 * this.canvas.height;
               if (sample_ix == 0) {
-                this.context.moveTo(sample_ix, true_y);
+                this.context.moveTo(sample_ix + 0.5, true_y);
               } else {
-                this.context.lineTo(sample_ix, true_y);
+                this.context.lineTo(sample_ix + 0.5, true_y);
               }
             }
             
@@ -839,7 +1094,17 @@ function () {
     };
 
     Oscilloscope.prototype.draw = function () {
-      // Drawing is done in handle_AudioProcessingEvent.
+      // Actual drawing stuff is handled in the AudioProcessingEvent handler.
+      if (!this.div) return;
+
+      if (this.canvas.width != parseInt(this.div.getAttribute("data-width"))) {
+        this.canvas.width = parseInt(this.div.getAttribute("data-width"));
+      }
+
+      // Height doesn't seem to be computed properly with css flex-box yet?
+      if (this.canvas.height != parseInt(this.div.getAttribute("data-height"))) {
+        this.canvas.height = parseInt(this.div.getAttribute("data-height"));
+      }
     };
 
     return Oscilloscope;
