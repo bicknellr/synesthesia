@@ -221,7 +221,12 @@ function () {
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
-      this.node = this.context.createGainNode();
+      this.node = null;
+      if (this.context.createGain) {
+        this.node = this.context.createGain();
+      } else if (this.context.createGainNode) {
+        this.node = this.context.createGainNode();
+      }
 
       this.gain_sync = new Utilities.SynchronizedValue();
       this.gain_sync.addListener(this, (function (new_value) {
@@ -390,7 +395,12 @@ function () {
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
-      this.node = this.context.createDelayNode();
+      this.node = null;
+      if (this.context.createDelay) {
+        this.node = this.context.createDelay();
+      } else if (this.context.createDelayNode) {
+        this.node = this.context.createDelayNode();
+      }
 
       this.delayTime_sync = new Utilities.SynchronizedValue();
       this.delayTime_sync.addListener(this, (function (new_value) {
@@ -1449,7 +1459,11 @@ function () {
           var new_osc = this.context.createOscillator();
           new_osc.type = this.type;
           new_osc.frequency.setValueAtTime(cur_note.frequency, 0);
-          new_osc.noteOn(0);
+          if (new_osc.start) {
+            new_osc.start(0);
+          } else if (new_osc.noteOn) {
+            new_osc.noteOn(0);
+          }
           new_osc.connect(destination);
           this.osc_map.set(cur_note, new_osc);
         }
@@ -1535,7 +1549,11 @@ function () {
       this.audio_sink = this.context.createGainNode();
         this.audio_sink.gain.value = 0;
         this.audio_sink.connect(this.synesthesia.getDestination());
-      this.node = this.context.createJavaScriptNode(2048);
+      if (this.context.createScriptProcessor) {
+        this.node = this.context.createScriptProcessor(2048);
+      } else if (this.context.createJavaScriptNode) {
+        this.node = this.context.createJavaScriptNode(2048);
+      }
         this.node.onaudioprocess = this.handle_AudioProcessingEvent.bind(this);
         this.node.connect(this.audio_sink);
 
