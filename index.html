@@ -1,7 +1,6 @@
 <html>
 <head>
 
-
 <script src="./module.js"></script>
 <script src="./Utilities.js"></script>
 <script src="./Synesthesia.js"></script>
@@ -10,6 +9,22 @@
 <script src="./Synesthesia.UI.js"></script>
   <link rel="stylesheet" href="./Synesthesia.UI.css" />
 <script src="./Synesthesia.Library.js"></script>
+
+<style type="text/css">
+
+body {
+  margin: 0px;
+  padding: 0px;
+}
+
+#SynesthesiaUIContainer {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+</style>
 
 <script type="application/javascript">
 
@@ -20,6 +35,7 @@ window.addEventListener("load", function () {
     
     MainSynesthesia = new Synesthesia();
     MainUI = new Synesthesia.UI({
+      container: document.getElementById("SynesthesiaUIContainer"),
       node_canvas: document.getElementById("NodeCanvas"),
       node_div: document.getElementById("NodeDiv")
     });
@@ -91,6 +107,13 @@ window.addEventListener("load", function () {
       x: 20, y: 370
     });
 
+    TestPanner = new Synesthesia.Library.Panner({
+      synesthesia: MainSynesthesia
+    });
+    MainUI.addNode(TestPanner, {
+      x: 440, y: 10
+    });
+
     // UI
     //MainUI.start();
     MainUI.draw();
@@ -102,12 +125,7 @@ window.addEventListener("load", function () {
 </head>
 <body>
 
-<!--
-TODO: Set a single container div, have the main Synesthesia object
-handle adding and managing the canvas and window container.
--->
-<canvas id="NodeCanvas" width="640" height="480"></canvas>
-<div id="NodeDiv"></div>
+<div id="SynesthesiaUIContainer"></div>
 
 </body>
 </html>

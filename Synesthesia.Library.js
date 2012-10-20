@@ -525,6 +525,568 @@ function () {
     return Delay;
   })();
 
+  Synesthesia.Library.Panner = (function () {
+    function Panner (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
+      Synesthesia.Graph.Node.AudioDestinationNode.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+      this.context = this.synesthesia.getContext();
+      this.node = this.context.createPanner();
+
+      // AudioParams
+
+      this.coneGain_sync = new Utilities.SynchronizedValue();
+      this.coneGain_sync.addListener(this, (function (new_value) {
+        this.node.coneGain.value = new_value;
+      }).bind(this));
+      this.coneGain_sync.setValue(this, this.node.coneGain);
+
+      this.distanceGain_sync = new Utilities.SynchronizedValue();
+      this.distanceGain_sync.addListener(this, (function (new_value) {
+        this.node.distanceGain.value = new_value;
+      }).bind(this));
+      this.distanceGain_sync.setValue(this, this.node.distanceGain);
+
+      // Physics attributes.
+
+      this.positionX_sync = new Utilities.SynchronizedValue();
+      this.positionX_sync.addListener(this, (function (new_value) {
+        this.node.setPosition(
+          new_value,
+          this.positionY_sync.getValue(),
+          this.positionZ_sync.getValue()
+        );
+      }).bind(this));
+      this.positionX_sync.setValue(this, 0);
+
+      this.positionY_sync = new Utilities.SynchronizedValue();
+      this.positionY_sync.addListener(this, (function (new_value) {
+        this.node.setPosition(
+          this.positionX_sync.getValue(),
+          new_value,
+          this.positionZ_sync.getValue()
+        );
+      }).bind(this));
+      this.positionY_sync.setValue(this, 0);
+
+      this.positionZ_sync = new Utilities.SynchronizedValue();
+      this.positionZ_sync.addListener(this, (function (new_value) {
+        this.node.setPosition(
+          this.positionX_sync.getValue(),
+          this.positionY_sync.getValue(),
+          new_value
+        );
+      }).bind(this));
+      this.positionZ_sync.setValue(this, 0);
+
+      this.orientationX_sync = new Utilities.SynchronizedValue();
+      this.orientationX_sync.addListener(this, (function (new_value) {
+        this.node.setPosition(
+          new_value,
+          this.orientationY_sync.getValue(),
+          this.orientationZ_sync.getValue()
+        );
+      }).bind(this));
+      this.orientationX_sync.setValue(this, 0);
+
+      this.orientationY_sync = new Utilities.SynchronizedValue();
+      this.orientationY_sync.addListener(this, (function (new_value) {
+        this.node.setPosition(
+          this.orientationX_sync.getValue(),
+          new_value,
+          this.orientationZ_sync.getValue()
+        );
+      }).bind(this));
+      this.orientationY_sync.setValue(this, 0);
+
+      this.orientationZ_sync = new Utilities.SynchronizedValue();
+      this.orientationZ_sync.addListener(this, (function (new_value) {
+        this.node.setPosition(
+          this.orientationX_sync.getValue(),
+          this.orientationY_sync.getValue(),
+          new_value
+        );
+      }).bind(this));
+      this.orientationZ_sync.setValue(this, 0);
+
+      this.velocityX_sync = new Utilities.SynchronizedValue();
+      this.velocityX_sync.addListener(this, (function (new_value) {
+        this.node.setPosition(
+          new_value,
+          this.velocityY_sync.getValue(),
+          this.velocityZ_sync.getValue()
+        );
+      }).bind(this));
+      this.velocityX_sync.setValue(this, 0);
+
+      this.velocityY_sync = new Utilities.SynchronizedValue();
+      this.velocityY_sync.addListener(this, (function (new_value) {
+        this.node.setPosition(
+          this.velocityX_sync.getValue(),
+          new_value,
+          this.velocityZ_sync.getValue()
+        );
+      }).bind(this));
+      this.velocityY_sync.setValue(this, 0);
+
+      this.velocityZ_sync = new Utilities.SynchronizedValue();
+      this.velocityZ_sync.addListener(this, (function (new_value) {
+        this.node.setPosition(
+          this.velocityX_sync.getValue(),
+          this.velocityY_sync.getValue(),
+          new_value
+        );
+      }).bind(this));
+      this.velocityZ_sync.setValue(this, 0);
+
+      // Models
+
+      this.panningModel_sync = new Utilities.SynchronizedValue();
+      this.panningModel_sync.addListener(this, (function (new_value) {
+        this.node.panningModel = new_value;
+      }).bind(this));
+      this.panningModel_sync.setValue(this, this.node.panningModel);
+
+      this.distanceModel_sync = new Utilities.SynchronizedValue();
+      this.distanceModel_sync.addListener(this, (function (new_value) {
+        this.node.distanceModel = new_value;
+      }).bind(this));
+      this.distanceModel_sync.setValue(this, this.node.distanceModel);
+
+      // Distance Parameters
+
+      this.refDistance_sync = new Utilities.SynchronizedValue();
+      this.refDistance_sync.addListener(this, (function (new_value) {
+        this.node.refDistance = new_value;
+      }).bind(this));
+      this.refDistance_sync.setValue(this, this.node.refDistance);
+
+      this.maxDistance_sync = new Utilities.SynchronizedValue();
+      this.maxDistance_sync.addListener(this, (function (new_value) {
+        this.node.maxDistance = new_value;
+      }).bind(this));
+      this.maxDistance_sync.setValue(this, this.node.maxDistance);
+
+      this.rolloffFactor_sync = new Utilities.SynchronizedValue();
+      this.rolloffFactor_sync.addListener(this, (function (new_value) {
+        this.node.rolloffFactor = new_value;
+      }).bind(this));
+      this.rolloffFactor_sync.setValue(this, this.node.rolloffFactor);
+
+      // Cone Parameters
+
+      this.coneInnerAngle_sync = new Utilities.SynchronizedValue();
+      this.coneInnerAngle_sync.addListener(this, (function (new_value) {
+        this.node.coneInnerAngle = new_value;
+      }).bind(this));
+      this.coneInnerAngle_sync.setValue(this, this.node.coneInnerAngle);
+
+      this.coneOuterAngle_sync = new Utilities.SynchronizedValue();
+      this.coneOuterAngle_sync.addListener(this, (function (new_value) {
+        this.node.coneOuterAngle = new_value;
+      }).bind(this));
+      this.coneOuterAngle_sync.setValue(this, this.node.coneOuterAngle);
+
+      this.coneOuterGain_sync = new Utilities.SynchronizedValue();
+      this.coneOuterGain_sync.addListener(this, (function (new_value) {
+        this.node.coneOuterGain = new_value;
+      }).bind(this));
+      this.coneOuterGain_sync.setValue(this, this.node.coneOuterGain);
+
+      // Endpoint Descriptors
+
+      this.setInputDescriptors({
+        "waveform": new Synesthesia.Graph.Endpoint({
+          node: this,
+          name: "waveform",
+          type: "AudioNode",
+          accepted_types: [
+            "AudioNode"
+          ],
+          direction: "input"
+        })
+      });
+
+      this.setOutputDescriptors({
+        "waveform": new Synesthesia.Graph.Endpoint({
+          node: this,
+          name: "waveform",
+          type: "AudioNode",
+          accepted_types: [
+            "AudioNode",
+            "AudioParam"
+          ],
+          direction: "output"
+        })
+      });
+
+      // NodeWindow
+
+      this.ui_window = new Synesthesia.UI.NodeWindow({
+        node: this,
+        title: "Panner",
+        resizable: false,
+        use_flex: false
+      });
+    }
+
+    Panner.PanningModel = {
+      EQUALPOWER: 0,
+      HRTF: 1,
+      SOUNDFIELD: 2
+    };
+
+    Panner.DistanceModel = {
+      LINEAR_DISTANCE: 0,
+      INVERSE_DISTANCE: 1,
+      EXPONENTIAL_DISTANCE: 2
+    };
+
+    Panner.prototype = Utilities.extend(
+      new Synesthesia.Graph.Node.AudioSourceNode(),
+      new Synesthesia.Graph.Node.AudioDestinationNode()
+    );
+
+    Panner.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    Panner.prototype.setPanningModel = function (panning_model) {
+      this.node.panningModel = panning_model;
+    };
+
+    Panner.prototype.setDistanceModel = function (distance_model) {
+      this.node.distanceModel = distance_model;
+    };
+
+    Panner.prototype.informConnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["waveform"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
+          this.connectSourceToDestination(
+            this.node,
+            other_node.getDestinationForInput(other_endpoint)
+          );
+          break;
+      }
+    };
+
+    Panner.prototype.informDisconnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["waveform"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
+          this.disconnectSourceFromDestination(
+            this.node,
+            other_node.getDestinationForInput(other_endpoint)
+          );
+          break;
+      }
+    };
+
+    Panner.prototype.getDestinationForInput = function (input_endpoint) {
+      switch (input_endpoint) {
+        case this.getInputDescriptors()["waveform"]:
+          return this.node;
+      }
+    };
+
+    Panner.prototype.informWindowPrepared = function (div) {
+      this.div = div;
+      this.div.style.width = "300px";
+
+      this.div.appendChild(document.createTextNode("Panning Model"));
+
+      this.panningModel_radiogroup = new Synesthesia.UI.RadioGroup({
+        options: [
+          { label: "Equal Power", value: Panner.PanningModel.EQUALPOWER },
+          { label: "HRTF", value: Panner.PanningModel.HRTF, selected: true },
+          /* NOT SUPPORTED YET
+          { label: "Soundfield", value: Panner.PanningModel.SOUNDFIELD },
+          */
+        ],
+        callback_select: (function (selected_option) {
+          this.panningModel_sync.setValue(null, selected_option.value);
+        }).bind(this)
+      });
+      this.div.appendChild(this.panningModel_radiogroup.getElement());
+
+      this.div.appendChild(document.createTextNode("Distance Model"));
+
+      this.distanceModel_radiogroup = new Synesthesia.UI.RadioGroup({
+        options: [
+          { label: "Linear", value: Panner.DistanceModel.LINEAR_DISTANCE },
+          { label: "Inverse", value: Panner.DistanceModel.INVERSE_DISTANCE, selected: true },
+          { label: "Exponential", value: Panner.DistanceModel.EXPONENTIAL_DISTANCE },
+        ],
+        callback_select: (function (selected_option) {
+          this.distanceModel_sync.setValue(null, selected_option.value);
+        }).bind(this)
+      });
+      this.div.appendChild(this.distanceModel_radiogroup.getElement());
+
+      // Distance model parameters.
+
+      this.div.appendChild(document.createTextNode("Distance Parameters"));
+
+      this.refDistance_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.refDistance_sync,
+        min_value: 0,
+        max_value: 10,
+        sensitivity: 0.1,
+        digits: 2,
+        direction_lock: "vertical",
+        string_format: function (str) {
+          return "" + str + "m";
+        }
+      });
+
+      this.maxDistance_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.maxDistance_sync,
+        min_value: 0,
+        max_value: 10,
+        sensitivity: 0.1,
+        digits: 2,
+        direction_lock: "vertical",
+        string_format: function (str) {
+          return "" + str + "m";
+        }
+      });
+
+      this.rolloffFactor_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.rolloffFactor_sync,
+        min_value: 0,
+        max_value: 10,
+        sensitivity: 0.1,
+        digits: 2,
+        direction_lock: "vertical"
+      });
+
+      this.distance_dragvaluetable = new Synesthesia.UI.DragValueTable({
+        stack: "horizontal",
+        values: [
+          { label: "RefDist",
+            drag_value: this.refDistance_drag_value
+          },
+          { label: "MaxDist",
+            drag_value: this.maxDistance_drag_value
+          },
+          { label: "Rolloff",
+            drag_value: this.rolloffFactor_drag_value
+          }
+        ]
+      });
+      this.distance_dragvaluetable.getElement().style.width = "100%";
+      this.div.appendChild(this.distance_dragvaluetable.getElement());
+
+      // Cone parameters.
+
+      this.div.appendChild(document.createTextNode("Cone Parameters"));
+
+      this.coneInnerAngle_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.coneInnerAngle_sync,
+        min_value: 0,
+        max_value: 360,
+        sensitivity: 1,
+        direction_lock: "vertical",
+        string_format: function (str) {
+          return "" + str + "&deg;";
+        }
+      });
+
+      this.coneOuterAngle_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.coneOuterAngle_sync,
+        min_value: 0,
+        max_value: 360,
+        sensitivity: 1,
+        direction_lock: "vertical",
+        string_format: function (str) {
+          return "" + str + "&deg;";
+        }
+      });
+
+      this.coneOuterGain_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.coneOuterGain_sync,
+        min_value: 0,
+        max_value: 5,
+        sensitivity: 0.001,
+        digits: 3,
+        direction_lock: "vertical"
+      });
+
+      this.cone_dragvaluetable = new Synesthesia.UI.DragValueTable({
+        stack: "horizontal",
+        values: [
+          { label: "Inner",
+            drag_value: this.coneInnerAngle_drag_value
+          },
+          { label: "Outer",
+            drag_value: this.coneOuterAngle_drag_value
+          },
+          { label: "Gain",
+            drag_value: this.coneOuterGain_drag_value
+          }
+        ]
+      });
+      this.cone_dragvaluetable.getElement().style.width = "100%";
+      this.div.appendChild(this.cone_dragvaluetable.getElement());
+
+      // Position.
+
+      this.div.appendChild(document.createTextNode("Position"));
+
+      this.positionX_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.positionX_sync,
+        min_value: -20,
+        max_value: 20,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical"
+      });
+
+      this.positionY_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.positionY_sync,
+        min_value: -20,
+        max_value: 20,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical"
+      });
+
+      this.positionZ_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.positionZ_sync,
+        min_value: -20,
+        max_value: 20,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical"
+      });
+
+      this.position_dragvaluetable = new Synesthesia.UI.DragValueTable({
+        stack: "horizontal",
+        values: [
+          { label: "X",
+            drag_value: this.positionX_drag_value
+          },
+          { label: "Y",
+            drag_value: this.positionY_drag_value
+          },
+          { label: "Z",
+            drag_value: this.positionZ_drag_value
+          }
+        ]
+      });
+      this.position_dragvaluetable.getElement().style.width = "100%";
+      this.div.appendChild(this.position_dragvaluetable.getElement());
+
+      // Orienation.
+
+      this.div.appendChild(document.createTextNode("Orientation"));
+
+      this.orientationX_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.orientationX_sync,
+        min_value: -20,
+        max_value: 20,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical"
+      });
+
+      this.orientationY_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.orientationY_sync,
+        min_value: -20,
+        max_value: 20,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical"
+      });
+
+      this.orientationZ_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.orientationZ_sync,
+        min_value: -20,
+        max_value: 20,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical"
+      });
+
+      this.orientation_dragvaluetable = new Synesthesia.UI.DragValueTable({
+        stack: "horizontal",
+        values: [
+          { label: "X",
+            drag_value: this.orientationX_drag_value
+          },
+          { label: "Y",
+            drag_value: this.orientationY_drag_value
+          },
+          { label: "Z",
+            drag_value: this.orientationZ_drag_value
+          }
+        ]
+      });
+      this.orientation_dragvaluetable.getElement().style.width = "100%";
+      this.div.appendChild(this.orientation_dragvaluetable.getElement());
+
+      // Velocity.
+
+      this.div.appendChild(document.createTextNode("Velocity"));
+
+      this.velocityX_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.velocityX_sync,
+        min_value: -20,
+        max_value: 20,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical"
+      });
+
+      this.velocityY_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.velocityY_sync,
+        min_value: -20,
+        max_value: 20,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical"
+      });
+
+      this.velocityZ_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.velocityZ_sync,
+        min_value: -20,
+        max_value: 20,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical"
+      });
+
+      this.velocity_dragvaluetable = new Synesthesia.UI.DragValueTable({
+        stack: "horizontal",
+        values: [
+          { label: "X",
+            drag_value: this.velocityX_drag_value
+          },
+          { label: "Y",
+            drag_value: this.velocityY_drag_value
+          },
+          { label: "Z",
+            drag_value: this.velocityZ_drag_value
+          }
+        ]
+      });
+      this.velocity_dragvaluetable.getElement().style.width = "100%";
+      this.div.appendChild(this.velocity_dragvaluetable.getElement());
+    };
+
+    Panner.prototype.draw = function () {
+
+    };
+
+    return Panner;
+  })();
+
   Synesthesia.Library.BiquadFilter = (function () {
     function BiquadFilter (params) {
       this.params = (typeof params !== "undefined" ? params : {});
@@ -840,8 +1402,8 @@ function () {
       this.ui_window = new Synesthesia.UI.NodeWindow({
         node: this,
         title: "Oscillator",
-        width: 200, height: 51,
-        min_width: 200, min_height: 51
+        resizable: false,
+        use_flex: false
       });
     }
 

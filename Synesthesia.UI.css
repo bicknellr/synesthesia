@@ -102,17 +102,23 @@
   margin-left: -2px;
 
   border: 2px solid #808080;
-  border-radius: 2px;
+  /*border-radius: 2px;*/ /* Appease Safari... */
 
   color: #606060;
 
   background-color: #f0f0f0;
 
   -webkit-transition:
-    opacity ease-in-out 0.4s;
+    opacity ease-in-out 0.4s,
+    -webkit-transform ease-in-out 0.4s;
 }
 .Synesthesia_UI_NodeWindow__main:hover {
   opacity: 1;
+}
+.Synesthesia_UI_NodeWindow__main.hidden {
+  -webkit-transform: rotateX(90deg) scale(0);
+  /*-webkit-transform: translateY(200px) scale(0.8);*/
+  opacity: 0;
 }
   .Synesthesia_UI_NodeWindow__main .title {
     -webkit-user-select: none;
@@ -165,6 +171,7 @@
     border-width: 1px 0px 0px 1px;
     border-style: solid;
     border-color: #808080;
-    border-radius: 2px 0px 0px 0px;
+    /* Keeping in style with border-radius bug on windows in Safari. */
+    /*border-radius: 2px 0px 0px 0px;*/
     background-color: rgba(255, 255, 255, 0.5);
   }

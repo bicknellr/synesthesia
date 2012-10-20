@@ -75,6 +75,15 @@ module("Utilities", [], function () {
     return { top: cur_top, left: cur_left };
   };
 
+  var addClass = function (element, new_class) {
+    if (element.className.split(" ").indexOf(new_class) != -1) return;
+    element.className = element.className + " " + new_class;
+  };
+
+  var removeClass = function (element, rm_class) {
+    element.className = element.className.replace(rm_class, "").replace(/(\s\s+)/g, " ").replace(/^\s+|\s+$/g, "");
+  };
+
   var Map = (function () {
     function Map () {
       this.keys = [];
@@ -217,6 +226,8 @@ module("Utilities", [], function () {
     overrides: overrides,
 
     getPagePosition: getPagePosition,
+    addClass: addClass,
+    removeClass: removeClass,
 
     Flaggable: Flaggable,
     Map: Map,

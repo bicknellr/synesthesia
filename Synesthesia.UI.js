@@ -14,13 +14,30 @@ function () {
 
       this.nodes = [];
 
-      this.node_canvas = new Synesthesia.UI.NodeCanvas({
-        canvas: this.params.node_canvas
-      });
+      this.container = this.params.container;
 
-      this.node_div = this.params.node_div;
+      var canvas = document.createElement("canvas");
+      this.container.appendChild(canvas);
+      this.node_canvas = new Synesthesia.UI.NodeCanvas({
+        UI: this,
+        canvas: canvas
+      });
+      
+      this.node_div = document.createElement("div");
       this.node_div.className = "Synesthesia_UI__node_window_container";
+      this.container.appendChild(this.node_div);
     }
+
+    UI.prototype.getContainer = function () {
+      return this.container;
+    };
+
+    UI.prototype.getDimensions = function () {
+      return {
+        width: this.container.offsetWidth,
+        height: this.container.offsetHeight
+      };
+    };
 
     UI.prototype.addNode = function (new_node, params) {
       var params = (typeof params !== "undefined" ? params : {});
@@ -52,25 +69,6 @@ function () {
       this.draw();
     };
 
-    // PHASING OUT THE DRAW LOOP
-    /*
-    UI.prototype.start = function () {
-      this.running = true;
-      this.step();
-    };
-
-    UI.prototype.step = function () {
-      this.draw();
-      if (this.running) {
-        Synesthesia.requestAnimationFrame(this.step.bind(this), this.canvas);
-      }
-    };
-
-    UI.prototype.stop = function () {
-      this.running = false;
-    };
-    */
-
     UI.prototype.draw = function () {
       for (var node_ix = 0; node_ix < this.nodes.length; node_ix++) {
         this.nodes[node_ix].setZIndex(node_ix);
@@ -86,20 +84,16 @@ function () {
       this.params = (typeof params !== "undefined" ? params : {});
 
       this.handle = this.params.handle;
+        this.handle.addEventListener("mousedown", this.handle_mousedown.bind(this), false);
+        window.addEventListener("mousemove", this.handle_mousemove.bind(this), false);
+        window.addEventListener("mouseup", this.handle_mouseup.bind(this), false);
+
       this.callback = this.params.callback || function () {};
       this.callback_mousedown = this.params.callback_mousedown || function () {};
       this.callback_mousemove = this.params.callback_mousemove || function () {};
       this.callback_mouseup = this.params.callback_mouseup || function () {};
 
       this.cursor = this.params.cursor || null;
-
-      this.init();
-    }
-
-    Draggable.prototype.init = function () {
-      this.handle.addEventListener("mousedown", this.handle_mousedown.bind(this), false);
-      window.addEventListener("mousemove", this.handle_mousemove.bind(this), false);
-      window.addEventListener("mouseup", this.handle_mouseup.bind(this), false);
     };
 
     Draggable.prototype.handle_mousedown = function (e) {
@@ -1106,6 +1100,8 @@ function () {
     function NodeCanvas (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
+      this.UI = this.params.UI;
+
       this.canvas = this.params.canvas;
         this.canvas.className = "Synesthesia_UI_NodeCanvas__canvas";
         this.canvas.addEventListener("mousemove", (function (e) {
@@ -1141,13 +1137,16 @@ function () {
 
     NodeCanvas.prototype.addNodeWindow = function (new_node_window) {
       this.node_windows.push(new_node_window);
+
+      this.draw();
     };
 
     // Event handlers.
 
     NodeCanvas.prototype.handle_resize = function () {
-      this.canvas.width = window.innerWidth;
-      this.canvas.height = window.innerHeight;
+      var dimensions = this.UI.getDimensions();
+      this.canvas.width = dimensions.width;
+      this.canvas.height = dimensions.height;
 
       this.draw();
     };
