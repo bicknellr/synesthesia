@@ -48,9 +48,7 @@ function () {
     };
 
     UI.prototype.addNodeWindow = function (node_window, params) {
-      var div = document.createElement("div");
-      this.node_div.appendChild(div);
-      node_window.setContainer(div);
+      this.node_div.appendChild(node_window.getElement());
         
       this.nodes.push(node_window);
 
@@ -166,7 +164,7 @@ function () {
       Utilities.Flaggable.apply(this, arguments);
 
       this.element = document.createElement("div");
-        this.element.className = "Synesthesia_UI_DragValue__main";
+        this.element.className = "Synesthesia_UI_DragValue";
         this.value_span = document.createElement("span");
         this.element.appendChild(this.value_span);
       this.element.addEventListener("dblclick", this.handle_dblclick.bind(this), false);
@@ -379,7 +377,7 @@ function () {
       this.params = (typeof params !== "undefined" ? params : {});
       
       this.element = document.createElement("div");
-        this.element.className = "Synesthesia_UI_RadioGroup__main";
+        this.element.className = "Synesthesia_UI_RadioGroup";
 
       this.callback_select = this.params.callback_select || function () {};
 
@@ -540,6 +538,133 @@ function () {
     return ScalableGraph;
   })();
 
+  Synesthesia.UI.SlidePanel = (function () {
+    function SlidePanel (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Utilities.Flaggable.apply(this, arguments);
+
+      this.element = null;
+
+      this.content = this.params.content;
+
+      this.callback = this.params.callback || function () {};
+
+      this.direction = this.params.direction || "right"; // up, down, left, right
+      this.prop_name = "width";
+      switch (this.direction) {
+        case "up":
+        case "down":
+          this.prop_name = "height";
+          break; 
+        default:
+          break;
+      }
+
+      this.state = this.params.initial_state || "open";
+      switch (this.state) {
+        case "open":
+          this.content.style["margin-" + this.direction] = "0px"; 
+          break;
+        case "closed":
+          this.content.style["margin-" + this.direction] = "-" + (this.params.expected_size || "1000") + "px"; 
+          break;
+      }
+
+      this.build();
+    }
+
+    SlidePanel.prototype = Utilities.extend(
+      new Utilities.Flaggable()
+    );
+
+    SlidePanel.prototype.getElement = function () {
+      return this.element;
+    };
+
+    SlidePanel.prototype.build = function () {
+      this.element = document.createElement("div");
+        Utilities.addClass(this.element, "Synesthesia_UI_SlidePanel");
+        this.element.addEventListener("webkitTransitionEnd", this.callback, false);
+      
+      Utilities.addClass(this.content, "content");
+      this.element.appendChild(this.content);
+    };
+
+    SlidePanel.prototype.toggle = function () {
+      var content_style = window.getComputedStyle(this.content);
+      switch (this.state) {
+        case "closed":
+          this.content.style.setProperty("margin-" + this.direction, "0px"); 
+          this.state = "open";
+          break;
+        case "open":
+          this.content.style.setProperty("margin-" + this.direction, "-" + parseInt(content_style[this.prop_name]) + "px");
+          this.state = "closed";
+          break;
+      }
+    };
+
+    return SlidePanel;
+  })();
+
+  Synesthesia.UI.EndpointPanel = (function () {
+    function EndpointPanel (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.node_window = this.params.node_window;
+
+      this.endpoints = this.params.endpoints || [];
+
+      this.direction = this.params.direction;
+
+      this.element = null;
+      this.slidepanel = null;
+      this.content_space_div = null;
+      
+      this.build();
+    }
+
+    EndpointPanel.prototype.getElement = function () {
+      return this.element;
+    };
+
+    EndpointPanel.prototype.build = function () {
+      this.element = document.createElement("div");
+        Utilities.addClass(this.element, "Synesthesia_UI_EndpointPanel");
+        Utilities.addClass(this.element, "" + this.direction);
+
+        this.content = document.createElement("div");
+
+          for (var endpoint_ix = 0; endpoint_ix < this.endpoints.length; endpoint_ix++) {
+            var cur_endpoint = this.endpoints[endpoint_ix]; 
+
+            var cur_endpoint_div = document.createElement("div");
+              Utilities.addClass(cur_endpoint_div, "endpoint");
+              cur_endpoint_div.appendChild(document.createTextNode(cur_endpoint.name));
+            this.content.appendChild(cur_endpoint_div);
+          }
+        
+        this.slidepanel = new Synesthesia.UI.SlidePanel({
+          content: this.content,
+          initial_state: "closed",
+          direction: (this.direction == "input" ? "right" : "left"),
+          expected_size: 200,
+          callback: (function () {
+            this.node_window.reflow();
+          }).bind(this)
+        });
+
+        this.element.appendChild(this.slidepanel.getElement());
+    };
+
+    EndpointPanel.prototype.toggle = function () {
+      this.slidepanel.toggle();
+    };
+
+    return EndpointPanel;
+  })();
+
   Synesthesia.UI.NodeWindow = (function () {
     function NodeWindow (params) {
       this.params = (typeof params !== "undefined" ? params : {});
@@ -547,6 +672,8 @@ function () {
       this.UI = null
 
       this.node = params.node;
+      
+      this.element = null;
 
       this.x = this.params.x || 0;
       this.y = this.params.y || 0;
@@ -556,8 +683,8 @@ function () {
       this.max_width = this.params.max_width || Infinity;
       this.unbounded_width = this.width;
 
-      this.height = this.params.height || 100;
-      this.min_height = this.params.min_height || 100;
+      this.height = this.params.height || 50;
+      this.min_height = this.params.min_height || 50;
       this.max_height = this.params.max_height || Infinity;
       this.unbounded_height = this.height;
 
@@ -574,12 +701,26 @@ function () {
         });
       }).bind(this));
 
+      this.input_endpointpanel = new Synesthesia.UI.EndpointPanel({
+        node_window: this,
+        endpoints: this.input_endpoints,
+        direction: "input"
+      });
+
       this.output_endpoints = this.node.getOutputDescriptorsArray().map((function (desc) {
         return new Synesthesia.UI.Endpoint({
           descriptor: desc,
           node: this.node
         });
       }).bind(this));
+
+      this.output_endpointpanel = new Synesthesia.UI.EndpointPanel({
+        node_window: this,
+        endpoints: this.output_endpoints,
+        direction: "input"
+      });
+
+      this.build();
     }
 
     NodeWindow.prototype.getNode = function () {
@@ -607,62 +748,91 @@ function () {
     };
 
     NodeWindow.prototype.draw = function () {
-      this.title_div.innerHTML = this.title;
       this.node.draw();
     };
 
-    NodeWindow.prototype.setContainer = function (div) {
-      this._container = div;
-        this._container.className = "Synesthesia_UI_NodeWindow__main";
-        if (!this.flex) {
-          this._container.style.display = "block";
-        }
-        this._container.style.left = "" + this.x + "px";
-        this._container.style.top = "" + this.y + "px";
-        this._container.addEventListener("mousedown", (function () {
+    NodeWindow.prototype.getElement = function () {
+      return this.element;
+    };
+
+    NodeWindow.prototype.build = function () {
+      this.element = document.createElement("div");
+        Utilities.addClass(this.element, "Synesthesia_UI_NodeWindow");
+        this.element.style.left = "" + this.x + "px";
+        this.element.style.top = "" + this.y + "px";
+        this.element.addEventListener("mousedown", (function () {
           this.UI.bringToFront(this);
         }).bind(this), false);
 
-      this.title_div = document.createElement("div");
-        this.title_div.className = "title";
-        this.title_div.innerHTML = this.title;
-      this._container.appendChild(this.title_div);
+      this.element.appendChild(
+        this.input_endpointpanel.getElement()
+      );
 
-      this.div = document.createElement("div");
-        this.div.className = "content";
-      this._container.appendChild(this.div);
+      this.main_panel_div = document.createElement("div");
+        Utilities.addClass(this.main_panel_div, "main_panel");
 
-      this._draggable = new Synesthesia.UI.Draggable({
-        handle: this.title_div,
-        cursor: "-webkit-grabbing",
-        callback: this.handle_drag.bind(this)
-      });
+        this.title_div = document.createElement("div");
+          Utilities.addClass(this.title_div, "title");
+          this.title_div.appendChild(
+            document.createTextNode(this.title)
+          );
 
+          this.title_div_right = document.createElement("div");
+            Utilities.addClass(this.title_div_right, "right");
 
-      if (this.resizable) {
-        this.resize_grabber = document.createElement("div");
-          this.resize_grabber.className = "resize_grabber";
-        this._container.appendChild(this.resize_grabber);
+            this.expand_link = document.createElement("span");
+              Utilities.addClass(this.expand_link, "link");
+              this.expand_link.appendChild(document.createTextNode("expand"));
+              this.expand_link.addEventListener("click", (function (e) {
+                this.input_endpointpanel.toggle();
+                this.output_endpointpanel.toggle();
+              }).bind(this), false);
+            this.title_div_right.appendChild(this.expand_link);
 
-        this._resizeable = new Synesthesia.UI.Draggable({
-          handle: this.resize_grabber,
-          cursor: "nwse-resize",
-          callback_mousedown: this.handle_resize_mousedown.bind(this),
-          callback_mousemove: this.handle_resize_mousemove.bind(this),
-          callback_mouseup: this.handle_resize_mouseup.bind(this)
+          this.title_div.appendChild(this.title_div_right);
+        this.main_panel_div.appendChild(this.title_div);
+
+        this.content = document.createElement("div");
+          Utilities.addClass(this.content, "content");
+        this.main_panel_div.appendChild(this.content);
+
+        this._draggable = new Synesthesia.UI.Draggable({
+          handle: this.title_div,
+          cursor: "-webkit-grabbing",
+          callback: this.handle_drag.bind(this)
         });
-      }
 
-      // HACK: Work around for Chrome flex-box css width/height reporting bug.
-      //var title_style = window.getComputedStyle(this.title_div);
-      this.div.setAttribute("data-width", this.width);
-      this.div.setAttribute("data-height", this.height - this.title_div.offsetHeight);
 
-      this.node.informWindowPrepared(this.div);
+        if (this.resizable) {
+          this.resize_grabber = document.createElement("div");
+            Utilities.addClass(this.resize_grabber, "resize_grabber");
+          this.main_panel_div.appendChild(this.resize_grabber);
+
+          this._resizeable = new Synesthesia.UI.Draggable({
+            handle: this.resize_grabber,
+            cursor: "nwse-resize",
+            callback_mousedown: this.handle_resize_mousedown.bind(this),
+            callback_mousemove: this.handle_resize_mousemove.bind(this),
+            callback_mouseup: this.handle_resize_mouseup.bind(this)
+          });
+        }
+
+        // HACK: Work around for Chrome flex-box css width/height reporting bug.
+        //var title_style = window.getComputedStyle(this.title_div);
+        this.content.setAttribute("data-width", this.width);
+        this.content.setAttribute("data-height", this.height - this.title_div.offsetHeight);
+
+      this.element.appendChild(this.main_panel_div);
+
+      this.element.appendChild(
+        this.output_endpointpanel.getElement()
+      );
+
+      this.node.informWindowPrepared(this.content);
     };
 
     NodeWindow.prototype.handle_drag = function (params) {
-      var div_style = window.getComputedStyle(this._container);
+      var div_style = window.getComputedStyle(this.element);
       this.x = parseInt(div_style.left) + params.dx;
       this.y = parseInt(div_style.top) + params.dy;
 
@@ -674,7 +844,7 @@ function () {
     };
 
     NodeWindow.prototype.handle_resize_mousedown = function (params) {
-      var div_style = window.getComputedStyle(this._container);
+      var div_style = window.getComputedStyle(this.element);
       this.unbounded_width = parseInt(div_style.width);
       this.unbounded_height = parseInt(div_style.height);
     };
@@ -694,8 +864,8 @@ function () {
 
       // HACK: Work around for Chrome flex-box css width/height reporting bug.
       //var title_style = window.getComputedStyle(this.title_div);
-      this.div.setAttribute("data-width", this.width);
-      this.div.setAttribute("data-height", this.height - this.title_div.offsetHeight);
+      this.content.setAttribute("data-width", this.width);
+      this.content.setAttribute("data-height", this.height - this.title_div.offsetHeight);
 
       this.reflow();
 
@@ -707,17 +877,17 @@ function () {
     };
 
     NodeWindow.prototype.setZIndex = function (index) {
-      this._container.style.zIndex = "" + index;
+      this.element.style.zIndex = "" + index;
     };
 
     NodeWindow.prototype.reflow = function () {
-      this._container.style.left = "" + this.x + "px";
-      this._container.style.top = "" + this.y + "px";
+      this.element.style.left = "" + this.x + "px";
+      this.element.style.top = "" + this.y + "px";
       if (this.use_flex) {
-        this._container.style.width = "" + this.width + "px";
-        this._container.style.height = "" + this.height + "px";
+        this.element.style.width = "" + this.width + "px";
+        this.element.style.height = "" + this.height + "px";
       } else {
-        var container_style = window.getComputedStyle(this._container);
+        var container_style = window.getComputedStyle(this.element);
         this.width = parseInt(container_style.getPropertyValue("width"));
         this.height = parseInt(container_style.getPropertyValue("height"));
       }

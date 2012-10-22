@@ -6,7 +6,6 @@
 
 .Synesthesia_UI__node_window_container {
   pointer-events: none;
-  overflow: hidden;
 
   position: absolute;
   top: 0px;
@@ -18,7 +17,7 @@
     pointer-events: auto;
   }
 
-.Synesthesia_UI_DragValue__main {
+.Synesthesia_UI_DragValue {
   display: inline-block;
   margin: 1px;
   background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(128, 128, 128, 0)), to(rgba(128, 128, 128, 0.1)));
@@ -29,15 +28,15 @@
 
   -webkit-transition: border-color ease-in-out 0.1s;
 }
-.Synesthesia_UI_DragValue__main:hover {
+.Synesthesia_UI_DragValue:hover {
   border-color: rgba(0, 0, 0, 0.6);
 }
-  .Synesthesia_UI_DragValue__main input {
+  .Synesthesia_UI_DragValue input {
     outline: none;
     background-color: transparent;
   }
 
-.Synesthesia_UI_RadioGroup__main {
+.Synesthesia_UI_RadioGroup {
   display: inline-block;
   display: -webkit-flex;
   -webkit-flex-direction: row;
@@ -49,7 +48,7 @@
   border: 1px solid #808080;
   border-radius: 2px;
 }
-  .Synesthesia_UI_RadioGroup__main .radio_option {
+  .Synesthesia_UI_RadioGroup .radio_option {
     display: inline-block;
     -webkit-flex: 1 0 0;
     -moz-flex: 1 0 0;
@@ -64,25 +63,24 @@
     border-style: solid;
     border-color: #808080;
   }
-  .Synesthesia_UI_RadioGroup__main .radio_option:hover {
+  .Synesthesia_UI_RadioGroup .radio_option:hover {
     background-color: #b0b0b0;
   }
-  .Synesthesia_UI_RadioGroup__main .radio_option:active,
-  .Synesthesia_UI_RadioGroup__main .radio_option.selected {
+  .Synesthesia_UI_RadioGroup .radio_option:active,
+  .Synesthesia_UI_RadioGroup .radio_option.selected {
     background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(255, 255, 255, 0)), to(rgba(255, 255, 255, 0.7)));
   }
-  .Synesthesia_UI_RadioGroup__main .radio_option.selected {
+  .Synesthesia_UI_RadioGroup .radio_option.selected {
     background-color: #b8b8b8;
     text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.5);
   }
-  .Synesthesia_UI_RadioGroup__main .radio_option.selected:hover {
+  .Synesthesia_UI_RadioGroup .radio_option.selected:hover {
     background-color: #a0a0a0;
   }
-  .Synesthesia_UI_RadioGroup__main .radio_option:last-of-type {
+  .Synesthesia_UI_RadioGroup .radio_option:last-of-type {
     border-right-width: 0px;
   }
 
-.Synesthesia_UI_NodeWindow__main {
 .Synesthesia_UI_LabeledDiv {
   margin: 1px;
   border: 1px solid #808080;
@@ -94,13 +92,42 @@
     padding: 2px;
   }
 
+.Synesthesia_UI_SlidePanel {
+  overflow: hidden;
+  -webkit-transition:
+    width ease-in 0.4s,
+    height ease-in 0.4s;
+}
+
+  .Synesthesia_UI_SlidePanel > .content {
+    -webkit-transition: margin ease-in-out 0.4s;
+  }
+
+.Synesthesia_UI_EndpointPanel {
+  margin: 0px;
+  border: none;
+  padding: 0px;
+}
+
+  .Synesthesia_UI_EndpointPanel .content {
+  }
+
+    .Synesthesia_UI_EndpointPanel .content > .endpoint {
+      padding: 1px 2px;
+      font-size: 10px;
+      line-height: 18px;
+      vertical-align: middle;
+      height: 18px;
+    }
+
+.Synesthesia_UI_NodeWindow {
   -webkit-user-select: none;
 
   display: -webkit-flex;
   display: flex;
-  -webkit-flex-direction: column;
-  -moz-flex-direction: column;
-  flex-direction: column;
+  -webkit-flex-direction: row;
+  -moz-flex-direction: row;
+  flex-direction: row;
 
   position: absolute;
   overflow: hidden;
@@ -109,11 +136,11 @@
   
   /* HACK: placement of node decoration
   needs to be dependend upon border also. Maybe. */
-  margin-top: -2px;
-  margin-left: -2px;
+  margin-top: -1px;
+  margin-left: -1px;
 
-  border: 2px solid #808080;
-  /*border-radius: 2px;*/ /* Appease Safari... */
+  border: 1px solid #808080;
+  border-radius: 2px;
 
   color: #606060;
 
@@ -123,66 +150,101 @@
     opacity ease-in-out 0.4s,
     -webkit-transform ease-in-out 0.4s;
 }
-.Synesthesia_UI_NodeWindow__main:hover {
+.Synesthesia_UI_NodeWindow:hover {
   opacity: 1;
 }
-.Synesthesia_UI_NodeWindow__main.hidden {
+.Synesthesia_UI_NodeWindow.hidden {
   -webkit-transform: rotateX(90deg) scale(0);
   /*-webkit-transform: translateY(200px) scale(0.8);*/
   opacity: 0;
 }
-  .Synesthesia_UI_NodeWindow__main .title {
-    -webkit-user-select: none;
-    cursor: -webkit-grab;
-    cursor: grab;
-
-    height: 14px;
-    font-size: 11px;
-
-    -webkit-flex: 0 0 auto;
-    -moz-flex: 0 0 auto;
-    flex: 0 0 auto;
-
-    background-color: #ffffff;
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#FDFDFD), to(#D0D0D0));
-    border-bottom: 1px solid #808080;
-    padding: 3px;
-    color: #606060;
-
-    -webkit-transition:
-      background-image ease-in-out 0.4s,
-  }
-  /*
-  .Synesthesia_UI_NodeWindow__main .title:hover {
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#E6E9EE), to(#B2B4B9));
-  }
-  */
-
-  .Synesthesia_UI_NodeWindow__main .content {
-    position: relative;
-
-    overflow: hidden;
-
-    font-size: 11px;
-
-    -webkit-flex: 1 0 auto;
-    -moz-flex: 1 0 auto;
-    flex: 1 0 auto;
+  .Synesthesia_UI_NodeWindow .Synesthesia_UI_EndpointPanel.input {
+    -webkit-flex: initial;
   }
 
-  .Synesthesia_UI_NodeWindow__main .resize_grabber {
-    cursor: nwse-resize;
+  .Synesthesia_UI_NodeWindow .main_panel {
+    -webkit-flex: auto;
 
-    position: absolute;
-    bottom: 0px;
-    right: 0px;
-    width: 8px;
-    height: 8px;
-
-    border-width: 1px 0px 0px 1px;
-    border-style: solid;
-    border-color: #808080;
-    /* Keeping in style with border-radius bug on windows in Safari. */
-    /*border-radius: 2px 0px 0px 0px;*/
-    background-color: rgba(255, 255, 255, 0.5);
+    margin: -1px;
+    border: 1px solid #808080;
   }
+
+    .Synesthesia_UI_NodeWindow .content {
+      position: relative;
+
+      overflow: hidden;
+
+      font-size: 11px;
+
+      -webkit-flex: 1 0 auto;
+      -moz-flex: 1 0 auto;
+      flex: 1 0 auto;
+    }
+
+    .Synesthesia_UI_NodeWindow .title {
+      position: relative;
+
+      -webkit-user-select: none;
+      cursor: -webkit-grab;
+      cursor: grab;
+
+      height: 14px;
+      font-size: 11px;
+
+      -webkit-flex: 0 0 auto;
+      -moz-flex: 0 0 auto;
+      flex: 0 0 auto;
+
+      background-color: #ffffff;
+      background-image: -webkit-gradient(linear, left top, left bottom, from(#FDFDFD), to(#D0D0D0));
+      border-bottom: 1px solid #808080;
+      padding: 3px;
+      color: #606060;
+
+      -webkit-transition:
+        background-image ease-in-out 0.4s,
+    }
+    /*
+    .Synesthesia_UI_NodeWindow .title:hover {
+      background-image: -webkit-gradient(linear, left top, left bottom, from(#E6E9EE), to(#B2B4B9));
+    }
+    */
+      .Synesthesia_UI_NodeWindow .title > .right {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        bottom: 0px;
+
+        padding: 3px;
+      }
+        .Synesthesia_UI_NodeWindow .title > .right > .link {
+          text-decoration: underline;
+        }
+        .Synesthesia_UI_NodeWindow .title > .right > .link:hover {
+          cursor: hand;
+          color: #a06060;
+        }
+        .Synesthesia_UI_NodeWindow .title > .right > .link:active {
+          color: #d06060;
+        }
+
+    .Synesthesia_UI_NodeWindow .resize_grabber {
+      cursor: nwse-resize;
+
+      position: absolute;
+      bottom: 0px;
+      right: 0px;
+      width: 8px;
+      height: 8px;
+
+      border-width: 1px 0px 0px 1px;
+      border-style: solid;
+      border-color: #808080;
+      border-radius: 2px 0px 0px 0px;
+      background-color: rgba(255, 255, 255, 0.5);
+    }
+
+  .Synesthesia_UI_NodeWindow .Synesthesia_UI_EndpointPanel.output {
+    -webkit-flex: initial;
+  }
+

@@ -114,6 +114,13 @@ window.addEventListener("load", function () {
       x: 440, y: 10
     });
 
+    TestDynamicsCompressor = new Synesthesia.Library.DynamicsCompressor({
+      synesthesia: MainSynesthesia
+    });
+    MainUI.addNode(TestDynamicsCompressor, {
+      x: 460, y: 370
+    });
+
     // UI
     //MainUI.start();
     MainUI.draw();
