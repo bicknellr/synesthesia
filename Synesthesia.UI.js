@@ -437,6 +437,33 @@ function () {
     return RadioGroup;
   })();
 
+  Synesthesia.UI.LabeledDiv = (function () {
+    function LabeledDiv (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+      
+      this.element = document.createElement("div");
+        this.element.className = "Synesthesia_UI_LabeledDiv";
+
+      this.label_div = document.createElement("div");
+        this.label_div.className = "label";
+        this.label_div.appendChild(
+          document.createTextNode(this.params.label)
+        );
+      this.element.appendChild(this.label_div);
+
+      this.element.appendChild(this.params.content);
+    }
+
+    LabeledDiv.prototype.getElement = function () {
+      return this.element;
+    };
+
+    return LabeledDiv;
+  })();
+
+  /*
+    The scaling part of this (of all things) needs to be rewritten.
+  */
   Synesthesia.UI.ScalableGraph = (function () {
     function ScalableGraph (params) {
       this.params = (typeof params !== "undefined" ? params : {});

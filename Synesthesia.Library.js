@@ -362,10 +362,6 @@ function () {
         sensitivity: 0.0025,
         direction_lock: "vertical"
       });
-      this.gain_sync.addListener(this.gain_drag_value, (function (new_value) {
-        this.gain_drag_value.setValue(new_value);
-      }).bind(this));
-
 
       this.drag_value_table = new Synesthesia.UI.DragValueTable({
         values: [
@@ -510,9 +506,6 @@ function () {
           return "" + str + "s";
         }
       });
-      this.delayTime_sync.addListener(this.delayTime_drag_value, (function (new_value) {
-        this.delayTime_drag_value.setValue(new_value);
-      }).bind(this));
 
       var drag_value_table = new Synesthesia.UI.DragValueTable({
         values: [
@@ -533,6 +526,243 @@ function () {
     };
 
     return Delay;
+  })();
+
+  Synesthesia.Library.DynamicsCompressor = (function () {
+    function DynamicsCompressor (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
+      Synesthesia.Graph.Node.AudioDestinationNode.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+      this.context = this.synesthesia.getContext();
+      this.node = this.context.createDynamicsCompressor();
+
+      this.threshold_sync = new Utilities.SynchronizedValue();
+      this.threshold_sync.addListener(this, (function (new_value) {
+        this.node.threshold.value = new_value;
+      }).bind(this));
+      this.threshold_sync.setValue(this, this.node.threshold.value);
+
+      this.knee_sync = new Utilities.SynchronizedValue();
+      this.knee_sync.addListener(this, (function (new_value) {
+        this.node.knee.value = new_value;
+      }).bind(this));
+      this.knee_sync.setValue(this, this.node.knee.value);
+
+      this.ratio_sync = new Utilities.SynchronizedValue();
+      this.ratio_sync.addListener(this, (function (new_value) {
+        this.node.ratio.value = new_value;
+      }).bind(this));
+      this.ratio_sync.setValue(this, this.node.ratio.value);
+
+      this.reduction_sync = new Utilities.SynchronizedValue();
+      this.reduction_sync.addListener(this, (function (new_value) {
+        this.node.reduction.value = new_value;
+      }).bind(this));
+      this.reduction_sync.setValue(this, this.node.reduction.value);
+
+      this.attack_sync = new Utilities.SynchronizedValue();
+      this.attack_sync.addListener(this, (function (new_value) {
+        this.node.attack.value = new_value;
+      }).bind(this));
+      this.attack_sync.setValue(this, this.node.attack.value);
+
+      this.release_sync = new Utilities.SynchronizedValue();
+      this.release_sync.addListener(this, (function (new_value) {
+        this.node.release.value = new_value;
+      }).bind(this));
+      this.release_sync.setValue(this, this.node.release.value);
+
+      this.setInputDescriptors({
+        "waveform": new Synesthesia.Graph.Endpoint({
+          node: this,
+          name: "waveform",
+          type: "AudioNode",
+          accepted_types: [
+            "AudioNode"
+          ],
+          direction: "input"
+        })
+      });
+
+      this.setOutputDescriptors({
+        "waveform": new Synesthesia.Graph.Endpoint({
+          node: this,
+          name: "waveform",
+          type: "AudioNode",
+          accepted_types: [
+            "AudioNode",
+            "AudioParam"
+          ],
+          direction: "output"
+        })
+      });
+
+      // MUST BE DEFINED AFTER ENDPOINTS
+      this.ui_window = new Synesthesia.UI.NodeWindow({
+        node: this,
+        title: "Dynamics Compressor",
+        resizable: false,
+        width: 400, height: 70
+      });
+    }
+
+    DynamicsCompressor.prototype = Utilities.extend(
+      new Synesthesia.Graph.Node.AudioSourceNode(),
+      new Synesthesia.Graph.Node.AudioDestinationNode()
+    );
+
+    DynamicsCompressor.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    DynamicsCompressor.prototype.informConnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["waveform"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
+          this.connectSourceToDestination(
+            this.node,
+            other_node.getDestinationForInput(other_endpoint)
+          );
+          break;
+      }
+    };
+
+    DynamicsCompressor.prototype.informDisconnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["waveform"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
+          this.disconnectSourceFromDestination(
+            this.node,
+            other_node.getDestinationForInput(other_endpoint)
+          );
+          break;
+      }
+    };
+
+    DynamicsCompressor.prototype.getDestinationForInput = function (input_endpoint) {
+      switch (input_endpoint) {
+        case this.getInputDescriptors()["waveform"]:
+          return this.node;
+      }
+    };
+
+    DynamicsCompressor.prototype.informWindowPrepared = function (div) {
+      this.div = div;
+
+      this.threshold_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.threshold_sync,
+        min_value: this.node.threshold.minValue,
+        max_value: this.node.threshold.maxValue,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical",
+        string_format: function (str) {
+          return "" + str + "dB";
+        }
+      });
+
+      this.knee_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.knee_sync,
+        min_value: this.node.knee.minValue,
+        max_value: this.node.knee.maxValue,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical",
+        string_format: function (str) {
+          return "" + str + "dB";
+        }
+      });
+
+      this.ratio_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.ratio_sync,
+        min_value: this.node.ratio.minValue,
+        max_value: this.node.ratio.maxValue,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical"
+      });
+
+      var drag_value_table_r1 = new Synesthesia.UI.DragValueTable({
+        stack: "horizontal",
+        values: [
+          { label: "Threshold",
+            drag_value: this.threshold_drag_value
+          },
+          { label: "Knee",
+            drag_value: this.knee_drag_value
+          },
+          { label: "Ratio",
+            drag_value: this.ratio_drag_value
+          }
+        ]
+      });
+      drag_value_table_r1.getElement().style.width = "100%";
+      this.div.appendChild(drag_value_table_r1.getElement());
+
+      this.reduction_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.reduction_sync,
+        min_value: this.node.reduction.minValue,
+        max_value: this.node.reduction.maxValue,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical",
+        string_format: function (str) {
+          return "" + str + "dB";
+        }
+      });
+
+      this.attack_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.attack_sync,
+        min_value: this.node.attack.minValue,
+        max_value: this.node.attack.maxValue,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical",
+        string_format: function (str) {
+          return "" + str + "s";
+        }
+      });
+
+      this.release_drag_value = new Synesthesia.UI.DragValue({
+        sync_value: this.release_sync,
+        min_value: this.node.release.minValue,
+        max_value: this.node.release.maxValue,
+        sensitivity: 0.01,
+        digits: 2,
+        direction_lock: "vertical",
+        string_format: function (str) {
+          return "" + str + "s";
+        }
+      });
+
+      var drag_value_table_r2 = new Synesthesia.UI.DragValueTable({
+        stack: "horizontal",
+        values: [
+          { label: "Reduction",
+            drag_value: this.reduction_drag_value
+          },
+          { label: "Attack",
+            drag_value: this.attack_drag_value
+          },
+          { label: "Release",
+            drag_value: this.release_drag_value
+          }
+        ]
+      });
+      drag_value_table_r2.getElement().style.width = "100%";
+      this.div.appendChild(drag_value_table_r2.getElement());
+    };
+
+    DynamicsCompressor.prototype.draw = function () {
+
+    };
+
+    return DynamicsCompressor;
   })();
 
   Synesthesia.Library.Panner = (function () {
@@ -809,7 +1039,7 @@ function () {
       this.div = div;
       this.div.style.width = "300px";
 
-      this.div.appendChild(document.createTextNode("Panning Model"));
+      // Panning model.
 
       this.panningModel_radiogroup = new Synesthesia.UI.RadioGroup({
         options: [
@@ -823,9 +1053,14 @@ function () {
           this.panningModel_sync.setValue(null, selected_option.value);
         }).bind(this)
       });
-      this.div.appendChild(this.panningModel_radiogroup.getElement());
 
-      this.div.appendChild(document.createTextNode("Distance Model"));
+      this.panningModel_labeleddiv = new Synesthesia.UI.LabeledDiv({
+        label: "Panning Model",
+        content: this.panningModel_radiogroup.getElement()
+      });
+      this.div.appendChild(this.panningModel_labeleddiv.getElement());
+      
+      // Distance model.
 
       this.distanceModel_radiogroup = new Synesthesia.UI.RadioGroup({
         options: [
@@ -837,11 +1072,14 @@ function () {
           this.distanceModel_sync.setValue(null, selected_option.value);
         }).bind(this)
       });
-      this.div.appendChild(this.distanceModel_radiogroup.getElement());
+
+      this.distanceModel_labeleddiv = new Synesthesia.UI.LabeledDiv({
+        label: "Distance Model",
+        content: this.distanceModel_radiogroup.getElement()
+      });
+      this.div.appendChild(this.distanceModel_labeleddiv.getElement());
 
       // Distance model parameters.
-
-      this.div.appendChild(document.createTextNode("Distance Parameters"));
 
       this.refDistance_drag_value = new Synesthesia.UI.DragValue({
         sync_value: this.refDistance_sync,
@@ -891,11 +1129,14 @@ function () {
         ]
       });
       this.distance_dragvaluetable.getElement().style.width = "100%";
-      this.div.appendChild(this.distance_dragvaluetable.getElement());
+
+      this.distance_labeleddiv = new Synesthesia.UI.LabeledDiv({
+        label: "Distance Parameters",
+        content: this.distance_dragvaluetable.getElement()
+      });
+      this.div.appendChild(this.distance_labeleddiv.getElement());
 
       // Cone parameters.
-
-      this.div.appendChild(document.createTextNode("Cone Parameters"));
 
       this.coneInnerAngle_drag_value = new Synesthesia.UI.DragValue({
         sync_value: this.coneInnerAngle_sync,
@@ -943,11 +1184,14 @@ function () {
         ]
       });
       this.cone_dragvaluetable.getElement().style.width = "100%";
-      this.div.appendChild(this.cone_dragvaluetable.getElement());
+
+      this.cone_labeleddiv = new Synesthesia.UI.LabeledDiv({
+        label: "Cone Parameters",
+        content: this.cone_dragvaluetable.getElement()
+      });
+      this.div.appendChild(this.cone_labeleddiv.getElement());
 
       // Position.
-
-      this.div.appendChild(document.createTextNode("Position"));
 
       this.positionX_drag_value = new Synesthesia.UI.DragValue({
         sync_value: this.positionX_sync,
@@ -991,11 +1235,14 @@ function () {
         ]
       });
       this.position_dragvaluetable.getElement().style.width = "100%";
-      this.div.appendChild(this.position_dragvaluetable.getElement());
+
+      this.position_labeleddiv = new Synesthesia.UI.LabeledDiv({
+        label: "Position",
+        content: this.position_dragvaluetable.getElement()
+      })
+      this.div.appendChild(this.position_labeleddiv.getElement());
 
       // Orienation.
-
-      this.div.appendChild(document.createTextNode("Orientation"));
 
       this.orientationX_drag_value = new Synesthesia.UI.DragValue({
         sync_value: this.orientationX_sync,
@@ -1039,11 +1286,14 @@ function () {
         ]
       });
       this.orientation_dragvaluetable.getElement().style.width = "100%";
-      this.div.appendChild(this.orientation_dragvaluetable.getElement());
+
+      this.orientation_labeleddiv = new Synesthesia.UI.LabeledDiv({
+        label: "Orientation",
+        content: this.orientation_dragvaluetable.getElement()
+      });
+      this.div.appendChild(this.orientation_labeleddiv.getElement());
 
       // Velocity.
-
-      this.div.appendChild(document.createTextNode("Velocity"));
 
       this.velocityX_drag_value = new Synesthesia.UI.DragValue({
         sync_value: this.velocityX_sync,
@@ -1087,7 +1337,12 @@ function () {
         ]
       });
       this.velocity_dragvaluetable.getElement().style.width = "100%";
-      this.div.appendChild(this.velocity_dragvaluetable.getElement());
+
+      this.velocity_labeleddiv = new Synesthesia.UI.LabeledDiv({
+        label: "Velocity",
+        content: this.velocity_dragvaluetable.getElement()
+      });
+      this.div.appendChild(this.velocity_labeleddiv.getElement());
     };
 
     Panner.prototype.draw = function () {

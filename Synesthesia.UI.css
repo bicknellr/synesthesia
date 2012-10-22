@@ -82,6 +82,17 @@
     border-right-width: 0px;
   }
 
+.Synesthesia_UI_LabeledDiv {
+  margin: 1px;
+  border: 1px solid #808080;
+  border-radius: 2px;
+}
+  .Synesthesia_UI_LabeledDiv > .label {
+    margin: 1px;
+    border-bottom: 1px solid #b0b0b0;
+    padding: 2px;
+  }
+
 .Synesthesia_UI_NodeWindow__main {
   -webkit-user-select: none;
 
@@ -101,8 +112,8 @@
   margin-top: -2px;
   margin-left: -2px;
 
-  border: 2px solid #808080;
-  /*border-radius: 2px;*/ /* Appease Safari... */
+  border: 1px solid #808080;
+  border-radius: 2px;
 
   color: #606060;
 
