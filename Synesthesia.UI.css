@@ -83,6 +83,17 @@
   }
 
 .Synesthesia_UI_NodeWindow__main {
+.Synesthesia_UI_LabeledDiv {
+  margin: 1px;
+  border: 1px solid #808080;
+  border-radius: 2px;
+}
+  .Synesthesia_UI_LabeledDiv > .label {
+    margin: 1px;
+    border-bottom: 1px solid #b0b0b0;
+    padding: 2px;
+  }
+
   -webkit-user-select: none;
 
   display: -webkit-flex;
