@@ -220,7 +220,6 @@ function () {
       this.params = (typeof params !== "undefined" ? params : {});
 
       Graph.Node.AudioSourceNode.apply(this, arguments);
-      Graph.Node.AudioDestinationNode.apply(this, arguments);
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
@@ -259,8 +258,7 @@ function () {
     }
 
     LiveInput.prototype = Utilities.extend(
-      new Graph.Node.AudioSourceNode(),
-      new Graph.Node.AudioDestinationNode()
+      new Graph.Node.AudioSourceNode()
     );
 
     LiveInput.prototype.getWindow = function () {
