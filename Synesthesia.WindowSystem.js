@@ -1,12 +1,12 @@
-module("Synesthesia:WindowSystem",
+module.declare("Synesthesia:WindowSystem",
 ["Utilities", "Synesthesia:UILibrary", "Synesthesia:Graph"],
 function () {
 
-  var Utilities = require("Utilities");
+  var Utilities = module.require("Utilities");
 
-  var Synesthesia = require("Synesthesia");
-  var UILibrary = require("Synesthesia:UILibrary");
-  var Graph = require("Synesthesia:Graph");
+  var Synesthesia = module.require("Synesthesia");
+  var UILibrary = module.require("Synesthesia:UILibrary");
+  var Graph = module.require("Synesthesia:Graph");
 
   var WindowSystem = (function () {
     function WindowSystem (params) {

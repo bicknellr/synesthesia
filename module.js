@@ -1,22 +1,21 @@
-(function () {
+window.module = {
+  modules: {},
 
-  window.modules = {};
-
-  function check_modules () {
+  check_modules: function () {
     var changes = false;
 
-    to_next_module: for (var mod_ix in modules) {
-      cur_module = modules[mod_ix];
+    to_next_module: for (var mod_ix in this.modules) {
+      cur_module = this.modules[mod_ix];
 
       if (cur_module.processed) continue;
 
       for (var req_ix = 0; req_ix < cur_module.dependencies.length; req_ix++) {
         var req_name = cur_module.dependencies[req_ix];
-        if (!modules[req_name]) {
+        if (!this.modules[req_name]) {
           console.log("module: Dependency '" + req_name + "' for '" + cur_module.name + "' not found.");
           continue to_next_module;
         }
-        if (!modules[req_name].processed) {
+        if (!this.modules[req_name].processed) {
           console.log("module: Dependency '" + req_name + "' for '" + cur_module.name + "' not processed.");
           continue to_next_module;
         }
@@ -40,11 +39,11 @@
       cur_module.processed = true;
     }
 
-    if (changes) check_modules();
-  };
+    if (changes) this.check_modules();
+  },
 
-  window.module = function (name, dependencies, callback) {
-    modules[name] = {
+  declare: function (name, dependencies, callback) {
+    this.modules[name] = {
       name: name,
       dependencies: dependencies,
       callback: callback,
@@ -52,14 +51,13 @@
       processed: false
     };
 
-    check_modules();
-  };
+    this.check_modules();
+  },
 
-  window.require = function (name) {
-    if (!modules[name]) {
+  require: function (name) {
+    if (!this.modules[name]) {
       throw new Error("module: Unsatisfied dependency (" + name + ") requested!");
     }
-    return modules[name].exports;
-  };
-
-})();
+    return this.modules[name].exports;
+  }
+};

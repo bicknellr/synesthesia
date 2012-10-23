@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="./Synesthesia.UILibrary.css" />
 <script src="./Synesthesia.WindowSystem.js"></script>
   <link rel="stylesheet" href="./Synesthesia.WindowSystem.css" />
-<script src="./Synesthesia.Library.js"></script>
+<script src="./Synesthesia.NodeLibrary.js"></script>
 
 <style type="text/css">
 
@@ -33,10 +33,10 @@ body {
 <script type="application/javascript">
 
 window.addEventListener("load", function () {
-  module("MAIN", ["Synesthesia", "Synesthesia:NodeLibrary"], function () {
+  module.declare("MAIN", ["Synesthesia", "Synesthesia:NodeLibrary"], function () {
 
-    var Synesthesia = require("Synesthesia");
-    var NodeLibrary = require("Synesthesia:NodeLibrary");
+    var Synesthesia = module.require("Synesthesia");
+    var NodeLibrary = module.require("Synesthesia:NodeLibrary");
     
     MainSynesthesia = new Synesthesia({
       container: document.getElementById("SynesthesiaUIContainer"),

@@ -11,11 +11,11 @@
     This module should not have an associated CSS file.
     No part of this file should make reference to any type of display mechanism or properties.
 */
-module("Synesthesia:Graph",
+module.declare("Synesthesia:Graph",
 ["Utilities"],
 function () {
 
-  var Utilities = require("Utilities");
+  var Utilities = module.require("Utilities");
   
   var Graph = {};
 

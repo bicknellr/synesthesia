@@ -1,4 +1,4 @@
-module("Utilities", [], function () {
+module.declare("Utilities", [], function () {
   // Utilities
 
   var copy_properties = function (source, destination, properties) {

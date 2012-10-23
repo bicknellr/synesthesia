@@ -1,8 +1,8 @@
-module("Synesthesia:UILibrary",
+module.declare("Synesthesia:UILibrary",
 ["Utilities"],
 function () {
   
-  var Utilities = require("Utilities");
+  var Utilities = module.require("Utilities");
 
   var UILibrary = {};
 
@@ -93,7 +93,7 @@ function () {
       Utilities.Flaggable.apply(this, arguments);
 
       this.element = document.createElement("div");
-        this.element.className = "Synesthesia_UILibrary_DragValue__main";
+        this.element.className = "Synesthesia_UILibrary_DragValue";
         this.value_span = document.createElement("span");
         this.element.appendChild(this.value_span);
       this.element.addEventListener("dblclick", this.handle_dblclick.bind(this), false);
@@ -306,7 +306,7 @@ function () {
       this.params = (typeof params !== "undefined" ? params : {});
       
       this.element = document.createElement("div");
-        this.element.className = "Synesthesia_UILibrary_RadioGroup__main";
+        this.element.className = "Synesthesia_UILibrary_RadioGroup";
 
       this.callback_select = this.params.callback_select || function () {};
 
