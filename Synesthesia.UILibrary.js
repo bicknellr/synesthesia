@@ -181,7 +181,13 @@ function () {
         this.unsetFlag("editing");
       };
       value_input.addEventListener("blur", confirm_listener.bind(this), false);
-      value_input.value = this.value;
+
+      if (this.sync_value) {
+        value_input.value = this.sync_value.getValue();
+      } else {
+        value_input.value = this.value;
+      }
+
       this.element_input.appendChild(
         value_input
       );
