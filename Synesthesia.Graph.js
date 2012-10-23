@@ -1,39 +1,37 @@
-module("Synesthesia.Graph",
-["Utilities", "Synesthesia"],
+module("Synesthesia:Graph",
+["Utilities"],
 function () {
 
   var Utilities = require("Utilities");
   
-  var Synesthesia = require("Synesthesia");
+  Graph = {};
 
-  Synesthesia.Graph = {};
-
-  Synesthesia.Graph.Endpoint = (function () {
+  Graph.Endpoint = (function () {
     function Endpoint (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
       this.node = this.params.node;
-      if (!Utilities.conforms(Synesthesia.Graph.Node, this.node)) {
-        throw new Error("Synesthesia.Graph.Endpoint: Given object is not a valid node.");
+      if (!Utilities.conforms(Graph.Node, this.node)) {
+        throw new Error("Graph.Endpoint: Given object is not a valid node.");
       }
 
       this.name = this.params.name;
 
       this.type = this.params.type;
       if (Endpoint.Types.indexOf(this.type) == -1) {
-        throw new Error("Synesthesia.Graph.Endpoint: Invalid type '" + this.type + "'.");
+        throw new Error("Graph.Endpoint: Invalid type '" + this.type + "'.");
       }
 
       this.accepted_types = this.params.accepted_types;
       for (var i = 0; i < this.accepted_types.length; i++) {
         if (Endpoint.Types.indexOf(this.accepted_types[i]) == -1) {
-          throw new Error("Synesthesia.Graph.Endpoint: Invalid accepted type '" + this.accpeted_types[i] + "'.");
+          throw new Error("Graph.Endpoint: Invalid accepted type '" + this.accpeted_types[i] + "'.");
         }
       }
 
       this.direction = this.params.direction;
       if (Endpoint.Directions.indexOf(this.direction) == -1) {
-        throw new Error("Synesthesia.Graph.Endpoint: Invalid direction.");
+        throw new Error("Graph.Endpoint: Invalid direction.");
       }
 
       this.max_connections = this.params.max_connections || Infinity;
@@ -116,7 +114,7 @@ function () {
     return Endpoint;
   })();
 
-  Synesthesia.Graph.Connection = (function () {
+  Graph.Connection = (function () {
     function Connection (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
@@ -151,7 +149,7 @@ function () {
     return Connection;
   })();
 
-  Synesthesia.Graph.Node = (function () {
+  Graph.Node = (function () {
     function Node (params) {
       if (!params) return; // INTERFACE
       
@@ -205,38 +203,38 @@ function () {
 
     // Informs the node that a given connection has been connected to / disconnected from the given endpoint.
     Node.prototype.informConnected = function (endpoint, connection) {
-      throw new Error("Synesthesia.Graph.Node(.informConnected): Not implemented.");
+      throw new Error("Graph.Node(.informConnected): Not implemented.");
     };
 
     Node.prototype.informDisconnected = function (endpoint, connection) {
-      throw new Error("Synesthesia.Graph.Node(.informDisconnected): Not implemented.");
+      throw new Error("Graph.Node(.informDisconnected): Not implemented.");
     };
 
     // UI
     // TODO: Should this method be part of a UI class?
 
     Node.prototype.draw = function () {
-      throw new Error("Synesthesia.Graph.Node(.draw): Not implemented.");
+      throw new Error("Graph.Node(.draw): Not implemented.");
     };
 
     return Node;
   })();
 
-  Synesthesia.Graph.Node.NoteSourceNode = (function () {
+  Graph.Node.NoteSourceNode = (function () {
     function NoteSourceNode (params) {
       if (!params) return;
 
-      Synesthesia.Graph.Node.apply(this, arguments);
+      Graph.Node.apply(this, arguments);
 
-      if (!Utilities.overrides(Synesthesia.Graph.Node.NoteSourceNode, this)) {
-        console.error("Synesthesia.Graph.Node.NoteSourceNode: Subclass does not override.");
+      if (!Utilities.overrides(Graph.Node.NoteSourceNode, this)) {
+        console.error("Graph.Node.NoteSourceNode: Subclass does not override.");
       }
     }
 
     NoteSourceNode.GlobalConnectionMap = new Utilities.Map();
 
     NoteSourceNode.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node()
+      new Graph.Node()
     );
 
     NoteSourceNode.prototype.connectToNoteDestination = function (destination_node) {
@@ -248,14 +246,14 @@ function () {
       if (connections.indexOf(destination_node) == -1) {
         connections.push(destination_node);
       } else {
-        console.warn("Synesthesia.Graph.Node.NoteSourceNode(.connectToNoteDestination): Already connected to the requested node.");
+        console.warn("Graph.Node.NoteSourceNode(.connectToNoteDestination): Already connected to the requested node.");
       }
     };
 
     NoteSourceNode.prototype.disconnectFromNoteDestination = function (destination_node) {
       var connections = NoteSourceNode.GlobalConnectionMap.get(this);
       if (!connections) {
-        throw new Error("Synesthesia.Graph.Node.NoteSourceNode(.disconnectFromNoteDestination): Disconnect requested on a node that was not known to be connected.");
+        throw new Error("Graph.Node.NoteSourceNode(.disconnectFromNoteDestination): Disconnect requested on a node that was not known to be connected.");
       }
       while (connections.indexOf(destination_node) != -1) {
         connections.splice(connections.indexOf(destination_node), 1);
@@ -274,43 +272,43 @@ function () {
     return NoteSourceNode;
   })();
 
-  Synesthesia.Graph.Node.NoteDestinationNode = (function () {
+  Graph.Node.NoteDestinationNode = (function () {
     function NoteDestinationNode (params) {
       if (!params) return;
 
-      if(!Utilities.overrides(Synesthesia.Graph.Node.NoteDestinationNode, this)) {
-        console.error("Synesthesia.Graph.Node.NoteDestinationNode: Subclass does not override.");
+      if(!Utilities.overrides(Graph.Node.NoteDestinationNode, this)) {
+        console.error("Graph.Node.NoteDestinationNode: Subclass does not override.");
       }
     }
 
     NoteDestinationNode.prototype.handleNotes = function (notes) {
-      throw new Error("Synesthesia.Graph.Node.NoteDestinationNode(.handleNotes): Not implemented.");
+      throw new Error("Graph.Node.NoteDestinationNode(.handleNotes): Not implemented.");
     };
 
     return NoteDestinationNode;
   })();
 
-  Synesthesia.Graph.Node.AudioNode = (function () {
+  Graph.Node.AudioNode = (function () {
     function AudioNode () {
-      Synesthesia.Graph.Node.apply(this, arguments);
+      Graph.Node.apply(this, arguments);
     }
     
     AudioNode.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node()
+      new Graph.Node()
     );
 
     return AudioNode;
   })();
 
-  Synesthesia.Graph.Node.AudioSourceNode = (function () {
+  Graph.Node.AudioSourceNode = (function () {
     function AudioSourceNode () {
-      Synesthesia.Graph.Node.AudioNode.apply(this, arguments);
+      Graph.Node.AudioNode.apply(this, arguments);
 
       this.src_dest_map = new Utilities.Map();
     }
 
     AudioSourceNode.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node.AudioNode()
+      new Graph.Node.AudioNode()
     );
 
     AudioSourceNode.GlobalConnectionMap = new Utilities.Map();
@@ -334,7 +332,7 @@ function () {
     AudioSourceNode.prototype.disconnectSourceFromDestination = function (source_node, destination_node) {
       var connections = AudioSourceNode.GlobalConnectionMap.get(source_node);
       if (!connections || connections.length == 0) {
-        throw new Error("Synesthesia.Graph.Node.AudioSourceNode(.disconnectSourceFromDestination): Disconnect requested on a node that was not known to be connected.");
+        throw new Error("Graph.Node.AudioSourceNode(.disconnectSourceFromDestination): Disconnect requested on a node that was not known to be connected.");
       }
 
       // Remove all copies (only one expected) of the connection.
@@ -354,21 +352,23 @@ function () {
     return AudioSourceNode;
   })();
 
-  Synesthesia.Graph.Node.AudioDestinationNode = (function () {
+  Graph.Node.AudioDestinationNode = (function () {
     function AudioDestinationNode () {
-      Synesthesia.Graph.Node.AudioNode.apply(this, arguments);
+      Graph.Node.AudioNode.apply(this, arguments);
 
       this.destination_map = new Utilities.Map();
     }
 
     AudioDestinationNode.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node.AudioNode()
+      new Graph.Node.AudioNode()
     );
 
     AudioDestinationNode.prototype.getDestinationForInput = function (input_endpoint) {
-      throw new Error("Synesthesia.Graph.Node.AudioDestinationNode(.getDestinationForInput): Not implemented.");
+      throw new Error("Graph.Node.AudioDestinationNode(.getDestinationForInput): Not implemented.");
     };
 
     return AudioDestinationNode;
   })();
+
+  return Graph;
 });

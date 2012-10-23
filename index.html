@@ -8,6 +8,8 @@
 <script src="./Synesthesia.Graph.js"></script>
 <script src="./Synesthesia.UI.js"></script>
   <link rel="stylesheet" href="./Synesthesia.UI.css" />
+<script src="./Synesthesia.UILibrary.js"></script>
+  <link rel="stylesheet" href="./Synesthesia.UILibrary.css" />
 <script src="./Synesthesia.WindowSystem.js"></script>
   <link rel="stylesheet" href="./Synesthesia.WindowSystem.css" />
 <script src="./Synesthesia.Library.js"></script>
@@ -31,96 +33,97 @@ body {
 <script type="application/javascript">
 
 window.addEventListener("load", function () {
-  module("MAIN", ["Synesthesia", "Synesthesia.UI", "Synesthesia.Library"], function () {
+  module("MAIN", ["Synesthesia", "Synesthesia:NodeLibrary"], function () {
 
-    window.Synesthesia = require("Synesthesia");
+    var Synesthesia = require("Synesthesia");
+    var NodeLibrary = require("Synesthesia:NodeLibrary");
     
     MainSynesthesia = new Synesthesia({
       container: document.getElementById("SynesthesiaUIContainer"),
     });
 
-    MainOutput = new Synesthesia.Library.MainOutput({
+    MainOutput = new NodeLibrary.MainOutput({
       synesthesia: MainSynesthesia
     });
     MainSynesthesia.getUI().addNode(MainOutput, {
       x: 300, y: 10
     });
 
-    MainKeyboard = new Synesthesia.Library.KeyboardInput({
+    MainKeyboard = new NodeLibrary.KeyboardInput({
       synesthesia: MainSynesthesia
     });
     MainSynesthesia.getUI().addNode(MainKeyboard, {
       x: 20, y: 10
     });
 
-    TestOsc1 = new Synesthesia.Library.Oscillator({
+    TestOsc1 = new NodeLibrary.Oscillator({
       synesthesia: MainSynesthesia,
-      type: Synesthesia.Library.Oscillator.Type.SINE
+      type: NodeLibrary.Oscillator.Type.SINE
     });
     //MainSynesthesia.mapInput(MainKeyboard, TestOsc1);
     MainSynesthesia.getUI().addNode(TestOsc1, {
       x: 20, y: 130
     });
 
-    TestOsc2 = new Synesthesia.Library.Oscillator({
+    TestOsc2 = new NodeLibrary.Oscillator({
       synesthesia: MainSynesthesia,
-      type: Synesthesia.Library.Oscillator.Type.SINE
+      type: NodeLibrary.Oscillator.Type.SINE
     });
     //MainSynesthesia.mapInput(MainKeyboard, TestOsc2);
     MainSynesthesia.getUI().addNode(TestOsc2, {
       x: 20, y: 200
     });
 
-    TestGain1 = new Synesthesia.Library.Gain({
+    TestGain1 = new NodeLibrary.Gain({
       synesthesia: MainSynesthesia
     });
     MainSynesthesia.getUI().addNode(TestGain1, {
       x: 160, y: 10
     });
 
-    TestGain2 = new Synesthesia.Library.Gain({
+    TestGain2 = new NodeLibrary.Gain({
       synesthesia: MainSynesthesia
     });
     MainSynesthesia.getUI().addNode(TestGain2, {
       x: 160, y: 70
     });
 
-    TestDelay1 = new Synesthesia.Library.Delay({
+    TestDelay1 = new NodeLibrary.Delay({
       synesthesia: MainSynesthesia
     });
     MainSynesthesia.getUI().addNode(TestDelay1, {
       x: 300, y: 250
     });
 
-    TestOscilloscope = new Synesthesia.Library.Oscilloscope({
+    TestOscilloscope = new NodeLibrary.Oscilloscope({
       synesthesia: MainSynesthesia
     });
     MainSynesthesia.getUI().addNode(TestOscilloscope, {
       x: 300, y: 130,
     });
 
-    TestBiquadFilter = new Synesthesia.Library.BiquadFilter({
+    TestBiquadFilter = new NodeLibrary.BiquadFilter({
       synesthesia: MainSynesthesia
     });
     MainSynesthesia.getUI().addNode(TestBiquadFilter, {
       x: 20, y: 370
     });
 
-    TestPanner = new Synesthesia.Library.Panner({
+    TestPanner = new NodeLibrary.Panner({
       synesthesia: MainSynesthesia
     });
     MainSynesthesia.getUI().addNode(TestPanner, {
       x: 440, y: 10
     });
 
-    TestDynamicsCompressor = new Synesthesia.Library.DynamicsCompressor({
+    TestDynamicsCompressor = new NodeLibrary.DynamicsCompressor({
       synesthesia: MainSynesthesia
     });
     MainSynesthesia.getUI().addNode(TestDynamicsCompressor, {
       x: 460, y: 370
     });
 
-    TestLiveInput = new Synesthesia.Library.LiveInput({
+    TestLiveInput = new NodeLibrary.LiveInput({
       synesthesia: MainSynesthesia
     });
     MainSynesthesia.getUI().addNode(TestLiveInput, {

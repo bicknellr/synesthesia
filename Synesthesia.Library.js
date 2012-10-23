@@ -1,23 +1,26 @@
-module("Synesthesia.Library",
-["Utilities", "Synesthesia", "Synesthesia.Graph", "Synesthesia.UI", "Synesthesia.WindowSystem"],
+module("Synesthesia:NodeLibrary",
+["Utilities", "Synesthesia:Graph", "Synesthesia:UILibrary", "Synesthesia:WindowSystem"],
 function () {
 
   var Utilities = require("Utilities");
 
   var Synesthesia = require("Synesthesia");
+  var Graph = require("Synesthesia:Graph");
+  var UILibrary = require("Synesthesia:UILibrary");
+  var WindowSystem = require("Synesthesia:WindowSystem");
 
-  Synesthesia.Library = {};
+  var NodeLibrary = {};
 
-  Synesthesia.Library.MainOutput = (function () {
+  NodeLibrary.MainOutput = (function () {
     function MainOutput (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Synesthesia.Graph.Node.AudioDestinationNode.apply(this, arguments);
+      Graph.Node.AudioDestinationNode.apply(this, arguments);
 
       this.synesthesia = this.params.synesthesia;
 
       this.setInputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -31,14 +34,14 @@ function () {
       this.setOutputDescriptors({});
 
       // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
+      this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Main Output"
       });
     }
 
     MainOutput.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node.AudioDestinationNode()
+      new Graph.Node.AudioDestinationNode()
     );
 
     MainOutput.prototype.getWindow = function () {
@@ -71,11 +74,11 @@ function () {
     return MainOutput;
   })();
 
-  Synesthesia.Library.KeyboardInput = (function () {
+  NodeLibrary.KeyboardInput = (function () {
     function KeyboardInput (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Synesthesia.Graph.Node.NoteSourceNode.apply(this, arguments);
+      Graph.Node.NoteSourceNode.apply(this, arguments);
 
       this.synesthesia = this.params.synesthesia;
       this.notes = {};
@@ -134,7 +137,7 @@ function () {
       this.setInputDescriptors({});
 
       this.setOutputDescriptors({
-        "notes": new Synesthesia.Graph.Endpoint({
+        "notes": new Graph.Endpoint({
           node: this,
           name: "notes",
           type: "notes",
@@ -146,14 +149,14 @@ function () {
       });
 
       // DEFINE LAST
-      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
+      this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Keyboard"
       });
     }
 
     KeyboardInput.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node.NoteSourceNode()
+      new Graph.Node.NoteSourceNode()
     );
 
     KeyboardInput.prototype.keydown = function (e) {
@@ -212,12 +215,12 @@ function () {
     return KeyboardInput;
   })();
 
-  Synesthesia.Library.LiveInput = (function () {
+  NodeLibrary.LiveInput = (function () {
     function LiveInput (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
-      Synesthesia.Graph.Node.AudioDestinationNode.apply(this, arguments);
+      Graph.Node.AudioSourceNode.apply(this, arguments);
+      Graph.Node.AudioDestinationNode.apply(this, arguments);
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
@@ -234,7 +237,7 @@ function () {
       });
 
       this.setOutputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -247,7 +250,7 @@ function () {
       });
 
       // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
+      this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Live Input",
         resizable: false,
@@ -256,8 +259,8 @@ function () {
     }
 
     LiveInput.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node.AudioSourceNode(),
-      new Synesthesia.Graph.Node.AudioDestinationNode()
+      new Graph.Node.AudioSourceNode(),
+      new Graph.Node.AudioDestinationNode()
     );
 
     LiveInput.prototype.getWindow = function () {
@@ -315,7 +318,7 @@ function () {
           this.audio_stream.connect(this.node);
         }).bind(this),
         function (err) {
-          console.error("Synesthesia.Library.LiveInput: Could not get media stream.");
+          console.error("NodeLibrary.LiveInput: Could not get media stream.");
           console.error(err);
         }
       );
@@ -337,12 +340,12 @@ function () {
     return LiveInput;
   })();
 
-  Synesthesia.Library.Gain = (function () {
+  NodeLibrary.Gain = (function () {
     function Gain (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
-      Synesthesia.Graph.Node.AudioDestinationNode.apply(this, arguments);
+      Graph.Node.AudioSourceNode.apply(this, arguments);
+      Graph.Node.AudioDestinationNode.apply(this, arguments);
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
@@ -360,7 +363,7 @@ function () {
       this.gain_sync.setValue(this, this.node.gain.value);
 
       this.setInputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -369,7 +372,7 @@ function () {
           ],
           direction: "input"
         }),
-        "gain": new Synesthesia.Graph.Endpoint({
+        "gain": new Graph.Endpoint({
           node: this,
           name: "gain",
           type: "AudioParam",
@@ -382,7 +385,7 @@ function () {
       });
 
       this.setOutputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -395,7 +398,7 @@ function () {
       });
 
       // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
+      this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Gain",
         resizable: false,
@@ -404,8 +407,8 @@ function () {
     }
 
     Gain.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node.AudioSourceNode(),
-      new Synesthesia.Graph.Node.AudioDestinationNode()
+      new Graph.Node.AudioSourceNode(),
+      new Graph.Node.AudioDestinationNode()
     );
 
     Gain.prototype.getWindow = function () {
@@ -479,7 +482,7 @@ function () {
     Gain.prototype.informWindowPrepared = function (div) {
       this.div = div;
 
-      this.gain_drag_value =  new Synesthesia.UI.DragValue({
+      this.gain_drag_value =  new UILibrary.DragValue({
         sync_value: this.gain_sync,
         min_value: this.node.gain.minValue,
         max_value: this.node.gain.maxValue,
@@ -488,7 +491,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.drag_value_table = new Synesthesia.UI.DragValueTable({
+      this.drag_value_table = new UILibrary.DragValueTable({
         values: [
           { label: "Gain",
             drag_value: this.gain_drag_value
@@ -507,12 +510,12 @@ function () {
     return Gain;
   })();
 
-  Synesthesia.Library.Delay = (function () {
+  NodeLibrary.Delay = (function () {
     function Delay (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
-      Synesthesia.Graph.Node.AudioDestinationNode.apply(this, arguments);
+      Graph.Node.AudioSourceNode.apply(this, arguments);
+      Graph.Node.AudioDestinationNode.apply(this, arguments);
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
@@ -530,7 +533,7 @@ function () {
       this.delayTime_sync.setValue(this, this.node.delayTime.value);
 
       this.setInputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -542,7 +545,7 @@ function () {
       });
 
       this.setOutputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -555,7 +558,7 @@ function () {
       });
 
       // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
+      this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Delay",
         resizable: false,
@@ -564,8 +567,8 @@ function () {
     }
 
     Delay.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node.AudioSourceNode(),
-      new Synesthesia.Graph.Node.AudioDestinationNode()
+      new Graph.Node.AudioSourceNode(),
+      new Graph.Node.AudioDestinationNode()
     );
 
     Delay.prototype.getWindow = function () {
@@ -620,7 +623,7 @@ function () {
     Delay.prototype.informWindowPrepared = function (div) {
       this.div = div;
 
-      this.delayTime_drag_value = new Synesthesia.UI.DragValue({
+      this.delayTime_drag_value = new UILibrary.DragValue({
         sync_value: this.delayTime_sync,
         min_value: this.node.delayTime.minValue,
         max_value: this.node.delayTime.maxValue,
@@ -632,7 +635,7 @@ function () {
         }
       });
 
-      var drag_value_table = new Synesthesia.UI.DragValueTable({
+      var drag_value_table = new UILibrary.DragValueTable({
         values: [
           { label: "Time",
             drag_value: this.delayTime_drag_value
@@ -653,12 +656,12 @@ function () {
     return Delay;
   })();
 
-  Synesthesia.Library.DynamicsCompressor = (function () {
+  NodeLibrary.DynamicsCompressor = (function () {
     function DynamicsCompressor (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
-      Synesthesia.Graph.Node.AudioDestinationNode.apply(this, arguments);
+      Graph.Node.AudioSourceNode.apply(this, arguments);
+      Graph.Node.AudioDestinationNode.apply(this, arguments);
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
@@ -701,7 +704,7 @@ function () {
       this.release_sync.setValue(this, this.node.release.value);
 
       this.setInputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -713,7 +716,7 @@ function () {
       });
 
       this.setOutputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -726,7 +729,7 @@ function () {
       });
 
       // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
+      this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Dynamics Compressor",
         resizable: false,
@@ -735,8 +738,8 @@ function () {
     }
 
     DynamicsCompressor.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node.AudioSourceNode(),
-      new Synesthesia.Graph.Node.AudioDestinationNode()
+      new Graph.Node.AudioSourceNode(),
+      new Graph.Node.AudioDestinationNode()
     );
 
     DynamicsCompressor.prototype.getWindow = function () {
@@ -779,7 +782,7 @@ function () {
     DynamicsCompressor.prototype.informWindowPrepared = function (div) {
       this.div = div;
 
-      this.threshold_drag_value = new Synesthesia.UI.DragValue({
+      this.threshold_drag_value = new UILibrary.DragValue({
         sync_value: this.threshold_sync,
         min_value: this.node.threshold.minValue,
         max_value: this.node.threshold.maxValue,
@@ -791,7 +794,7 @@ function () {
         }
       });
 
-      this.knee_drag_value = new Synesthesia.UI.DragValue({
+      this.knee_drag_value = new UILibrary.DragValue({
         sync_value: this.knee_sync,
         min_value: this.node.knee.minValue,
         max_value: this.node.knee.maxValue,
@@ -803,7 +806,7 @@ function () {
         }
       });
 
-      this.ratio_drag_value = new Synesthesia.UI.DragValue({
+      this.ratio_drag_value = new UILibrary.DragValue({
         sync_value: this.ratio_sync,
         min_value: this.node.ratio.minValue,
         max_value: this.node.ratio.maxValue,
@@ -812,7 +815,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      var drag_value_table_r1 = new Synesthesia.UI.DragValueTable({
+      var drag_value_table_r1 = new UILibrary.DragValueTable({
         stack: "horizontal",
         values: [
           { label: "Threshold",
@@ -829,7 +832,7 @@ function () {
       drag_value_table_r1.getElement().style.width = "100%";
       this.div.appendChild(drag_value_table_r1.getElement());
 
-      this.reduction_drag_value = new Synesthesia.UI.DragValue({
+      this.reduction_drag_value = new UILibrary.DragValue({
         sync_value: this.reduction_sync,
         min_value: this.node.reduction.minValue,
         max_value: this.node.reduction.maxValue,
@@ -841,7 +844,7 @@ function () {
         }
       });
 
-      this.attack_drag_value = new Synesthesia.UI.DragValue({
+      this.attack_drag_value = new UILibrary.DragValue({
         sync_value: this.attack_sync,
         min_value: this.node.attack.minValue,
         max_value: this.node.attack.maxValue,
@@ -853,7 +856,7 @@ function () {
         }
       });
 
-      this.release_drag_value = new Synesthesia.UI.DragValue({
+      this.release_drag_value = new UILibrary.DragValue({
         sync_value: this.release_sync,
         min_value: this.node.release.minValue,
         max_value: this.node.release.maxValue,
@@ -865,7 +868,7 @@ function () {
         }
       });
 
-      var drag_value_table_r2 = new Synesthesia.UI.DragValueTable({
+      var drag_value_table_r2 = new UILibrary.DragValueTable({
         stack: "horizontal",
         values: [
           { label: "Reduction",
@@ -890,12 +893,12 @@ function () {
     return DynamicsCompressor;
   })();
 
-  Synesthesia.Library.Panner = (function () {
+  NodeLibrary.Panner = (function () {
     function Panner (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
-      Synesthesia.Graph.Node.AudioDestinationNode.apply(this, arguments);
+      Graph.Node.AudioSourceNode.apply(this, arguments);
+      Graph.Node.AudioDestinationNode.apply(this, arguments);
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
@@ -1064,7 +1067,7 @@ function () {
       // Endpoint Descriptors
 
       this.setInputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -1076,7 +1079,7 @@ function () {
       });
 
       this.setOutputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -1090,7 +1093,7 @@ function () {
 
       // NodeWindow
 
-      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
+      this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Panner",
         resizable: false,
@@ -1111,8 +1114,8 @@ function () {
     };
 
     Panner.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node.AudioSourceNode(),
-      new Synesthesia.Graph.Node.AudioDestinationNode()
+      new Graph.Node.AudioSourceNode(),
+      new Graph.Node.AudioDestinationNode()
     );
 
     Panner.prototype.getWindow = function () {
@@ -1166,7 +1169,7 @@ function () {
 
       // Panning model.
 
-      this.panningModel_radiogroup = new Synesthesia.UI.RadioGroup({
+      this.panningModel_radiogroup = new UILibrary.RadioGroup({
         options: [
           { label: "Equal Power", value: Panner.PanningModel.EQUALPOWER },
           { label: "HRTF", value: Panner.PanningModel.HRTF, selected: true },
@@ -1179,7 +1182,7 @@ function () {
         }).bind(this)
       });
 
-      this.panningModel_labeleddiv = new Synesthesia.UI.LabeledDiv({
+      this.panningModel_labeleddiv = new UILibrary.LabeledDiv({
         label: "Panning Model",
         content: this.panningModel_radiogroup.getElement()
       });
@@ -1187,7 +1190,7 @@ function () {
       
       // Distance model.
 
-      this.distanceModel_radiogroup = new Synesthesia.UI.RadioGroup({
+      this.distanceModel_radiogroup = new UILibrary.RadioGroup({
         options: [
           { label: "Linear", value: Panner.DistanceModel.LINEAR_DISTANCE },
           { label: "Inverse", value: Panner.DistanceModel.INVERSE_DISTANCE, selected: true },
@@ -1198,7 +1201,7 @@ function () {
         }).bind(this)
       });
 
-      this.distanceModel_labeleddiv = new Synesthesia.UI.LabeledDiv({
+      this.distanceModel_labeleddiv = new UILibrary.LabeledDiv({
         label: "Distance Model",
         content: this.distanceModel_radiogroup.getElement()
       });
@@ -1206,7 +1209,7 @@ function () {
 
       // Distance model parameters.
 
-      this.refDistance_drag_value = new Synesthesia.UI.DragValue({
+      this.refDistance_drag_value = new UILibrary.DragValue({
         sync_value: this.refDistance_sync,
         min_value: 0,
         max_value: 10,
@@ -1218,7 +1221,7 @@ function () {
         }
       });
 
-      this.maxDistance_drag_value = new Synesthesia.UI.DragValue({
+      this.maxDistance_drag_value = new UILibrary.DragValue({
         sync_value: this.maxDistance_sync,
         min_value: 0,
         max_value: 10,
@@ -1230,7 +1233,7 @@ function () {
         }
       });
 
-      this.rolloffFactor_drag_value = new Synesthesia.UI.DragValue({
+      this.rolloffFactor_drag_value = new UILibrary.DragValue({
         sync_value: this.rolloffFactor_sync,
         min_value: 0,
         max_value: 10,
@@ -1239,7 +1242,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.distance_dragvaluetable = new Synesthesia.UI.DragValueTable({
+      this.distance_dragvaluetable = new UILibrary.DragValueTable({
         stack: "horizontal",
         values: [
           { label: "RefDist",
@@ -1255,7 +1258,7 @@ function () {
       });
       this.distance_dragvaluetable.getElement().style.width = "100%";
 
-      this.distance_labeleddiv = new Synesthesia.UI.LabeledDiv({
+      this.distance_labeleddiv = new UILibrary.LabeledDiv({
         label: "Distance Parameters",
         content: this.distance_dragvaluetable.getElement()
       });
@@ -1263,7 +1266,7 @@ function () {
 
       // Cone parameters.
 
-      this.coneInnerAngle_drag_value = new Synesthesia.UI.DragValue({
+      this.coneInnerAngle_drag_value = new UILibrary.DragValue({
         sync_value: this.coneInnerAngle_sync,
         min_value: 0,
         max_value: 360,
@@ -1274,7 +1277,7 @@ function () {
         }
       });
 
-      this.coneOuterAngle_drag_value = new Synesthesia.UI.DragValue({
+      this.coneOuterAngle_drag_value = new UILibrary.DragValue({
         sync_value: this.coneOuterAngle_sync,
         min_value: 0,
         max_value: 360,
@@ -1285,7 +1288,7 @@ function () {
         }
       });
 
-      this.coneOuterGain_drag_value = new Synesthesia.UI.DragValue({
+      this.coneOuterGain_drag_value = new UILibrary.DragValue({
         sync_value: this.coneOuterGain_sync,
         min_value: 0,
         max_value: 5,
@@ -1294,7 +1297,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.cone_dragvaluetable = new Synesthesia.UI.DragValueTable({
+      this.cone_dragvaluetable = new UILibrary.DragValueTable({
         stack: "horizontal",
         values: [
           { label: "Inner",
@@ -1310,7 +1313,7 @@ function () {
       });
       this.cone_dragvaluetable.getElement().style.width = "100%";
 
-      this.cone_labeleddiv = new Synesthesia.UI.LabeledDiv({
+      this.cone_labeleddiv = new UILibrary.LabeledDiv({
         label: "Cone Parameters",
         content: this.cone_dragvaluetable.getElement()
       });
@@ -1318,7 +1321,7 @@ function () {
 
       // Position.
 
-      this.positionX_drag_value = new Synesthesia.UI.DragValue({
+      this.positionX_drag_value = new UILibrary.DragValue({
         sync_value: this.positionX_sync,
         min_value: -20,
         max_value: 20,
@@ -1327,7 +1330,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.positionY_drag_value = new Synesthesia.UI.DragValue({
+      this.positionY_drag_value = new UILibrary.DragValue({
         sync_value: this.positionY_sync,
         min_value: -20,
         max_value: 20,
@@ -1336,7 +1339,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.positionZ_drag_value = new Synesthesia.UI.DragValue({
+      this.positionZ_drag_value = new UILibrary.DragValue({
         sync_value: this.positionZ_sync,
         min_value: -20,
         max_value: 20,
@@ -1345,7 +1348,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.position_dragvaluetable = new Synesthesia.UI.DragValueTable({
+      this.position_dragvaluetable = new UILibrary.DragValueTable({
         stack: "horizontal",
         values: [
           { label: "X",
@@ -1361,7 +1364,7 @@ function () {
       });
       this.position_dragvaluetable.getElement().style.width = "100%";
 
-      this.position_labeleddiv = new Synesthesia.UI.LabeledDiv({
+      this.position_labeleddiv = new UILibrary.LabeledDiv({
         label: "Position",
         content: this.position_dragvaluetable.getElement()
       })
@@ -1369,7 +1372,7 @@ function () {
 
       // Orienation.
 
-      this.orientationX_drag_value = new Synesthesia.UI.DragValue({
+      this.orientationX_drag_value = new UILibrary.DragValue({
         sync_value: this.orientationX_sync,
         min_value: -20,
         max_value: 20,
@@ -1378,7 +1381,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.orientationY_drag_value = new Synesthesia.UI.DragValue({
+      this.orientationY_drag_value = new UILibrary.DragValue({
         sync_value: this.orientationY_sync,
         min_value: -20,
         max_value: 20,
@@ -1387,7 +1390,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.orientationZ_drag_value = new Synesthesia.UI.DragValue({
+      this.orientationZ_drag_value = new UILibrary.DragValue({
         sync_value: this.orientationZ_sync,
         min_value: -20,
         max_value: 20,
@@ -1396,7 +1399,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.orientation_dragvaluetable = new Synesthesia.UI.DragValueTable({
+      this.orientation_dragvaluetable = new UILibrary.DragValueTable({
         stack: "horizontal",
         values: [
           { label: "X",
@@ -1412,7 +1415,7 @@ function () {
       });
       this.orientation_dragvaluetable.getElement().style.width = "100%";
 
-      this.orientation_labeleddiv = new Synesthesia.UI.LabeledDiv({
+      this.orientation_labeleddiv = new UILibrary.LabeledDiv({
         label: "Orientation",
         content: this.orientation_dragvaluetable.getElement()
       });
@@ -1420,7 +1423,7 @@ function () {
 
       // Velocity.
 
-      this.velocityX_drag_value = new Synesthesia.UI.DragValue({
+      this.velocityX_drag_value = new UILibrary.DragValue({
         sync_value: this.velocityX_sync,
         min_value: -20,
         max_value: 20,
@@ -1429,7 +1432,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.velocityY_drag_value = new Synesthesia.UI.DragValue({
+      this.velocityY_drag_value = new UILibrary.DragValue({
         sync_value: this.velocityY_sync,
         min_value: -20,
         max_value: 20,
@@ -1438,7 +1441,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.velocityZ_drag_value = new Synesthesia.UI.DragValue({
+      this.velocityZ_drag_value = new UILibrary.DragValue({
         sync_value: this.velocityZ_sync,
         min_value: -20,
         max_value: 20,
@@ -1447,7 +1450,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.velocity_dragvaluetable = new Synesthesia.UI.DragValueTable({
+      this.velocity_dragvaluetable = new UILibrary.DragValueTable({
         stack: "horizontal",
         values: [
           { label: "X",
@@ -1463,7 +1466,7 @@ function () {
       });
       this.velocity_dragvaluetable.getElement().style.width = "100%";
 
-      this.velocity_labeleddiv = new Synesthesia.UI.LabeledDiv({
+      this.velocity_labeleddiv = new UILibrary.LabeledDiv({
         label: "Velocity",
         content: this.velocity_dragvaluetable.getElement()
       });
@@ -1477,12 +1480,12 @@ function () {
     return Panner;
   })();
 
-  Synesthesia.Library.BiquadFilter = (function () {
+  NodeLibrary.BiquadFilter = (function () {
     function BiquadFilter (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
-      Synesthesia.Graph.Node.AudioDestinationNode.apply(this, arguments);
+      Graph.Node.AudioSourceNode.apply(this, arguments);
+      Graph.Node.AudioDestinationNode.apply(this, arguments);
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
@@ -1523,7 +1526,7 @@ function () {
       // Set up endpoint descriptors.
 
       this.setInputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -1535,7 +1538,7 @@ function () {
       });
 
       this.setOutputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -1550,7 +1553,7 @@ function () {
       this.canvas = null;
 
       // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
+      this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Biquad Filter",
         use_flex: false,
@@ -1570,8 +1573,8 @@ function () {
     };
 
     BiquadFilter.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node.AudioSourceNode(),
-      new Synesthesia.Graph.Node.AudioDestinationNode()
+      new Graph.Node.AudioSourceNode(),
+      new Graph.Node.AudioDestinationNode()
     );
 
     BiquadFilter.prototype.getWindow = function () {
@@ -1614,7 +1617,7 @@ function () {
     BiquadFilter.prototype.informWindowPrepared = function (div) {
       this.div = div;
 
-      this.type_radio_group = new Synesthesia.UI.RadioGroup({
+      this.type_radio_group = new UILibrary.RadioGroup({
         options: [
           { label: "lowpass", value: BiquadFilter.Type.LOWPASS, selected: true },
           { label: "highpass", value: BiquadFilter.Type.HIGHPASS },
@@ -1632,12 +1635,13 @@ function () {
         }).bind(this)
       });
 
-      // Maybe?
-      this.type_radio_group.getElement().style.margin = "-1px -1px 1px -1px";
+      this.type_labeleddiv = new UILibrary.LabeledDiv({
+        label: "Type",
+        content: this.type_radio_group.getElement()
+      });
+      this.div.appendChild(this.type_labeleddiv.getElement());
 
-      this.div.appendChild(this.type_radio_group.getElement());
-
-      this.frequency_drag_value = new Synesthesia.UI.DragValue({
+      this.frequency_drag_value = new UILibrary.DragValue({
         sync_value: this.frequency_sync,
         min_value: this.node.frequency.minValue,
         max_value: this.node.frequency.maxValue,
@@ -1648,7 +1652,7 @@ function () {
         }
       });
 
-      this.Q_drag_value = new Synesthesia.UI.DragValue({
+      this.Q_drag_value = new UILibrary.DragValue({
         sync_value: this.Q_sync,
         min_value: this.node.Q.minValue,
         max_value: this.node.Q.maxValue,
@@ -1657,7 +1661,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.gain_drag_value = new Synesthesia.UI.DragValue({
+      this.gain_drag_value = new UILibrary.DragValue({
         sync_value: this.gain_sync,
         min_value: this.node.gain.minValue,
         max_value: this.node.gain.maxValue,
@@ -1666,7 +1670,7 @@ function () {
         direction_lock: "vertical"
       });
 
-      this.drag_value_table = new Synesthesia.UI.DragValueTable({
+      this.drag_value_table = new UILibrary.DragValueTable({
         stack: "horizontal",
         values: [
           { label: "Frequency",
@@ -1684,7 +1688,7 @@ function () {
         table_element.style.width = "100%";
       this.div.appendChild(table_element);
 
-      this.filter_graph = new Synesthesia.UI.ScalableGraph({
+      this.filter_graph = new UILibrary.ScalableGraph({
         x_min: 0, x_max: 22050,
         y_min: 0, y_max: 2,
         scale_x_func: function (x) {
@@ -1707,7 +1711,7 @@ function () {
           return magResponse;
         }).bind(this)
       });
-      this.filter_graph.setDimensions(400, 200);
+      this.filter_graph.setDimensions(450, 200);
       this.filter_graph.getElement().style.marginTop = "1px";
       this.filter_graph.getElement().style.borderTop = "1px solid #808080";
 
@@ -1720,12 +1724,12 @@ function () {
     return BiquadFilter;
   })();
 
-  Synesthesia.Library.Oscillator = (function () {
+  NodeLibrary.Oscillator = (function () {
     function Oscillator (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Synesthesia.Graph.Node.NoteDestinationNode.apply(this, arguments);
-      Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
+      Graph.Node.NoteDestinationNode.apply(this, arguments);
+      Graph.Node.AudioSourceNode.apply(this, arguments);
 
       // BEGIN
 
@@ -1739,7 +1743,7 @@ function () {
       this.osc_map = new Utilities.Map();
 
       this.setInputDescriptors({
-        "notes": new Synesthesia.Graph.Endpoint({
+        "notes": new Graph.Endpoint({
           node: this,
           name: "notes",
           type: "notes",
@@ -1749,7 +1753,7 @@ function () {
           direction: "input"
         })/*,
 
-        "frequency": new Synesthesia.Graph.Endpoint({
+        "frequency": new Graph.Endpoint({
           node: this,
           name: "frequency",
           type: "AudioParam",
@@ -1760,7 +1764,7 @@ function () {
           direction: "input"
         }),
 
-        "detune": new Synesthesia.Graph.Endpoint({
+        "detune": new Graph.Endpoint({
           node: this,
           name: "detune",
           type: "AudioParam",
@@ -1774,7 +1778,7 @@ function () {
       });
 
       this.setOutputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -1786,10 +1790,10 @@ function () {
         })
       });
 
-      // UI
+      // UILibrary
 
       // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
+      this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Oscillator",
         resizable: false,
@@ -1806,8 +1810,8 @@ function () {
     };
 
     Oscillator.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node.NoteDestinationNode(),
-      new Synesthesia.Graph.Node.AudioSourceNode()
+      new Graph.Node.NoteDestinationNode(),
+      new Graph.Node.AudioSourceNode()
     );
 
     // Synesthesia.Instrument
@@ -1850,7 +1854,7 @@ function () {
       }
     };
 
-    // Synesthesia.GraphNode
+    // GraphNode
 
     Oscillator.prototype.informConnected = function (endpoint, connection) {
       switch (endpoint) {
@@ -1878,7 +1882,7 @@ function () {
       }
     };
 
-    // Synesthesia.UI.Node
+    // UILibrary.Node
 
     Oscillator.prototype.getWindow = function () {
       return this.ui_window;
@@ -1887,7 +1891,7 @@ function () {
     Oscillator.prototype.informWindowPrepared = function (div) {
       this.div = div;
 
-      this.type_radio_group = new Synesthesia.UI.RadioGroup({
+      this.type_radiogroup = new UILibrary.RadioGroup({
         options: [
           { label: "sine", value: Oscillator.Type.SINE, selected: true },
           { label: "square", value: Oscillator.Type.SQUARE },
@@ -1899,10 +1903,11 @@ function () {
         }).bind(this)
       });
 
-      // Maybe?
-      this.type_radio_group.getElement().style.margin = "-1px -1px 1px -1px";
-
-      this.div.appendChild(this.type_radio_group.getElement());
+      this.type_labeleddiv = new UILibrary.LabeledDiv({
+        label: "Type",
+        content: this.type_radiogroup.getElement()
+      });
+      this.div.appendChild(this.type_labeleddiv.getElement());
     };
 
     Oscillator.prototype.draw = function () {
@@ -1912,13 +1917,12 @@ function () {
     return Oscillator;
   })();
 
-  // TODO: Write this! Good for debugging.
-  Synesthesia.Library.Oscilloscope = (function () {
+  NodeLibrary.Oscilloscope = (function () {
     function Oscilloscope (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
-      Synesthesia.Graph.Node.AudioDestinationNode.apply(this, arguments);
+      Graph.Node.AudioSourceNode.apply(this, arguments);
+      Graph.Node.AudioDestinationNode.apply(this, arguments);
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
@@ -1938,7 +1942,7 @@ function () {
         this.node.connect(this.audio_sink);
 
       this.setInputDescriptors({
-        "waveform": new Synesthesia.Graph.Endpoint({
+        "waveform": new Graph.Endpoint({
           node: this,
           name: "waveform",
           type: "AudioNode",
@@ -1969,15 +1973,15 @@ function () {
         this.canvas.height = 0;
       this.context = this.canvas.getContext("2d");
 
-      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
+      this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Oscilloscope"
       });
     }
 
     Oscilloscope.prototype = Utilities.extend(
-      new Synesthesia.Graph.Node.AudioSourceNode(),
-      new Synesthesia.Graph.Node.AudioDestinationNode()
+      new Graph.Node.AudioSourceNode(),
+      new Graph.Node.AudioDestinationNode()
     );
 
     Oscilloscope.prototype.getDestinationForInput = function (input_endpoint) {
@@ -2070,4 +2074,5 @@ function () {
     return Oscilloscope;
   })();
 
+  return NodeLibrary;
 });

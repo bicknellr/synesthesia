@@ -1,12 +1,13 @@
-module("Synesthesia.WindowSystem",
-["Utilities", "Synesthesia", "Synesthesia.Graph"],
+module("Synesthesia:WindowSystem",
+["Utilities", "Synesthesia:UILibrary"],
 function () {
 
   var Utilities = require("Utilities");
 
   var Synesthesia = require("Synesthesia");
+  var UILibrary = require("Synesthesia:UILibrary");
 
-  Synesthesia.WindowSystem = (function () {
+  WindowSystem = (function () {
     function WindowSystem (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
@@ -16,7 +17,7 @@ function () {
 
       var canvas = document.createElement("canvas");
       this.container.appendChild(canvas);
-      this.node_canvas = new Synesthesia.WindowSystem.NodeCanvas({
+      this.node_canvas = new WindowSystem.NodeCanvas({
         window_system: this,
         canvas: canvas
       });
@@ -66,7 +67,7 @@ function () {
     return WindowSystem;
   })();
 
-  Synesthesia.WindowSystem.NodeCanvas = (function () {
+  WindowSystem.NodeCanvas = (function () {
     function NodeCanvas (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
@@ -143,7 +144,7 @@ function () {
           edit_connection.from_endpoint.informDisconnected(edit_connection);
           edit_connection.to_endpoint.informDisconnected(edit_connection);
           if (selectable_endpoint.direction == "input") {
-            this.temporary_endpoint = new Synesthesia.WindowSystem.Endpoint({
+            this.temporary_endpoint = new WindowSystem.Endpoint({
               type: null,
               direction: "input"
             });
@@ -151,7 +152,7 @@ function () {
             this.selected_endpoint = edit_connection.from_endpoint;
             edit_connection.setToEndpoint(this.temporary_endpoint);
           } else if (this.selected_endpoint.direction == "output") {
-            this.temporary_endpoint = new Synesthesia.WindowSystem.Endpoint({
+            this.temporary_endpoint = new WindowSystem.Endpoint({
               type: null,
               direction: "output"
             });
@@ -162,12 +163,12 @@ function () {
         } else {
           // Correct direction.
           if (this.selected_endpoint.direction == "input") {
-            this.temporary_endpoint = new Synesthesia.WindowSystem.Endpoint({
+            this.temporary_endpoint = new WindowSystem.Endpoint({
               type: null,
               direction: "output"
             });
             this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
-            this.temporary_connection = new Synesthesia.WindowSystem.Connection({
+            this.temporary_connection = new WindowSystem.Connection({
               from_endpoint: this.temporary_endpoint,
               to_endpoint: this.selected_endpoint,
               descriptor: new Synesthesia.Graph.Connection({
@@ -176,12 +177,12 @@ function () {
               })
             });
           } else if (this.selected_endpoint.direction == "output") {
-            this.temporary_endpoint = new Synesthesia.WindowSystem.Endpoint({
+            this.temporary_endpoint = new WindowSystem.Endpoint({
               type: null,
               direction: "input"
             });
             this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
-            this.temporary_connection = new Synesthesia.WindowSystem.Connection({
+            this.temporary_connection = new WindowSystem.Connection({
               from_endpoint: this.selected_endpoint,
               to_endpoint: this.temporary_endpoint,
               descriptor: new Synesthesia.Graph.Connection({
@@ -337,7 +338,7 @@ function () {
     return NodeCanvas;
   })();
 
-  Synesthesia.WindowSystem.NodeWindow = (function () {
+  WindowSystem.NodeWindow = (function () {
     function NodeWindow (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
@@ -367,14 +368,14 @@ function () {
       this.title = this.params.title || "Node";
 
       this.input_endpoints = this.node.getInputDescriptorsArray().map((function (desc) {
-        return new Synesthesia.WindowSystem.Endpoint({
+        return new WindowSystem.Endpoint({
           descriptor: desc,
           node: this.node
         });
       }).bind(this));
 
       this.output_endpoints = this.node.getOutputDescriptorsArray().map((function (desc) {
-        return new Synesthesia.WindowSystem.Endpoint({
+        return new WindowSystem.Endpoint({
           descriptor: desc,
           node: this.node
         });
@@ -437,7 +438,7 @@ function () {
         this.div.className = "content";
       this.element.appendChild(this.div);
 
-      this._draggable = new Synesthesia.UI.Draggable({
+      this._draggable = new UILibrary.Draggable({
         handle: this.title_div,
         cursor: "-webkit-grabbing",
         callback: this.handle_drag.bind(this)
@@ -449,7 +450,7 @@ function () {
           this.resize_grabber.className = "resize_grabber";
         this.element.appendChild(this.resize_grabber);
 
-        this._resizeable = new Synesthesia.UI.Draggable({
+        this._resizeable = new UILibrary.Draggable({
           handle: this.resize_grabber,
           cursor: "nwse-resize",
           callback_mousedown: this.handle_resize_mousedown.bind(this),
@@ -521,6 +522,8 @@ function () {
       if (this.use_flex) {
         this.element.style.width = "" + this.width + "px";
         this.element.style.height = "" + this.height + "px";
+        this.div.setAttribute("data-width", this.width);
+        this.div.setAttribute("data-height", this.height - this.title_div.offsetHeight);
       } else {
         var container_style = window.getComputedStyle(this.element);
         this.width = parseInt(container_style.getPropertyValue("width"));
@@ -560,7 +563,7 @@ function () {
     return NodeWindow;
   })();
 
-  Synesthesia.WindowSystem.Endpoint = (function () {
+  WindowSystem.Endpoint = (function () {
     function Endpoint (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
@@ -785,7 +788,7 @@ function () {
     return Endpoint;
   })();
 
-  Synesthesia.WindowSystem.Connection = (function () {
+  WindowSystem.Connection = (function () {
     function Connection (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
@@ -793,12 +796,6 @@ function () {
 
       this.from_endpoint = this.params.from_endpoint;
       this.to_endpoint = this.params.to_endpoint;
-      
-      /*
-      console.log("UI.Connection created:");
-      console.log(this.from_endpoint);
-      console.log(this.to_endpoint);
-      */
     }
 
     Connection.prototype.getDescriptor = function () {
@@ -833,9 +830,9 @@ function () {
       var context = canvas.getContext("2d");
       context.save();
         // Set color (based on from endpoint).
-        var color = Synesthesia.WindowSystem.Endpoint.ColorMap[this.from_endpoint.type];
+        var color = WindowSystem.Endpoint.ColorMap[this.from_endpoint.type];
         if (!color) {
-          color = Synesthesia.WindowSystem.Endpoint.ColorMap[this.to_endpoint.type];
+          color = WindowSystem.Endpoint.ColorMap[this.to_endpoint.type];
         }
         context.fillStyle = color || "rgba(256, 0, 0, 1)";
         context.strokeStyle = color || "rgba(256, 0, 0, 1)";
@@ -928,4 +925,5 @@ function () {
     return Connection;
   })();
 
+  return WindowSystem;
 });

@@ -1,6 +1,6 @@
 (function () {
 
-  var modules = {};
+  window.modules = {};
 
   function check_modules () {
     var changes = false;

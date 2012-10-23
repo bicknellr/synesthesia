@@ -1,6 +1,10 @@
-module("Synesthesia", ["Utilities"], function (exports) {
+module("Synesthesia",
+["Utilities", "Synesthesia:UI"],
+function (exports) {
 
   var Utilities = require("Utilities");
+
+  var UI = require("Synesthesia:UI");
 
   var Synesthesia = (function () {
     function Synesthesia (params) {
@@ -13,7 +17,7 @@ module("Synesthesia", ["Utilities"], function (exports) {
 
       this.container = this.params.container;
 
-      this.UI = new Synesthesia.UI({
+      this.UI = new UI({
         container: this.container
       });
     }
