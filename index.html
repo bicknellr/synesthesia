@@ -8,6 +8,8 @@
 <script src="./Synesthesia.Graph.js"></script>
 <script src="./Synesthesia.UI.js"></script>
   <link rel="stylesheet" href="./Synesthesia.UI.css" />
+<script src="./Synesthesia.WindowSystem.js"></script>
+  <link rel="stylesheet" href="./Synesthesia.WindowSystem.css" />
 <script src="./Synesthesia.Library.js"></script>
 
 <style type="text/css">
@@ -36,8 +38,6 @@ window.addEventListener("load", function () {
     MainSynesthesia = new Synesthesia();
     MainUI = new Synesthesia.UI({
       container: document.getElementById("SynesthesiaUIContainer"),
-      node_canvas: document.getElementById("NodeCanvas"),
-      node_div: document.getElementById("NodeDiv")
     });
 
     MainOutput = new Synesthesia.Library.MainOutput({
@@ -120,10 +120,6 @@ window.addEventListener("load", function () {
     MainUI.addNode(TestDynamicsCompressor, {
       x: 460, y: 370
     });
-
-    // UI
-    //MainUI.start();
-    MainUI.draw();
 
   });
 }, false);

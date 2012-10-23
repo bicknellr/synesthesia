@@ -1,5 +1,5 @@
 module("Synesthesia.Library",
-["Utilities", "Synesthesia", "Synesthesia.Graph", "Synesthesia.UI"],
+["Utilities", "Synesthesia", "Synesthesia.Graph", "Synesthesia.UI", "Synesthesia.WindowSystem"],
 function () {
 
   var Utilities = require("Utilities");
@@ -31,7 +31,7 @@ function () {
       this.setOutputDescriptors({});
 
       // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new Synesthesia.UI.NodeWindow({
+      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
         node: this,
         title: "Main Output"
       });
@@ -146,7 +146,7 @@ function () {
       });
 
       // DEFINE LAST
-      this.ui_window = new Synesthesia.UI.NodeWindow({
+      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
         node: this,
         title: "Keyboard"
       });
@@ -270,7 +270,7 @@ function () {
       });
 
       // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new Synesthesia.UI.NodeWindow({
+      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
         node: this,
         title: "Gain",
         resizable: false,
@@ -430,7 +430,7 @@ function () {
       });
 
       // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new Synesthesia.UI.NodeWindow({
+      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
         node: this,
         title: "Delay",
         resizable: false,
@@ -601,7 +601,7 @@ function () {
       });
 
       // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new Synesthesia.UI.NodeWindow({
+      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
         node: this,
         title: "Dynamics Compressor",
         resizable: false,
@@ -965,7 +965,7 @@ function () {
 
       // NodeWindow
 
-      this.ui_window = new Synesthesia.UI.NodeWindow({
+      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
         node: this,
         title: "Panner",
         resizable: false,
@@ -1425,7 +1425,7 @@ function () {
       this.canvas = null;
 
       // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new Synesthesia.UI.NodeWindow({
+      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
         node: this,
         title: "Biquad Filter",
         use_flex: false,
@@ -1664,7 +1664,7 @@ function () {
       // UI
 
       // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new Synesthesia.UI.NodeWindow({
+      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
         node: this,
         title: "Oscillator",
         resizable: false,
@@ -1844,7 +1844,7 @@ function () {
         this.canvas.height = 0;
       this.context = this.canvas.getContext("2d");
 
-      this.ui_window = new Synesthesia.UI.NodeWindow({
+      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
         node: this,
         title: "Oscilloscope"
       });
