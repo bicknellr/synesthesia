@@ -212,6 +212,131 @@ function () {
     return KeyboardInput;
   })();
 
+  Synesthesia.Library.LiveInput = (function () {
+    function LiveInput (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Synesthesia.Graph.Node.AudioSourceNode.apply(this, arguments);
+      Synesthesia.Graph.Node.AudioDestinationNode.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+      this.context = this.synesthesia.getContext();
+      this.node = null;
+      if (this.context.createGain) {
+        this.node = this.context.createGain();
+      } else if (this.context.createGainNode) {
+        this.node = this.context.createGainNode();
+      }
+
+      this.audio_stream = null;
+
+      this.setInputDescriptors({
+      });
+
+      this.setOutputDescriptors({
+        "waveform": new Synesthesia.Graph.Endpoint({
+          node: this,
+          name: "waveform",
+          type: "AudioNode",
+          accepted_types: [
+            "AudioNode",
+            "AudioParam"
+          ],
+          direction: "output"
+        })
+      });
+
+      // MUST BE DEFINED AFTER ENDPOINTS
+      this.ui_window = new Synesthesia.WindowSystem.NodeWindow({
+        node: this,
+        title: "Live Input",
+        resizable: false,
+        use_flex: false
+      });
+    }
+
+    LiveInput.prototype = Utilities.extend(
+      new Synesthesia.Graph.Node.AudioSourceNode(),
+      new Synesthesia.Graph.Node.AudioDestinationNode()
+    );
+
+    LiveInput.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    LiveInput.prototype.informConnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getInputDescriptors()["gain"]:
+          return;
+          // TODO: See informDisconnected.
+          if (this.div.contains(this.range_dragger.getElement())) {
+            this.range_dragger_replacement = document.createTextNode("<connected>");
+            this.div.replaceChild(
+              this.range_dragger_replacement,
+              this.range_dragger.getElement()
+            );
+          }
+          break;
+        case this.getOutputDescriptors()["waveform"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
+          this.connectSourceToDestination(
+            this.node,
+            other_node.getDestinationForInput(other_endpoint)
+          );
+          break;
+      }
+    };
+
+    LiveInput.prototype.informDisconnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["waveform"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
+          this.disconnectSourceFromDestination(
+            this.node,
+            other_node.getDestinationForInput(other_endpoint)
+          );
+          break;
+      }
+    };
+
+    LiveInput.prototype.getDestinationForInput = function (input_endpoint) {
+      switch (input_endpoint) {
+        case this.getInputDescriptors()["waveform"]:
+          return this.node;
+      }
+    };
+
+    LiveInput.prototype.connectStream = function () {
+      navigator.webkitGetUserMedia({audio: true},
+        (function (stream) {
+          this.audio_stream = this.context.createMediaStreamSource(stream);
+          this.audio_stream.connect(this.node);
+        }).bind(this),
+        function (err) {
+          console.error("Synesthesia.Library.LiveInput: Could not get media stream.");
+          console.error(err);
+        }
+      );
+    };
+
+    LiveInput.prototype.informWindowPrepared = function (div) {
+      this.div = div;
+
+      this.connect_button = document.createElement("button");
+        this.connect_button.appendChild(document.createTextNode("connect"));
+        this.connect_button.addEventListener("click", this.connectStream.bind(this), false);
+
+      this.div.appendChild(this.connect_button);
+    };
+
+    LiveInput.prototype.draw = function () {
+    };
+
+    return LiveInput;
+  })();
+
   Synesthesia.Library.Gain = (function () {
     function Gain (params) {
       this.params = (typeof params !== "undefined" ? params : {});

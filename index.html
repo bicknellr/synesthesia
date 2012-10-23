@@ -120,6 +120,13 @@ window.addEventListener("load", function () {
       x: 460, y: 370
     });
 
+    TestLiveInput = new Synesthesia.Library.LiveInput({
+      synesthesia: MainSynesthesia
+    });
+    MainSynesthesia.getUI().addNode(TestLiveInput, {
+      x: 460, y: 500
+    });
+
   });
 }, false);
 
