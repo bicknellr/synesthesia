@@ -6,7 +6,7 @@ function () {
 
   var WindowSystem = require("Synesthesia:WindowSystem");
 
-  UI = (function () {
+  var UI = (function () {
     function UI (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 

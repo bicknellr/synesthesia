@@ -1,10 +1,23 @@
+/*
+  Synesthesia:Graph
+
+    This module handles the internal representation of the graph. This
+    describes how nodes are connected, the ways those connections are
+    managed and the mechanism by which each of those connections has
+    the attributes associated with it propagated through the graph.
+    Propagation methods depend upon the type of information and which
+    node is oriented as the source or destination for that type.
+
+    This module should not have an associated CSS file.
+    No part of this file should make reference to any type of display mechanism or properties.
+*/
 module("Synesthesia:Graph",
 ["Utilities"],
 function () {
 
   var Utilities = require("Utilities");
   
-  Graph = {};
+  var Graph = {};
 
   Graph.Endpoint = (function () {
     function Endpoint (params) {

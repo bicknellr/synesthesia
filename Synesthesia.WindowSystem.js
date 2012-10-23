@@ -1,13 +1,14 @@
 module("Synesthesia:WindowSystem",
-["Utilities", "Synesthesia:UILibrary"],
+["Utilities", "Synesthesia:UILibrary", "Synesthesia:Graph"],
 function () {
 
   var Utilities = require("Utilities");
 
   var Synesthesia = require("Synesthesia");
   var UILibrary = require("Synesthesia:UILibrary");
+  var Graph = require("Synesthesia:Graph");
 
-  WindowSystem = (function () {
+  var WindowSystem = (function () {
     function WindowSystem (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
@@ -171,7 +172,7 @@ function () {
             this.temporary_connection = new WindowSystem.Connection({
               from_endpoint: this.temporary_endpoint,
               to_endpoint: this.selected_endpoint,
-              descriptor: new Synesthesia.Graph.Connection({
+              descriptor: new Graph.Connection({
                 from_endpoint: this.temporary_endpoint.getDescriptor(),
                 to_endpoint: this.selected_endpoint.getDescriptor()
               })
@@ -185,7 +186,7 @@ function () {
             this.temporary_connection = new WindowSystem.Connection({
               from_endpoint: this.selected_endpoint,
               to_endpoint: this.temporary_endpoint,
-              descriptor: new Synesthesia.Graph.Connection({
+              descriptor: new Graph.Connection({
                 from_endpoint: this.selected_endpoint.getDescriptor(),
                 to_endpoint: this.temporary_endpoint.getDescriptor()
               })
