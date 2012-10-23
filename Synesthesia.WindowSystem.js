@@ -722,7 +722,7 @@ function () {
         context.arc(
           10 + (this.direction == "output" ? 1 : -1) * (this.width * this.connections.length),
           10,
-          5,
+          5.5,
           (this.direction == "output" ? -1 : 1) * Math.PI / 2,
           (this.direction == "output" ? 1 : -1) * Math.PI / 2
         );
@@ -734,11 +734,11 @@ function () {
         context.beginPath();
         context.moveTo(
           10 + (this.direction == "output" ? 1 : -1) * (this.width * this.connections.length),
-          5
+          4.5
         );
         context.lineTo(
           10 * ((this.direction == "output" ? 1 : -1) + (this.direction == "input" ? 2 : 0)),
-          5
+          4.5
         );
         context.stroke();
 
@@ -746,11 +746,11 @@ function () {
         context.beginPath();
         context.moveTo(
           10 + (this.direction == "output" ? 1 : -1) * (this.width * this.connections.length),
-          15
+          15.5
         );
         context.lineTo(
           10 * ((this.direction == "output" ? 1 : -1) + (this.direction == "input" ? 2 : 0)),
-          15
+          15.5
         );
         context.stroke();
 
@@ -759,7 +759,7 @@ function () {
         context.arc(
           10,
           10,
-          5,
+          5.5,
           (this.direction == "output" ? 1 : -1) * Math.PI / 2,
           (this.direction == "output" ? -1 : 1) * Math.PI / 2
         );
@@ -771,11 +771,11 @@ function () {
         context.beginPath();
         context.arc(
           10, 10,
-          5,
+          (this.hasFlag("hovering") ? 6 : 5),
           0, 2 * Math.PI
         );
         context.strokeStyle = strokeStyle;
-        context.lineWidth = (this.hasFlag("hovering") ? 3 : 2);
+        context.lineWidth = 2;
         context.stroke();
       }
 

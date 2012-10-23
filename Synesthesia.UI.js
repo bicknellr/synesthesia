@@ -25,6 +25,10 @@ function () {
       return this.container;
     };
 
+    UI.prototype.getWindowSystem = function () {
+      return this.window_system;
+    };
+
     UI.prototype.addNode = function (new_node, params) {
       var params = (typeof params !== "undefined" ? params : {});
 
