@@ -6,16 +6,16 @@ module("Synesthesia", ["Utilities"], function (exports) {
     function Synesthesia (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      this.inputs = [];
-
-      this.input_mapping = new Utilities.Map();
-
-      this.instruments = [];
-
       if (typeof Synesthesia.AudioContext === "undefined") {
         throw new Error("Synesthesia: AudioContext not supported!");
       }
       this.context = new Synesthesia.AudioContext();
+
+      this.container = this.params.container;
+
+      this.UI = new Synesthesia.UI({
+        container: this.container
+      });
     }
 
     Synesthesia.requestAnimationFrame = (
@@ -33,52 +33,8 @@ module("Synesthesia", ["Utilities"], function (exports) {
       return this.context.destination;
     };
 
-    // Inputs
-    Synesthesia.prototype.addInput = function (input) {
-      this.inputs.push(input);
-    };
-
-    Synesthesia.prototype.removeInput = function (input) {
-      return this.inputs.splice(this.inputs.indexOf(input), 1)[0];
-    };
-
-    Synesthesia.prototype.input = function (input) {
-      var receiving_instruments = this.input_mapping.get(input.source);
-      if (!receiving_instruments || receiving_instruments.length == 0) {
-        return;
-      }
-      receiving_instruments.forEach(function (instrument) {
-        instrument.handleInput(input);
-      });
-    };
-    
-    // I/O
-    Synesthesia.prototype.mapInput = function (input, instrument) {
-      var mapping = this.input_mapping.get(input);
-      if (!mapping) {
-        this.input_mapping.set(input, []);
-        mapping = this.input_mapping.get(input);
-      }
-
-      mapping.push(instrument);
-    };
-
-    Synesthesia.prototype.unmapInput = function (input, instrument) {
-      var mapping = this.input_mapping.get(input);
-      if (!mapping) {
-        return null;
-      }
-
-      return mapping.splice(mapping.indexOf(instrument), 1)[0];
-    };
-
-    // Instruments
-    Synesthesia.prototype.addInstrument = function (instrument) {
-      this.instruments.push(instrument);
-    };
-
-    Synesthesia.prototype.removeInstrument = function (instrument) {
-      return this.instruments.splice(this.instruments.indexOf(instrument), 1)[0];
+    Synesthesia.prototype.getUI = function () {
+      return this.UI;
     };
 
     return Synesthesia;
