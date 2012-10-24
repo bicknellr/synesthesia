@@ -1,0 +1,12 @@
+.Synesthesia_UI {
+  display: -webkit-flex;
+  -webkit-flex-direction: column;
+}
+
+  .Synesthesia_UI .mainmenu {
+    -webkit-flex: 0 0 auto;
+  }
+
+  .Synesthesia_UI .windowsystem {
+    -webkit-flex: 1 0 0;
+  }
