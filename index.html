@@ -130,6 +130,13 @@ window.addEventListener("load", function () {
       x: 460, y: 500
     });
 
+    TestFileStream = new NodeLibrary.FileStream({
+      synesthesia: MainSynesthesia
+    });
+    MainSynesthesia.getUI().addNode(TestFileStream, {
+      x: 460, y: 575
+    });
+
   });
 }, false);
 

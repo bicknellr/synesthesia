@@ -338,6 +338,132 @@ function () {
     return LiveInput;
   })();
 
+  NodeLibrary.FileStream = (function () {
+    function FileStream (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Graph.Node.AudioSourceNode.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+      this.context = this.synesthesia.getContext();
+      this.node = null;
+      if (this.context.createGain) {
+        this.node = this.context.createGain();
+      } else if (this.context.createGainNode) {
+        this.node = this.context.createGainNode();
+      }
+
+      this.audio_stream = null;
+
+      this.setInputDescriptors({
+      });
+
+      this.setOutputDescriptors({
+        "waveform": new Graph.Endpoint({
+          node: this,
+          name: "waveform",
+          type: "AudioNode",
+          accepted_types: [
+            "AudioNode",
+            "AudioParam"
+          ],
+          direction: "output"
+        })
+      });
+
+      // MUST BE DEFINED AFTER ENDPOINTS
+      this.ui_window = new WindowSystem.NodeWindow({
+        node: this,
+        title: "File",
+        resizable: false,
+        use_flex: false
+      });
+    }
+
+    FileStream.prototype = Utilities.extend(
+      new Graph.Node.AudioSourceNode()
+    );
+
+    FileStream.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    FileStream.prototype.informConnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getInputDescriptors()["gain"]:
+          return;
+          // TODO: See informDisconnected.
+          if (this.div.contains(this.range_dragger.getElement())) {
+            this.range_dragger_replacement = document.createTextNode("<connected>");
+            this.div.replaceChild(
+              this.range_dragger_replacement,
+              this.range_dragger.getElement()
+            );
+          }
+          break;
+        case this.getOutputDescriptors()["waveform"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
+          this.connectSourceToDestination(
+            this.node,
+            other_node.getDestinationForInput(other_endpoint)
+          );
+          break;
+      }
+    };
+
+    FileStream.prototype.informDisconnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["waveform"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
+          this.disconnectSourceFromDestination(
+            this.node,
+            other_node.getDestinationForInput(other_endpoint)
+          );
+          break;
+      }
+    };
+
+    FileStream.prototype.getDestinationForInput = function (input_endpoint) {
+      switch (input_endpoint) {
+        case this.getInputDescriptors()["waveform"]:
+          return this.node;
+      }
+    };
+
+    FileStream.prototype.handle_change = function (e) {
+      var file_url = URL.createObjectURL(this.fileselect_element.files[0]);
+      if (!this.mediaelementsource_node) {
+        this.mediaelementsource_node = this.context.createMediaElementSource(this.audio_element);
+        this.mediaelementsource_node.connect(this.node);
+      }
+      this.audio_element.setAttribute("src", file_url);
+    };
+
+    FileStream.prototype.informWindowPrepared = function (div) {
+      this.div = div;
+
+      this.fileselect_element = document.createElement("input");
+        this.fileselect_element.setAttribute("type", "file");
+        this.fileselect_element.setAttribute("multiple", "false");
+        this.fileselect_element.style.display = "block";
+        this.fileselect_element.addEventListener("change", this.handle_change.bind(this), false);
+      this.div.appendChild(this.fileselect_element);
+
+      this.div.appendChild(document.createElement("br"));
+
+      this.audio_element = document.createElement("audio");
+        this.audio_element.setAttribute("controls", true);
+      this.div.appendChild(this.audio_element);
+    };
+
+    FileStream.prototype.draw = function () {
+    };
+
+    return FileStream;
+  })();
+
   NodeLibrary.Gain = (function () {
     function Gain (params) {
       this.params = (typeof params !== "undefined" ? params : {});
