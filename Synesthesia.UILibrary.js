@@ -674,6 +674,10 @@ function () {
       // Don't try removing it if it's already gone.
       if (!document.body.contains(this.element)) return false;
 
+      for (var i = 0; i < this.items.length; i++) {
+        this.items[i].close();
+      }
+
       document.body.removeChild(this.element);
     };
 

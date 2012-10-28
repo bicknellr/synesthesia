@@ -112,7 +112,8 @@
     background-color: #f0f0f0;
     padding: 3px 8px;
   }
-  .Synesthesia_UILibrary_Menu.dropdown > .item:hover {
+  .Synesthesia_UILibrary_Menu.dropdown > .item:hover,
+  .Synesthesia_UILibrary_Menu.dropdown > .item.open {
     background-color: #d0d0d0;
   }
   .Synesthesia_UILibrary_Menu.dropdown > .item:active {

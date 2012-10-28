@@ -44,10 +44,24 @@ function () {
                         }).bind(this)
                       }),
                       new UILibrary.MenuItem({
-                        label: "UI Preferences...",
-                        callback: (function () {
+                        label: "UI Preferences",
+                        submenu: new UILibrary.Menu({
+                          position: "right",
+                          items: [
+                            new UILibrary.MenuItem({
+                              label: "Color Scheme...",
+                              callback: (function () {
 
-                        }).bind(this)
+                              }).bind(this)
+                            }),
+                            new UILibrary.MenuItem({
+                              label: "Font Preferences...",
+                              callback: (function () {
+
+                              }).bind(this)
+                            }),
+                          ]
+                        })
                       }),
                     ]
                   })
