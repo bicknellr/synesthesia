@@ -19,43 +19,44 @@ function () {
         Utilities.addClass(this.container, "Synesthesia_UI");
 
       this.mainmenu_menubar = new UILibrary.Menu({
+        self_closeable: false,
         type: "bar",
         hover: false,
         items: [
           new UILibrary.MenuItem({
-            label: "Synesthesia",
+            content: document.createTextNode("Synesthesia"),
             submenu: new UILibrary.Menu({
               items: [
                 new UILibrary.MenuItem({
-                  label: "About Synesthesia",
+                  content: document.createTextNode("About Synesthesia"),
                   callback: (function () {
 
                   }).bind(this)
                 }),
                 new UILibrary.MenuItem({
-                  label: "Preferences",
+                  content: document.createTextNode("Preferences"),
                   submenu: new UILibrary.Menu({
                     position: "right",
                     items: [
                       new UILibrary.MenuItem({
-                        label: "Audio Preferences...",
+                        content: document.createTextNode("Audio Preferences..."),
                         callback: (function () {
 
                         }).bind(this)
                       }),
                       new UILibrary.MenuItem({
-                        label: "UI Preferences",
+                        content: document.createTextNode("UI Preferences"),
                         submenu: new UILibrary.Menu({
                           position: "right",
                           items: [
                             new UILibrary.MenuItem({
-                              label: "Color Scheme...",
+                              content: document.createTextNode("Color Scheme..."),
                               callback: (function () {
 
                               }).bind(this)
                             }),
                             new UILibrary.MenuItem({
-                              label: "Font Preferences...",
+                              content: document.createTextNode("Font Preferences..."),
                               callback: (function () {
 
                               }).bind(this)
@@ -70,11 +71,11 @@ function () {
             })
           }),
           new UILibrary.MenuItem({
-            label: "File",
+            content: document.createTextNode("File"),
             submenu: new UILibrary.Menu({
               items: [
                 new UILibrary.MenuItem({
-                  label: "New Project...",
+                  content: document.createTextNode("New Project..."),
                   callback: (function () {
 
                   }).bind(this)

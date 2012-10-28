@@ -477,13 +477,13 @@ function () {
     function MenuItem (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      this.label = this.params.label;
-      this.parent_menu = this.params.parent_menu || null;
+      this.content = this.params.content;
+      this.callback = this.params.callback || function () {};
       this.submenu = this.params.submenu || null;
 
       this.element = document.createElement("div");
         Utilities.addClass(this.element, "Synesthesia_UILibrary_MenuItem");
-        this.element.appendChild(document.createTextNode(this.label));
+        this.element.appendChild(this.content);
     }
 
     MenuItem.prototype.getElement = function () {
@@ -502,29 +502,12 @@ function () {
       return false;
     };
 
-    MenuItem.prototype.setParentMenu = function (parent_menu) {
-      this.parent_menu = parent_menu;
-      if (this.submenu) {
-        this.submenu.setParentMenu(parent_menu);
-      }
-    };
-
     MenuItem.prototype.getMenu = function () {
       return this.submenu;
     };
 
     MenuItem.prototype.launch = function () {
-      /*
-      if (this.submenu) {
-        if (this.submenu.isOpen()) {
-          this.submenu.close();
-          Utilities.removeClass(this.element, "open");
-        } else {
-          this.submenu.openWithTargetElement(this.element);
-          Utilities.addClass(this.element, "open");
-        }
-      }
-      */
+      this.callback();
     };
 
     MenuItem.prototype.open = function () {
@@ -548,10 +531,10 @@ function () {
     function Menu (params) {
       this.params = (typeof params !== "undefined" ? params : {});
       
+      this.self_closeable = (typeof this.params.self_closeable !== "undefined" ? this.params.self_closeable : true);
       this.type = this.params.type || "dropdown";
       this.label = this.params.label;
       this.items = this.params.items;
-      this.parent_menu = this.params.parent_menu || null;
 
       this.position = this.params.position || "below";
       this.hover = (typeof this.params.hover !== "undefined" ? this.params.hover : true);
@@ -574,6 +557,8 @@ function () {
               } else {
                 cur_item.open();
               }
+            } else {
+              cur_item.launch();
             }
           };
         })(cur_item)).bind(this));
@@ -632,10 +617,6 @@ function () {
       return false;
     };
 
-    Menu.prototype.setParentMenu = function (parent_menu) {
-      this.parent_menu = parent_menu;
-    };
-
     Menu.prototype.isOpen = function () {
       return document.body.contains(this.element);
     };
@@ -678,7 +659,9 @@ function () {
         this.items[i].close();
       }
 
-      document.body.removeChild(this.element);
+      if (this.self_closeable) {
+        document.body.removeChild(this.element);
+      }
     };
 
     return Menu;
