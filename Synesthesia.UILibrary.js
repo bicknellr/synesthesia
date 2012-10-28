@@ -478,6 +478,8 @@ function () {
       this.params = (typeof params !== "undefined" ? params : {});
 
       this.label = this.params.label;
+      this.parent_menu = this.params.parent_menu || null;
+      this.submenu = this.params.submenu || null;
 
       this.element = document.createElement("div");
         Utilities.addClass(this.element, "Synesthesia_UILibrary_MenuItem");
@@ -486,7 +488,58 @@ function () {
 
     MenuItem.prototype.getElement = function () {
       return this.element;
-    }
+    };
+
+    MenuItem.prototype.contains = function (test_element) {
+      if (this.element == test_element || this.element.contains(test_element)) {
+        return true;
+      }
+
+      if (this.submenu && this.submenu.contains(test_element)) {
+          return true;
+      }
+
+      return false;
+    };
+
+    MenuItem.prototype.setParentMenu = function (parent_menu) {
+      this.parent_menu = parent_menu;
+      if (this.submenu) {
+        this.submenu.setParentMenu(parent_menu);
+      }
+    };
+
+    MenuItem.prototype.getMenu = function () {
+      return this.submenu;
+    };
+
+    MenuItem.prototype.launch = function () {
+      /*
+      if (this.submenu) {
+        if (this.submenu.isOpen()) {
+          this.submenu.close();
+          Utilities.removeClass(this.element, "open");
+        } else {
+          this.submenu.openWithTargetElement(this.element);
+          Utilities.addClass(this.element, "open");
+        }
+      }
+      */
+    };
+
+    MenuItem.prototype.open = function () {
+      if (this.submenu) {
+        this.submenu.openWithTargetElement(this.element);
+        Utilities.addClass(this.element, "open");
+      }
+    };
+
+    MenuItem.prototype.close = function () {
+      if (this.submenu) {
+        this.submenu.close();
+        Utilities.removeClass(this.element, "open");
+      }
+    };
 
     return MenuItem;
   })();
@@ -495,148 +548,136 @@ function () {
     function Menu (params) {
       this.params = (typeof params !== "undefined" ? params : {});
       
-      this.parent_menu = this.params.parent_menu || null;
+      this.type = this.params.type || "dropdown";
       this.label = this.params.label;
       this.items = this.params.items;
+      this.parent_menu = this.params.parent_menu || null;
+
       this.position = this.params.position || "below";
-      this.hover = this.params.hover || false;
+      this.hover = (typeof this.params.hover !== "undefined" ? this.params.hover : true);
 
       this.element = document.createElement("div");
         Utilities.addClass(this.element, "Synesthesia_UILibrary_Menu");
-        this.element.appendChild(document.createTextNode(this.label));
-        this.element.addEventListener("click", this.open.bind(this));
-        if (this.hover) {
-          this.element.addEventListener("mouseover", this.open.bind(this));
-        }
-        this.element.addEventListener("mouseout", this.close.bind(this));
+        Utilities.addClass(this.element, this.type);
 
-      this.dropdown_element = document.createElement("div");
-        Utilities.addClass(this.dropdown_element, "Synesthesia_UILibrary_Menu__dropdown");
+      for (var item_ix = 0; item_ix < this.items.length; item_ix++) {
+        var cur_item = this.items[item_ix];
+
+        var cur_item_element = cur_item.getElement();
+          Utilities.addClass(cur_item_element, "item");
+
+        cur_item_element.addEventListener("click", ((function (cur_item) {
+          return function (e) {
+            if (cur_item.getMenu()) {
+              if (cur_item.getMenu().isOpen()) {
+                cur_item.close();
+              } else {
+                cur_item.open();
+              }
+            }
+          };
+        })(cur_item)).bind(this));
+
+        cur_item_element.addEventListener("mouseover", ((function (cur_item) {
+          return function (e) {
+            var do_open = false;
+
+            for (var i = 0; i < this.items.length; i++) {
+              if (this.hover || (this.items[i].getMenu() && this.items[i].getMenu().isOpen())) {
+                do_open = true;
+                this.items[i].close();
+              }
+            }
+
+            if (do_open) {
+              cur_item.open();
+            }
+          };
+        })(cur_item)).bind(this));
+
+        this.element.appendChild(cur_item_element);
+      }
+
+      window.addEventListener("mousedown", (function (e) {
+        var close_all = true;
         for (var i = 0; i < this.items.length; i++) {
-          var cur_item = this.items[i];
-
-          if (Utilities.conforms(Menu, cur_item)) {
-            cur_item.setParentMenu(this);
+          if (this.items[i].contains(e.target)) {
+            close_all = false;
           }
-
-          Utilities.addClass(cur_item.getElement(), "item");
-
-          this.dropdown_element.appendChild(
-            cur_item.getElement()
-          );
         }
-        this.dropdown_element.addEventListener("mouseout", this.dropdown_mouseout.bind(this));
+
+        if (close_all) {
+          for (var i = 0; i < this.items.length; i++) {
+            this.items[i].close();
+          }
+        }
+      }).bind(this));
     }
 
     Menu.prototype.getElement = function () {
       return this.element;
     };
 
+    Menu.prototype.contains = function (test_element) {
+      if (this.element == test_element || this.element.contains(test_element)) {
+        return true;
+      }
+
+      for (var i = 0; i < this.items.length; i++) {
+        if (this.items[i].contains(test_element)) {
+          return true;
+        }
+      }
+
+      return false;
+    };
+
     Menu.prototype.setParentMenu = function (parent_menu) {
       this.parent_menu = parent_menu;
     };
 
-    Menu.prototype.informOpened = function (child_menu) {
-      console.log("Child opened:");
-      console.log(child_menu);
+    Menu.prototype.isOpen = function () {
+      return document.body.contains(this.element);
     };
 
-    Menu.prototype.open = function (e) {
-      var element_position = Utilities.getPagePosition(this.element);
-      var element_style = window.getComputedStyle(this.element);
-      var dropdown_left = 0;
-      var dropdown_top = 0;
+    Menu.prototype.openWithTargetElement = function (target_element) {
+      // Don't try adding it if it's already there.
+      if (document.body.contains(this.element)) return false;
+
+      var target_position = Utilities.getPagePosition(target_element);
+      var target_style = window.getComputedStyle(target_element);
+      var new_left = 0;
+      var new_top = 0;
       switch (this.position) {
         case "below":
-          dropdown_top = element_position.top + this.element.offsetHeight;
-            dropdown_top += parseInt(element_style.getPropertyValue("border-top-width"));
-          dropdown_left = element_position.left;
-            dropdown_left += parseInt(element_style.getPropertyValue("border-left-width"));
+          new_top = target_position.top + target_element.offsetHeight;
+            new_top += parseInt(target_style.getPropertyValue("border-top-width"));
+            new_top += parseInt(target_style.getPropertyValue("border-bottom-width"));
+          new_left = target_position.left;
+            new_left += parseInt(target_style.getPropertyValue("border-left-width"));
           break;
         case "right":
-          dropdown_top = element_position.top;
-            dropdown_top += parseInt(element_style.getPropertyValue("border-top-width"));
-          dropdown_left = element_position.left + this.element.offsetWidth
-            dropdown_left += parseInt(element_style.getPropertyValue("border-left-width"));
+          new_top = target_position.top;
+            new_top += parseInt(target_style.getPropertyValue("border-top-width"));
+          new_left = target_position.left + target_element.offsetWidth;
+            new_left += parseInt(target_style.getPropertyValue("border-left-width"));
+            new_left += parseInt(target_style.getPropertyValue("border-right-width"));
           break;
       }
-      this.dropdown_element.style.left = "" + dropdown_left + "px";
-      this.dropdown_element.style.top = "" + dropdown_top + "px";
-
-      document.body.appendChild(this.dropdown_element);
-      Utilities.addClass(this.element, "opened");
-      
-      if (this.parent_menu) {
-        this.parent_menu.informOpened(this);
-      }
+      this.element.style.left = "" + new_left + "px";
+      this.element.style.top = "" + new_top + "px";
+ 
+      document.body.appendChild(this.element);
     };
+    
+    Menu.prototype.close = function () {
+      // Don't try removing it if it's already gone.
+      if (!document.body.contains(this.element)) return false;
 
-    Menu.prototype.close = function (e) {
-      if (e) {
-        if (
-          e.toElement == this.element ||
-          e.toElement == this.dropdown_element ||
-          this.dropdown_element.contains(e.toElement)
-        ) {
-          e.stopPropagation();
-          return false;
-        }
-      }
-
-      // Close sub-menus.
-      for (var i = 0; i < this.items.length; i++) {
-        var cur_item = this.items[i];
-        if (Utilities.conforms(Menu, cur_item)) {
-          cur_item.close();
-        }
-      }
-
-      if (document.body.contains(this.dropdown_element)) {
-        document.body.removeChild(this.dropdown_element);
-      }
-      Utilities.removeClass(this.element, "opened");
-    };
-
-    Menu.prototype.dropdown_mouseout = function (e) {
-      if (
-        e.toElement == this.element ||
-        e.toElement == this.dropdown_element ||
-        this.dropdown_element.contains(e.toElement)
-      ) {
-        e.stopImmediatePropagation();
-        return false;
-      }
-      console.log(e);
-      console.log(e.target);
-      this.close();
+      document.body.removeChild(this.element);
     };
 
     return Menu;
-  })();
-
-  UILibrary.MenuBar = (function () {
-    function MenuBar (params) {
-      this.params = (typeof params !== "undefined" ? params : {});
-
-      this.element = document.createElement("div");
-        Utilities.addClass(this.element, "Synesthesia_UILibrary_MenuBar");
-
-      this.items = this.params.items || [];
-
-      for (var i = 0; i < this.items.length; i++) {
-        var cur_item = this.items[i];
-        Utilities.addClass(cur_item.getElement(), "item");
-        this.element.appendChild(
-          cur_item.getElement()
-        );
-      }
-    }
-
-    MenuBar.prototype.getElement = function () {
-      return this.element;
-    };
-
-    return MenuBar;
   })();
 
   return UILibrary;

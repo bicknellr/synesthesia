@@ -18,66 +18,55 @@ function () {
       this.container = this.params.container;
         Utilities.addClass(this.container, "Synesthesia_UI");
 
-      this.mainmenu_menubar = new UILibrary.MenuBar({
-        container: this.mainmenu_container,
+      this.mainmenu_menubar = new UILibrary.Menu({
+        type: "bar",
+        hover: false,
         items: [
-          new UILibrary.Menu({
+          new UILibrary.MenuItem({
             label: "Synesthesia",
-            items: [
-              new UILibrary.MenuItem({
-                label: "About Synesthesia",
-                callback: (function () {
+            submenu: new UILibrary.Menu({
+              items: [
+                new UILibrary.MenuItem({
+                  label: "About Synesthesia",
+                  callback: (function () {
 
-                }).bind(this)
-              }),
-              new UILibrary.Menu({
-                label: "Preferences...",
-                position: "right",
-                hover: true,
-                items: [
-                  new UILibrary.MenuItem({
-                    label: "Audio Preferences",
-                    callback: (function () {
+                  }).bind(this)
+                }),
+                new UILibrary.MenuItem({
+                  label: "Preferences",
+                  submenu: new UILibrary.Menu({
+                    position: "right",
+                    items: [
+                      new UILibrary.MenuItem({
+                        label: "Audio Preferences...",
+                        callback: (function () {
 
-                    }).bind(this)
-                  }),
-                  new UILibrary.MenuItem({
-                    label: "UI Preferences",
-                    callback: (function () {
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        label: "UI Preferences...",
+                        callback: (function () {
 
-                    }).bind(this)
+                        }).bind(this)
+                      }),
+                    ]
                   })
-                ]
-              }),
-              new UILibrary.MenuItem({
-                label: "A fairly long menu item string.",
-                callback: (function () {
-
-                }).bind(this)
-              })
-            ]
+                })
+              ]
+            })
           }),
-          new UILibrary.Menu({
+          new UILibrary.MenuItem({
             label: "File",
-            items: [
-              new UILibrary.MenuItem({
-                label: "New Project...",
-                callback: (function () {
+            submenu: new UILibrary.Menu({
+              items: [
+                new UILibrary.MenuItem({
+                  label: "New Project...",
+                  callback: (function () {
 
-                }).bind(this)
-              })
-            ]
-          }),
-          new UILibrary.Menu({
-            label: "Node",
-            items: [
-              new UILibrary.MenuItem({
-                label: "Add Node...",
-                callback: (function () {
-
-                }).bind(this)
-              })
-            ]
+                  }).bind(this)
+                })
+              ]
+            })
           })
         ]
       });

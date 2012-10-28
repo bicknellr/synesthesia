@@ -77,65 +77,44 @@
 
 /* Menu */
 
-.Synesthesia_UILibrary_MenuItem {
-}
-
-.Synesthesia_UILibrary_Menu {
-}
-  .Synesthesia_UILibrary_Menu__dropdown {
-    color: #606060;
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    margin-left: -1px;
-    min-width: 150px;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 0px 2px 2px 2px;
-    box-shadow: 0px 6px 6px rgba(0, 0, 0, 0.1);
-  }
-  .Synesthesia_UILibrary_Menu__dropdown > .item {
-    color: #606060;
-    background-color: #f0f0f0;
-    /*border-bottom: 1px solid #c0c0c0;*/
-    padding: 3px 8px;
-  }
-  .Synesthesia_UILibrary_Menu__dropdown > .item:hover {
-    background-color: #d0d0d0;
-    /*background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(255, 255, 255, 1)), to(rgba(240, 240, 255, 1)));*/
-  }
-  .Synesthesia_UILibrary_Menu__dropdown > .item.opened {
-    background-color: #d0d0d0;
-    /*background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(255, 255, 255, 1)), to(rgba(240, 240, 255, 1)));*/
-  }
-  .Synesthesia_UILibrary_Menu__dropdown > .item:active,
-  .Synesthesia_UILibrary_Menu__dropdown > .item.opened:active {
-    background-color: #b0b0b0;
-    /*background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(240, 240, 255, 1)), to(rgba(255, 255, 255, 1)));*/
-  }
-  /*
-  .Synesthesia_UILibrary_Menu__dropdown > .item:last-of-type {
-    border-bottom: none;
-  }
-  */
-
-.Synesthesia_UILibrary_MenuBar {
+.Synesthesia_UILibrary_Menu.bar {
   color: #606060;
   overflow: hidden;
   background-color: #e0e0e0;
   background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(255, 255, 255, 0.7)), to(rgba(255, 255, 255, 0)));
 }
-  .Synesthesia_UILibrary_MenuBar > .item {
+  .Synesthesia_UILibrary_Menu.bar > .item {
     display: inline-block;
     padding: 3px 8px;
     border-right: 1px solid #d0d0d0;
     font-weight: lighter;
   }
-  .Synesthesia_UILibrary_MenuBar > .item:first-of-type {
-    border-left: 1px solid #a0a0a0;
-    border-right: 1px solid #a0a0a0;
-    font-weight: normal;
+  .Synesthesia_UILibrary_Menu.bar > .item:first-of-type {
+    border-left: 1px solid #d0d0d0;
   }
-  .Synesthesia_UILibrary_MenuBar > .item.opened {
+  .Synesthesia_UILibrary_Menu.bar > .item.open {
     background-color: #d0d0d0;
-    /*background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(240, 240, 255, 1)), to(rgba(255, 255, 255, 1)));*/
+  }
+
+.Synesthesia_UILibrary_Menu.dropdown {
+  color: #606060;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  margin-left: -1px;
+  min-width: 150px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0px 2px 2px 2px;
+  box-shadow: 0px 6px 6px rgba(0, 0, 0, 0.1);
+}
+  .Synesthesia_UILibrary_Menu.dropdown > .item {
+    color: #606060;
+    background-color: #f0f0f0;
+    padding: 3px 8px;
+  }
+  .Synesthesia_UILibrary_Menu.dropdown > .item:hover {
+    background-color: #d0d0d0;
+  }
+  .Synesthesia_UILibrary_Menu.dropdown > .item:active {
+    background-color: #c0c0c0;
   }
