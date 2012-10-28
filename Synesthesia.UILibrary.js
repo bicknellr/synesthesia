@@ -473,6 +473,171 @@ function () {
     return ScalableGraph;
   })();
 
+  UILibrary.MenuItem = (function () {
+    function MenuItem (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.label = this.params.label;
+
+      this.element = document.createElement("div");
+        Utilities.addClass(this.element, "Synesthesia_UILibrary_MenuItem");
+        this.element.appendChild(document.createTextNode(this.label));
+    }
+
+    MenuItem.prototype.getElement = function () {
+      return this.element;
+    }
+
+    return MenuItem;
+  })();
+
+  UILibrary.Menu = (function () {
+    function Menu (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+      
+      this.parent_menu = this.params.parent_menu || null;
+      this.label = this.params.label;
+      this.items = this.params.items;
+      this.position = this.params.position || "below";
+      this.hover = this.params.hover || false;
+
+      this.element = document.createElement("div");
+        Utilities.addClass(this.element, "Synesthesia_UILibrary_Menu");
+        this.element.appendChild(document.createTextNode(this.label));
+        this.element.addEventListener("click", this.open.bind(this));
+        if (this.hover) {
+          this.element.addEventListener("mouseover", this.open.bind(this));
+        }
+        this.element.addEventListener("mouseout", this.close.bind(this));
+
+      this.dropdown_element = document.createElement("div");
+        Utilities.addClass(this.dropdown_element, "Synesthesia_UILibrary_Menu__dropdown");
+        for (var i = 0; i < this.items.length; i++) {
+          var cur_item = this.items[i];
+
+          if (Utilities.conforms(Menu, cur_item)) {
+            cur_item.setParentMenu(this);
+          }
+
+          Utilities.addClass(cur_item.getElement(), "item");
+
+          this.dropdown_element.appendChild(
+            cur_item.getElement()
+          );
+        }
+        this.dropdown_element.addEventListener("mouseout", this.dropdown_mouseout.bind(this));
+    }
+
+    Menu.prototype.getElement = function () {
+      return this.element;
+    };
+
+    Menu.prototype.setParentMenu = function (parent_menu) {
+      this.parent_menu = parent_menu;
+    };
+
+    Menu.prototype.informOpened = function (child_menu) {
+      console.log("Child opened:");
+      console.log(child_menu);
+    };
+
+    Menu.prototype.open = function (e) {
+      var element_position = Utilities.getPagePosition(this.element);
+      var element_style = window.getComputedStyle(this.element);
+      var dropdown_left = 0;
+      var dropdown_top = 0;
+      switch (this.position) {
+        case "below":
+          dropdown_top = element_position.top + this.element.offsetHeight;
+            dropdown_top += parseInt(element_style.getPropertyValue("border-top-width"));
+          dropdown_left = element_position.left;
+            dropdown_left += parseInt(element_style.getPropertyValue("border-left-width"));
+          break;
+        case "right":
+          dropdown_top = element_position.top;
+            dropdown_top += parseInt(element_style.getPropertyValue("border-top-width"));
+          dropdown_left = element_position.left + this.element.offsetWidth
+            dropdown_left += parseInt(element_style.getPropertyValue("border-left-width"));
+          break;
+      }
+      this.dropdown_element.style.left = "" + dropdown_left + "px";
+      this.dropdown_element.style.top = "" + dropdown_top + "px";
+
+      document.body.appendChild(this.dropdown_element);
+      Utilities.addClass(this.element, "opened");
+      
+      if (this.parent_menu) {
+        this.parent_menu.informOpened(this);
+      }
+    };
+
+    Menu.prototype.close = function (e) {
+      if (e) {
+        if (
+          e.toElement == this.element ||
+          e.toElement == this.dropdown_element ||
+          this.dropdown_element.contains(e.toElement)
+        ) {
+          e.stopPropagation();
+          return false;
+        }
+      }
+
+      // Close sub-menus.
+      for (var i = 0; i < this.items.length; i++) {
+        var cur_item = this.items[i];
+        if (Utilities.conforms(Menu, cur_item)) {
+          cur_item.close();
+        }
+      }
+
+      if (document.body.contains(this.dropdown_element)) {
+        document.body.removeChild(this.dropdown_element);
+      }
+      Utilities.removeClass(this.element, "opened");
+    };
+
+    Menu.prototype.dropdown_mouseout = function (e) {
+      if (
+        e.toElement == this.element ||
+        e.toElement == this.dropdown_element ||
+        this.dropdown_element.contains(e.toElement)
+      ) {
+        e.stopImmediatePropagation();
+        return false;
+      }
+      console.log(e);
+      console.log(e.target);
+      this.close();
+    };
+
+    return Menu;
+  })();
+
+  UILibrary.MenuBar = (function () {
+    function MenuBar (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.element = document.createElement("div");
+        Utilities.addClass(this.element, "Synesthesia_UILibrary_MenuBar");
+
+      this.items = this.params.items || [];
+
+      for (var i = 0; i < this.items.length; i++) {
+        var cur_item = this.items[i];
+        Utilities.addClass(cur_item.getElement(), "item");
+        this.element.appendChild(
+          cur_item.getElement()
+        );
+      }
+    }
+
+    MenuBar.prototype.getElement = function () {
+      return this.element;
+    };
+
+    return MenuBar;
+  })();
 
   return UILibrary;
 });

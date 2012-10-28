@@ -5,6 +5,8 @@
 
   .Synesthesia_UI .mainmenu {
     -webkit-flex: 0 0 auto;
+    border-bottom: 1px solid #808080;
+    padding: 0px 10px;
   }
 
   .Synesthesia_UI .windowsystem {

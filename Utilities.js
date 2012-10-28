@@ -67,7 +67,7 @@ module.declare("Utilities", [], function () {
     var cur_element = element;
     var cur_left = element.offsetLeft;
     var cur_top = element.offsetTop;
-    while (cur_element.offsetParent != document.body) {
+    while (cur_element.offsetParent != null) {
       cur_element = cur_element.offsetParent;
       cur_left += cur_element.offsetLeft;
       cur_top += cur_element.offsetTop;

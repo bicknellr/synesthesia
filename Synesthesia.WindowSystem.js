@@ -51,18 +51,16 @@ function () {
       this.node_canvas.addNodeWindow(node_window);
     };
 
-    WindowSystem.prototype.bringToFront = function (node) {
-      var index = this.nodes.indexOf(node);
-      this.nodes.push(
-        this.nodes.splice(index, 1)[0]
-      );
-      this.draw();
+    WindowSystem.prototype.bringToFront = function (node_window) {
+      // Make the node window the last element in the container to move it to the front.
+      if (this.node_div.children[this.node_div.children.length - 1] != node_window.getElement()) {
+        this.node_div.removeChild(node_window.getElement());
+        this.node_div.appendChild(node_window.getElement());
+        this.draw();
+      }
     };
 
     WindowSystem.prototype.draw = function () {
-      for (var node_ix = 0; node_ix < this.nodes.length; node_ix++) {
-        this.nodes[node_ix].setZIndex(node_ix);
-      }
       this.node_canvas.draw();
     };
 
@@ -438,7 +436,10 @@ function () {
         }
         this.element.style.left = "" + this.x + "px";
         this.element.style.top = "" + this.y + "px";
-        this.element.addEventListener("mousedown", (function () {
+        // This must be "click" otherwise it occurs before the
+        // handler for any element in the window and the node
+        // reordering prevents the click from occurring.
+        this.element.addEventListener("click", (function () {
           this.window_system.bringToFront(this);
         }).bind(this), false);
 
