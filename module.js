@@ -24,7 +24,30 @@ window.module = {
       console.log("module: Processing '" + cur_module.name + "'.");
 
       try {
+        var before = [];
+        for (var prop in window) {
+          before.push(prop);
+        }
+
+        // Run the module.
         cur_module.exports = cur_module.callback.apply(window);
+
+        var after = [];
+        for (var prop in window) {
+          after.push(prop);
+        }
+
+        var polluted_variables = [];
+
+        for (var i = 0; i < after.length; i++) {
+          if (before.indexOf(after[i]) == -1) {
+            polluted_variables.push(after[i]);
+          }
+        }
+        
+        if (polluted_variables.length > 0) {
+          console.warn("module: Global namespace pollution found in '" + cur_module.name + "':\n    " + (polluted_variables.join("\n    ")));
+        }
       } catch (e) {
         if (e.stack) {
           console.error("module: Processing '" + cur_module.name + "' failed:\nStack:\n" + e.stack.toString() + "\nError:\n" + e.toString());
