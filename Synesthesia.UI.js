@@ -1,5 +1,5 @@
 module.declare("Synesthesia:UI",
-["Utilities", "Synesthesia:UILibrary", "Synesthesia:WindowSystem"],
+["Utilities", "Synesthesia:UILibrary", "Synesthesia:WindowSystem", "Synesthesia:NodeLibrary"],
 function () {
 
   var Utilities = module.require("Utilities");
@@ -7,9 +7,13 @@ function () {
   var UILibrary = module.require("Synesthesia:UILibrary");
   var WindowSystem = module.require("Synesthesia:WindowSystem");
 
+  var NodeLibrary = module.require("Synesthesia:NodeLibrary");
+
   var UI = (function () {
     function UI (params) {
       this.params = (typeof params !== "undefined" ? params : {});
+
+      this.synesthesia = this.params.synesthesia;
 
       this.running = false;
 
@@ -30,42 +34,14 @@ function () {
                 new UILibrary.MenuItem({
                   content: document.createTextNode("About Synesthesia"),
                   callback: (function () {
-
+                    alert("Add an about page?");
                   }).bind(this)
                 }),
                 new UILibrary.MenuItem({
                   content: document.createTextNode("Preferences"),
-                  submenu: new UILibrary.Menu({
-                    position: "right",
-                    items: [
-                      new UILibrary.MenuItem({
-                        content: document.createTextNode("Audio Preferences..."),
-                        callback: (function () {
-
-                        }).bind(this)
-                      }),
-                      new UILibrary.MenuItem({
-                        content: document.createTextNode("UI Preferences"),
-                        submenu: new UILibrary.Menu({
-                          position: "right",
-                          items: [
-                            new UILibrary.MenuItem({
-                              content: document.createTextNode("Color Scheme..."),
-                              callback: (function () {
-
-                              }).bind(this)
-                            }),
-                            new UILibrary.MenuItem({
-                              content: document.createTextNode("Font Preferences..."),
-                              callback: (function () {
-
-                              }).bind(this)
-                            }),
-                          ]
-                        })
-                      }),
-                    ]
-                  })
+                  callback: (function () {
+                    alert("Add preferences.");
+                  }).bind(this)
                 })
               ]
             })
@@ -76,6 +52,30 @@ function () {
               items: [
                 new UILibrary.MenuItem({
                   content: document.createTextNode("New Project..."),
+                  callback: (function () {
+
+                  }).bind(this)
+                })
+              ]
+            })
+          }),
+          new UILibrary.MenuItem({
+            content: document.createTextNode("Node"),
+            submenu: new UILibrary.Menu({
+              items: [
+                new UILibrary.MenuItem({
+                  content: document.createTextNode("New Oscillator"),
+                  callback: (function () {
+                    this.addNode(
+                      new NodeLibrary.Oscillator({
+                        synesthesia: this.synesthesia
+                      }),
+                      {x: 0, y: 0}
+                    );
+                  }).bind(this)
+                }),
+                new UILibrary.MenuItem({
+                  content: document.createTextNode("New Gain"),
                   callback: (function () {
 
                   }).bind(this)
