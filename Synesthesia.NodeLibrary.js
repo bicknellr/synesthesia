@@ -1,13 +1,14 @@
 module.declare("Synesthesia:NodeLibrary",
-["Utilities", "Synesthesia:Graph", "Synesthesia:UILibrary", "Synesthesia:WindowSystem"],
+["Utilities", "Synesthesia:Graph", "Synesthesia:UILibrary", "Synesthesia:WindowSystem", "Synesthesia:Envelope"],
 function () {
 
   var Utilities = module.require("Utilities");
 
-  var Synesthesia = module.require("Synesthesia");
   var Graph = module.require("Synesthesia:Graph");
   var UILibrary = module.require("Synesthesia:UILibrary");
   var WindowSystem = module.require("Synesthesia:WindowSystem");
+
+  var Envelope = module.require("Synesthesia:Envelope");
 
   var NodeLibrary = {};
 
@@ -165,7 +166,7 @@ function () {
       var frequency = this.keyToFrequencyMapping(e.keyCode);
       if (!frequency) return;
 
-      var note = new Synesthesia.Note({
+      var note = new Envelope.Note({
         frequency: frequency
       });
 

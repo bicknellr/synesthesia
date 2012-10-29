@@ -44,16 +44,5 @@ function (exports) {
     return Synesthesia;
   })();
 
-  Synesthesia.Note = (function () {
-    function Note (params) {
-      this.params = (typeof params !== "undefined" ? params : {});
-      
-      this.frequency = this.params.frequency || 0;
-      this.velocity = this.params.velocity || 0;
-    };
-
-    return Note;
-  })();
-
   return Synesthesia;
 });
