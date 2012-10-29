@@ -64,30 +64,179 @@ function () {
             submenu: new UILibrary.Menu({
               items: [
                 new UILibrary.MenuItem({
-                  content: document.createTextNode("New Oscillator"),
-                  callback: (function () {
+                  content: document.createTextNode("New..."),
+                  submenu: new UILibrary.Menu({
+                    position: "right",
+                    items: [
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("Keyboard Input"),
+                        callback: (function () {
 
-                    this.addNode(
-                      new NodeLibrary.Oscillator({
-                        synesthesia: this.synesthesia
+                          this.addNode(
+                            new NodeLibrary.KeyboardInput({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
                       }),
-                      {x: 10, y: 10}
-                    );
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("Main Output"),
+                        callback: (function () {
 
-                  }).bind(this)
-                }),
-                new UILibrary.MenuItem({
-                  content: document.createTextNode("New Gain"),
-                  callback: (function () {
+                          this.addNode(
+                            new NodeLibrary.MainOutput({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
 
-                    this.addNode(
-                      new NodeLibrary.Gain({
-                        synesthesia: this.synesthesia
+                        }).bind(this)
                       }),
-                      {x: 10, y: 10}
-                    );
+                      new UILibrary.MenuItem({
+                        content: document.createElement("hr"),
+                        callback: (function () {
 
-                  }).bind(this)
+                          return false;
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("Oscilloscope"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.Oscilloscope({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createElement("hr"),
+                        callback: (function () {
+
+                          return false;
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("Oscillator"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.Oscillator({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createElement("hr"),
+                        callback: (function () {
+
+                          return false;
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("Gain"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.Gain({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("Delay"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.Delay({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("Biquad Filter"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.BiquadFilter({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("Panner"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.Panner({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("Dynamics Compressor"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.DynamicsCompressor({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("Live Input"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.LiveInput({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("File Stream"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.FileStream({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      })
+                    ]
+                  })
                 })
               ]
             })

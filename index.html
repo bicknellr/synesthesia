@@ -34,108 +34,12 @@ body {
 <script type="application/javascript">
 
 window.addEventListener("load", function () {
-  module.declare("MAIN", ["Synesthesia", "Synesthesia:NodeLibrary"], function () {
+  module.declare("MAIN", ["Synesthesia"], function () {
 
     var Synesthesia = module.require("Synesthesia");
-    var NodeLibrary = module.require("Synesthesia:NodeLibrary");
     
     MainSynesthesia = new Synesthesia({
       container: document.getElementById("SynesthesiaUIContainer"),
-    });
-
-    MainOutput = new NodeLibrary.MainOutput({
-      synesthesia: MainSynesthesia
-    });
-    MainSynesthesia.getUI().addNode(MainOutput, {
-      x: 300, y: 10
-    });
-
-    MainKeyboard = new NodeLibrary.KeyboardInput({
-      synesthesia: MainSynesthesia
-    });
-    MainSynesthesia.getUI().addNode(MainKeyboard, {
-      x: 20, y: 10
-    });
-
-    TestOsc1 = new NodeLibrary.Oscillator({
-      synesthesia: MainSynesthesia,
-      type: NodeLibrary.Oscillator.Type.SINE
-    });
-    //MainSynesthesia.mapInput(MainKeyboard, TestOsc1);
-    MainSynesthesia.getUI().addNode(TestOsc1, {
-      x: 20, y: 130
-    });
-
-    TestOsc2 = new NodeLibrary.Oscillator({
-      synesthesia: MainSynesthesia,
-      type: NodeLibrary.Oscillator.Type.SINE
-    });
-    //MainSynesthesia.mapInput(MainKeyboard, TestOsc2);
-    MainSynesthesia.getUI().addNode(TestOsc2, {
-      x: 20, y: 200
-    });
-
-    TestGain1 = new NodeLibrary.Gain({
-      synesthesia: MainSynesthesia
-    });
-    MainSynesthesia.getUI().addNode(TestGain1, {
-      x: 160, y: 10
-    });
-
-    TestGain2 = new NodeLibrary.Gain({
-      synesthesia: MainSynesthesia
-    });
-    MainSynesthesia.getUI().addNode(TestGain2, {
-      x: 160, y: 70
-    });
-
-    TestDelay1 = new NodeLibrary.Delay({
-      synesthesia: MainSynesthesia
-    });
-    MainSynesthesia.getUI().addNode(TestDelay1, {
-      x: 300, y: 250
-    });
-
-    TestOscilloscope = new NodeLibrary.Oscilloscope({
-      synesthesia: MainSynesthesia
-    });
-    MainSynesthesia.getUI().addNode(TestOscilloscope, {
-      x: 300, y: 130,
-    });
-
-    TestBiquadFilter = new NodeLibrary.BiquadFilter({
-      synesthesia: MainSynesthesia
-    });
-    MainSynesthesia.getUI().addNode(TestBiquadFilter, {
-      x: 20, y: 370
-    });
-
-    TestPanner = new NodeLibrary.Panner({
-      synesthesia: MainSynesthesia
-    });
-    MainSynesthesia.getUI().addNode(TestPanner, {
-      x: 440, y: 10
-    });
-
-    TestDynamicsCompressor = new NodeLibrary.DynamicsCompressor({
-      synesthesia: MainSynesthesia
-    });
-    MainSynesthesia.getUI().addNode(TestDynamicsCompressor, {
-      x: 460, y: 370
-    });
-
-    TestLiveInput = new NodeLibrary.LiveInput({
-      synesthesia: MainSynesthesia
-    });
-    MainSynesthesia.getUI().addNode(TestLiveInput, {
-      x: 460, y: 500
-    });
-
-    TestFileStream = new NodeLibrary.FileStream({
-      synesthesia: MainSynesthesia
-    });
-    MainSynesthesia.getUI().addNode(TestFileStream, {
-      x: 460, y: 575
     });
 
   });
