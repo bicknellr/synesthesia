@@ -53,7 +53,7 @@ function () {
                 new UILibrary.MenuItem({
                   content: document.createTextNode("New Project..."),
                   callback: (function () {
-
+                    alert("This should clear everything out.");
                   }).bind(this)
                 })
               ]
@@ -66,17 +66,26 @@ function () {
                 new UILibrary.MenuItem({
                   content: document.createTextNode("New Oscillator"),
                   callback: (function () {
+
                     this.addNode(
                       new NodeLibrary.Oscillator({
                         synesthesia: this.synesthesia
                       }),
-                      {x: 0, y: 0}
+                      {x: 10, y: 10}
                     );
+
                   }).bind(this)
                 }),
                 new UILibrary.MenuItem({
                   content: document.createTextNode("New Gain"),
                   callback: (function () {
+
+                    this.addNode(
+                      new NodeLibrary.Gain({
+                        synesthesia: this.synesthesia
+                      }),
+                      {x: 10, y: 10}
+                    );
 
                   }).bind(this)
                 })

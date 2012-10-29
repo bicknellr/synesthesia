@@ -507,7 +507,7 @@ function () {
     };
 
     MenuItem.prototype.launch = function () {
-      this.callback();
+      return this.callback();
     };
 
     MenuItem.prototype.open = function () {
@@ -531,7 +531,9 @@ function () {
     function Menu (params) {
       this.params = (typeof params !== "undefined" ? params : {});
       
+      this.parent_menu = this.params.parent_menu || null;
       this.self_closeable = (typeof this.params.self_closeable !== "undefined" ? this.params.self_closeable : true);
+
       this.type = this.params.type || "dropdown";
       this.label = this.params.label;
       this.items = this.params.items;
@@ -549,6 +551,10 @@ function () {
         var cur_item_element = cur_item.getElement();
           Utilities.addClass(cur_item_element, "item");
 
+        if (cur_item.getMenu()) {
+          cur_item.getMenu().setParentMenu(this);
+        }
+
         cur_item_element.addEventListener("click", ((function (cur_item) {
           return function (e) {
             if (cur_item.getMenu()) {
@@ -558,7 +564,14 @@ function () {
                 cur_item.open();
               }
             } else {
-              cur_item.launch();
+              var close_to_root = cur_item.launch();
+              if (typeof close_to_root === "undefined") {
+                this.closeToRoot();
+              } else {
+                if (close_to_root) {
+                  this.closeToRoot();
+                }
+              }
             }
           };
         })(cur_item)).bind(this));
@@ -601,6 +614,10 @@ function () {
 
     Menu.prototype.getElement = function () {
       return this.element;
+    };
+
+    Menu.prototype.setParentMenu = function (parent_menu) {
+      this.parent_menu = parent_menu;
     };
 
     Menu.prototype.contains = function (test_element) {
@@ -661,6 +678,13 @@ function () {
 
       if (this.self_closeable) {
         document.body.removeChild(this.element);
+      }
+    };
+
+    Menu.prototype.closeToRoot = function () {
+      this.close();
+      if (this.parent_menu) {
+        this.parent_menu.closeToRoot();
       }
     };
 
