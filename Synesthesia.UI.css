@@ -1,0 +1,14 @@
+.Synesthesia_UI {
+  display: -webkit-flex;
+  -webkit-flex-direction: column;
+}
+
+  .Synesthesia_UI .mainmenu {
+    -webkit-flex: 0 0 auto;
+    border-bottom: 1px solid #a0a0a0;
+    padding: 0px 10px;
+  }
+
+  .Synesthesia_UI .windowsystem {
+    -webkit-flex: 1 0 0;
+  }

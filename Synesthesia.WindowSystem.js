@@ -13,6 +13,7 @@ function () {
       this.params = (typeof params !== "undefined" ? params : {});
 
       this.container = this.params.container;
+        this.container.style.position = "relative";
 
       this.nodes = [];
 
@@ -50,18 +51,16 @@ function () {
       this.node_canvas.addNodeWindow(node_window);
     };
 
-    WindowSystem.prototype.bringToFront = function (node) {
-      var index = this.nodes.indexOf(node);
-      this.nodes.push(
-        this.nodes.splice(index, 1)[0]
-      );
-      this.draw();
+    WindowSystem.prototype.bringToFront = function (node_window) {
+      // Make the node window the last element in the container to move it to the front.
+      if (this.node_div.children[this.node_div.children.length - 1] != node_window.getElement()) {
+        this.node_div.removeChild(node_window.getElement());
+        this.node_div.appendChild(node_window.getElement());
+        this.draw();
+      }
     };
 
     WindowSystem.prototype.draw = function () {
-      for (var node_ix = 0; node_ix < this.nodes.length; node_ix++) {
-        this.nodes[node_ix].setZIndex(node_ix);
-      }
       this.node_canvas.draw();
     };
 
@@ -124,23 +123,22 @@ function () {
     };
 
     NodeCanvas.prototype.handle_mousedown = function (e) {
-      //console.log("NodeCanvas mousedown pageX " + e.pageX + " pageY " + e.pageY);
+      var canvas_pagePosition = Utilities.getPagePosition(this.canvas);
+      var canvasX = e.pageX - canvas_pagePosition.left;
+      var canvasY = e.pageY - canvas_pagePosition.top;
+
       var selectable_endpoint = this.getSelectableEndpointForPoint({
-        x: e.pageX, y: e.pageY
+        x: canvasX, y: canvasY
       });
+
       if (selectable_endpoint) {
         this.selected_endpoint = selectable_endpoint;
 
         var edit_connection = this.selected_endpoint.getConnectionForPoint({
-          x: e.pageX, y: e.pageY
+          x: canvasX, y: canvasY
         });
-        /*
-        console.log("edit connection:");
-        console.log(edit_connection);
-        */
-        if (edit_connection) { // are we attempting to edit a connection?
-          //console.log("edit input");
 
+        if (edit_connection) {
           this.temporary_connection = edit_connection;
           edit_connection.from_endpoint.informDisconnected(edit_connection);
           edit_connection.to_endpoint.informDisconnected(edit_connection);
@@ -149,7 +147,7 @@ function () {
               type: null,
               direction: "input"
             });
-            this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
+            this.temporary_endpoint.setPosition(canvasX - 10, canvasY - 10);
             this.selected_endpoint = edit_connection.from_endpoint;
             edit_connection.setToEndpoint(this.temporary_endpoint);
           } else if (this.selected_endpoint.direction == "output") {
@@ -157,7 +155,7 @@ function () {
               type: null,
               direction: "output"
             });
-            this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
+            this.temporary_endpoint.setPosition(canvasX - 10, canvasY - 10);
             this.selected_endpoint = edit_connection.to_endpoint;
             edit_connection.setFromEndpoint(this.temporary_endpoint);
           }
@@ -168,7 +166,7 @@ function () {
               type: null,
               direction: "output"
             });
-            this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
+            this.temporary_endpoint.setPosition(canvasX - 10, canvasY - 10);
             this.temporary_connection = new WindowSystem.Connection({
               from_endpoint: this.temporary_endpoint,
               to_endpoint: this.selected_endpoint,
@@ -182,7 +180,7 @@ function () {
               type: null,
               direction: "input"
             });
-            this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
+            this.temporary_endpoint.setPosition(canvasX - 10, canvasY - 10);
             this.temporary_connection = new WindowSystem.Connection({
               from_endpoint: this.selected_endpoint,
               to_endpoint: this.temporary_endpoint,
@@ -196,15 +194,19 @@ function () {
         }
       }
 
-      this.last_pageX = e.pageX;
-      this.last_pageY = e.pageY;
+      this.last_pageX = canvasX;
+      this.last_pageY = canvasY;
 
       this.isMousedown = true;
     };
 
     NodeCanvas.prototype.handle_mousemove = function (e) {
+      var canvas_pagePosition = Utilities.getPagePosition(this.canvas);
+      var canvasX = e.pageX - canvas_pagePosition.left;
+      var canvasY = e.pageY - canvas_pagePosition.top;
+
       var selectable_endpoint = this.getSelectableEndpointForPoint({
-        x: e.pageX, y: e.pageY
+        x: canvasX, y: canvasY
       });
       this.unsetFlagAllEndpoints("hovering");
       this.unsetFlagAllEndpoints("selecting");
@@ -219,23 +221,27 @@ function () {
       }
 
       if (this.temporary_endpoint) {
-        this.temporary_endpoint.setPosition(e.pageX - 10, e.pageY - 10);
+        this.temporary_endpoint.setPosition(canvasX - 10, canvasY - 10);
       }
 
       if (!this.isMousedown) return;
 
-      //console.log("NodeCanvas mousemove pageX " + e.pageX + " pageY " + e.pageY);
-      this.last_pageX = e.pageX;
-      this.last_pageY = e.pageY;
+      //console.log("NodeCanvas mousemove pageX " + canvasX + " pageY " + canvasY);
+      this.last_pageX = canvasX;
+      this.last_pageY = canvasY;
     };
 
     NodeCanvas.prototype.handle_mouseup = function (e) {
       if (!this.isMousedown) return;
 
+      var canvas_pagePosition = Utilities.getPagePosition(this.canvas);
+      var canvasX = e.pageX - canvas_pagePosition.left;
+      var canvasY = e.pageY - canvas_pagePosition.top;
+
       //if (e.toElement && e.toElement != document.childNodes[0]) return;
 
       var selectable_endpoint = this.getSelectableEndpointForPoint({
-        x: e.pageX, y: e.pageY
+        x: canvasX, y: canvasY
       });
       var did_finalize_connection = false;
       if (selectable_endpoint && this.selected_endpoint && this.selected_endpoint.canConnectTo(selectable_endpoint)) {
@@ -250,9 +256,9 @@ function () {
         did_finalize_connection = true;
       }
 
-      //console.log("NodeCanvas mouseup pageX " + e.pageX + " pageY " + e.pageY);
-      this.last_pageX = e.pageX;
-      this.last_pageY = e.pageY;
+      //console.log("NodeCanvas mouseup pageX " + canvasX + " pageY " + canvasY);
+      this.last_pageX = canvasX;
+      this.last_pageY = canvasY;
 
       if (this.temporary_connection) {
         if (!did_finalize_connection) {
@@ -270,9 +276,13 @@ function () {
     };
 
     NodeCanvas.prototype.handle_mousewheel = function (e) {
-      console.log("NodeCanvas mousewheel " + e.wheelDelta + " pageX " + e.pageX + " pageY " + e.pageY);
-      this.last_pageX = e.pageX;
-      this.last_pageY = e.pageY;
+      var canvas_pagePosition = Utilities.getPagePosition(this.canvas);
+      var canvasX = e.pageX - canvas_pagePosition.left;
+      var canvasY = e.pageY - canvas_pagePosition.top;
+
+      console.log("NodeCanvas mousewheel " + e.wheelDelta + " pageX " + canvasX + " pageY " + canvasY);
+      this.last_pageX = canvasX;
+      this.last_pageY = canvasY;
       e.preventDefault();
       e.stopPropagation();
     };
@@ -426,7 +436,10 @@ function () {
         }
         this.element.style.left = "" + this.x + "px";
         this.element.style.top = "" + this.y + "px";
-        this.element.addEventListener("mousedown", (function () {
+        // This must be "click" otherwise it occurs before the
+        // handler for any element in the window and the node
+        // reordering prevents the click from occurring.
+        this.element.addEventListener("click", (function () {
           this.window_system.bringToFront(this);
         }).bind(this), false);
 

@@ -18,6 +18,7 @@ function (exports) {
       this.container = this.params.container;
 
       this.UI = new UI({
+        synesthesia: this,
         container: this.container
       });
     }

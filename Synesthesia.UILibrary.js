@@ -473,6 +473,223 @@ function () {
     return ScalableGraph;
   })();
 
+  UILibrary.MenuItem = (function () {
+    function MenuItem (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.content = this.params.content;
+      this.callback = this.params.callback || function () {};
+      this.submenu = this.params.submenu || null;
+
+      this.element = document.createElement("div");
+        Utilities.addClass(this.element, "Synesthesia_UILibrary_MenuItem");
+        this.element.appendChild(this.content);
+    }
+
+    MenuItem.prototype.getElement = function () {
+      return this.element;
+    };
+
+    MenuItem.prototype.contains = function (test_element) {
+      if (this.element == test_element || this.element.contains(test_element)) {
+        return true;
+      }
+
+      if (this.submenu && this.submenu.contains(test_element)) {
+          return true;
+      }
+
+      return false;
+    };
+
+    MenuItem.prototype.getMenu = function () {
+      return this.submenu;
+    };
+
+    MenuItem.prototype.launch = function () {
+      return this.callback();
+    };
+
+    MenuItem.prototype.open = function () {
+      if (this.submenu) {
+        this.submenu.openWithTargetElement(this.element);
+        Utilities.addClass(this.element, "open");
+      }
+    };
+
+    MenuItem.prototype.close = function () {
+      if (this.submenu) {
+        this.submenu.close();
+        Utilities.removeClass(this.element, "open");
+      }
+    };
+
+    return MenuItem;
+  })();
+
+  UILibrary.Menu = (function () {
+    function Menu (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+      
+      this.parent_menu = this.params.parent_menu || null;
+      this.self_closeable = (typeof this.params.self_closeable !== "undefined" ? this.params.self_closeable : true);
+
+      this.type = this.params.type || "dropdown";
+      this.label = this.params.label;
+      this.items = this.params.items;
+
+      this.position = this.params.position || "below";
+      this.hover = (typeof this.params.hover !== "undefined" ? this.params.hover : true);
+
+      this.element = document.createElement("div");
+        Utilities.addClass(this.element, "Synesthesia_UILibrary_Menu");
+        Utilities.addClass(this.element, this.type);
+
+      for (var item_ix = 0; item_ix < this.items.length; item_ix++) {
+        var cur_item = this.items[item_ix];
+
+        var cur_item_element = cur_item.getElement();
+          Utilities.addClass(cur_item_element, "item");
+
+        if (cur_item.getMenu()) {
+          cur_item.getMenu().setParentMenu(this);
+        }
+
+        cur_item_element.addEventListener("click", ((function (cur_item) {
+          return function (e) {
+            if (cur_item.getMenu()) {
+              if (cur_item.getMenu().isOpen()) {
+                cur_item.close();
+              } else {
+                cur_item.open();
+              }
+            } else {
+              var close_to_root = cur_item.launch();
+              if (typeof close_to_root === "undefined") {
+                this.closeToRoot();
+              } else {
+                if (close_to_root) {
+                  this.closeToRoot();
+                }
+              }
+            }
+          };
+        })(cur_item)).bind(this));
+
+        cur_item_element.addEventListener("mouseover", ((function (cur_item) {
+          return function (e) {
+            var do_open = false;
+
+            for (var i = 0; i < this.items.length; i++) {
+              if (this.hover || (this.items[i].getMenu() && this.items[i].getMenu().isOpen())) {
+                do_open = true;
+                this.items[i].close();
+              }
+            }
+
+            if (do_open) {
+              cur_item.open();
+            }
+          };
+        })(cur_item)).bind(this));
+
+        this.element.appendChild(cur_item_element);
+      }
+
+      window.addEventListener("mousedown", (function (e) {
+        var close_all = true;
+        for (var i = 0; i < this.items.length; i++) {
+          if (this.items[i].contains(e.target)) {
+            close_all = false;
+          }
+        }
+
+        if (close_all) {
+          for (var i = 0; i < this.items.length; i++) {
+            this.items[i].close();
+          }
+        }
+      }).bind(this));
+    }
+
+    Menu.prototype.getElement = function () {
+      return this.element;
+    };
+
+    Menu.prototype.setParentMenu = function (parent_menu) {
+      this.parent_menu = parent_menu;
+    };
+
+    Menu.prototype.contains = function (test_element) {
+      if (this.element == test_element || this.element.contains(test_element)) {
+        return true;
+      }
+
+      for (var i = 0; i < this.items.length; i++) {
+        if (this.items[i].contains(test_element)) {
+          return true;
+        }
+      }
+
+      return false;
+    };
+
+    Menu.prototype.isOpen = function () {
+      return document.body.contains(this.element);
+    };
+
+    Menu.prototype.openWithTargetElement = function (target_element) {
+      // Don't try adding it if it's already there.
+      if (document.body.contains(this.element)) return false;
+
+      var target_position = Utilities.getPagePosition(target_element);
+      var target_style = window.getComputedStyle(target_element);
+      var new_left = 0;
+      var new_top = 0;
+      switch (this.position) {
+        case "below":
+          new_top = target_position.top + target_element.offsetHeight;
+            new_top += parseInt(target_style.getPropertyValue("border-top-width"));
+            new_top += parseInt(target_style.getPropertyValue("border-bottom-width"));
+          new_left = target_position.left;
+            new_left += parseInt(target_style.getPropertyValue("border-left-width"));
+          break;
+        case "right":
+          new_top = target_position.top;
+            new_top += parseInt(target_style.getPropertyValue("border-top-width"));
+          new_left = target_position.left + target_element.offsetWidth;
+            new_left += parseInt(target_style.getPropertyValue("border-left-width"));
+            new_left += parseInt(target_style.getPropertyValue("border-right-width"));
+          break;
+      }
+      this.element.style.left = "" + new_left + "px";
+      this.element.style.top = "" + new_top + "px";
+ 
+      document.body.appendChild(this.element);
+    };
+    
+    Menu.prototype.close = function () {
+      // Don't try removing it if it's already gone.
+      if (!document.body.contains(this.element)) return false;
+
+      for (var i = 0; i < this.items.length; i++) {
+        this.items[i].close();
+      }
+
+      if (this.self_closeable) {
+        document.body.removeChild(this.element);
+      }
+    };
+
+    Menu.prototype.closeToRoot = function () {
+      this.close();
+      if (this.parent_menu) {
+        this.parent_menu.closeToRoot();
+      }
+    };
+
+    return Menu;
+  })();
 
   return UILibrary;
 });
