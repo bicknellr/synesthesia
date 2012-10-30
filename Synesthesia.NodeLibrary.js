@@ -435,11 +435,13 @@ function () {
 
     FileStream.prototype.handle_change = function (e) {
       var file_url = URL.createObjectURL(this.fileselect_element.files[0]);
-      if (!this.mediaelementsource_node) {
-        this.mediaelementsource_node = this.context.createMediaElementSource(this.audio_element);
-        this.mediaelementsource_node.connect(this.node);
-      }
       this.audio_element.setAttribute("src", file_url);
+      this.audio_element.addEventListener("loadeddata", (function () {
+        if (!this.mediaelementsource_node) {
+          this.mediaelementsource_node = this.context.createMediaElementSource(this.audio_element);
+          this.mediaelementsource_node.connect(this.node);
+        }
+      }).bind(this));
     };
 
     FileStream.prototype.informWindowPrepared = function (div) {
@@ -454,7 +456,7 @@ function () {
 
       this.div.appendChild(document.createElement("br"));
 
-      this.audio_element = document.createElement("audio");
+      this.audio_element = new Audio();
         this.audio_element.setAttribute("controls", true);
       this.div.appendChild(this.audio_element);
     };
