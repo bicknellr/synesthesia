@@ -12,8 +12,8 @@ function () {
     function WindowSystem (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      this.container = this.params.container;
-        this.container.style.position = "relative";
+      this.container = document.createElement("div");
+        Utilities.addClass(this.container, "Synesthesia_WindowSystem");
 
       this.nodes = [];
 
@@ -28,6 +28,10 @@ function () {
       this.node_div.className = "Synesthesia_WindowSystem__node_window_container";
       this.container.appendChild(this.node_div);
     }
+
+    WindowSystem.prototype.getElement = function () {
+      return this.container;
+    };
 
     WindowSystem.prototype.getDimensions = function () {
       return {
@@ -94,8 +98,6 @@ function () {
     }
 
     NodeCanvas.prototype.init = function () {
-      window.addEventListener("resize", this.handle_resize.bind(this), false);
-      
       this.canvas.addEventListener("mousedown", this.handle_mousedown.bind(this), false);
       window.addEventListener("mousemove", this.handle_mousemove.bind(this), false);
       window.addEventListener("mouseup", this.handle_mouseup.bind(this), false);
@@ -103,7 +105,7 @@ function () {
 
       this.canvas.addEventListener("mousewheel", this.handle_mousewheel.bind(this), false);
 
-      this.handle_resize();
+      this.draw();
     };
 
     NodeCanvas.prototype.addNodeWindow = function (new_node_window) {
@@ -113,14 +115,6 @@ function () {
     };
 
     // Event handlers.
-
-    NodeCanvas.prototype.handle_resize = function () {
-      var dimensions = this.window_system.getDimensions();
-      this.canvas.width = dimensions.width;
-      this.canvas.height = dimensions.height;
-
-      this.draw();
-    };
 
     NodeCanvas.prototype.handle_mousedown = function (e) {
       var canvas_pagePosition = Utilities.getPagePosition(this.canvas);
@@ -324,7 +318,9 @@ function () {
     NodeCanvas.prototype.draw = function (params) {
       params = (typeof params !== "undefined" ? params : {});
       
-      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      var dimensions = this.window_system.getDimensions();
+      this.canvas.width = dimensions.width;
+      this.canvas.height = dimensions.height;
 
       // draw windows (includes endpoints)
 

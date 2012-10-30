@@ -240,18 +240,59 @@ function () {
                 })
               ]
             })
-          })
+          }),
+          new UILibrary.MenuItem({
+            content: document.createTextNode("View"),
+            submenu: new UILibrary.Menu({
+              items: [
+                new UILibrary.MenuItem({
+                  content: document.createTextNode("Graph"),
+                  callback: (function () {
+
+                    this.slideview.gotoView("windowsystem");
+
+                  }).bind(this)
+                }),
+                new UILibrary.MenuItem({
+                  content: document.createTextNode("Envelope Editor"),
+                  callback: (function () {
+
+                    this.slideview.gotoView("testright");
+
+                  }).bind(this)
+                })
+              ]
+            })
+          }),
         ]
       });
         Utilities.addClass(this.mainmenu_menubar.getElement(), "mainmenu");
       this.container.appendChild(this.mainmenu_menubar.getElement());
 
-      this.windowsystem_container = document.createElement("div");
-        Utilities.addClass(this.windowsystem_container, "windowsystem");
-      this.container.appendChild(this.windowsystem_container);
       this.windowsystem = new WindowSystem({
         container: this.windowsystem_container
       });
+      var windowsystem_element = this.windowsystem.getElement();
+        //Utilities.addClass(windowsystem_element, "windowsystem");
+      //this.container.appendChild(windowsystem_element);
+      
+      var testright_element = document.createElement("div");
+        testright_element.style.setProperty("background-color", "#c0c0c0");
+
+      this.slideview = new UILibrary.SlideView({
+        views: [
+          { name: "windowsystem",
+            element: windowsystem_element
+          },
+          { name: "testright",
+            element: testright_element
+          }
+        ]
+      });
+        Utilities.addClass(this.slideview.getElement(), "slideview");
+      this.container.appendChild(this.slideview.getElement());
+
+      this.windowsystem.draw();
     }
 
     UI.prototype.getContainer = function () {

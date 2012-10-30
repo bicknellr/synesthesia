@@ -691,5 +691,58 @@ function () {
     return Menu;
   })();
 
+  UILibrary.SlideView = (function () {
+    function SlideView (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.views = this.params.views || [];
+        
+      this.default_view = this.params.default_view || (this.views[0] ? this.views[0].name : false) || null;
+      
+      this.element = null;
+      this.build();
+    }
+
+    SlideView.prototype.build = function () {
+      this.element = document.createElement("div");
+        Utilities.addClass(this.element, "Synesthesia_UILibrary_SlideView");
+
+      for (var view_ix = 0; view_ix < this.views.length; view_ix++) {
+        var cur_view = this.views[view_ix];
+
+        Utilities.addClass(cur_view.element, "view");
+
+        this.element.appendChild(cur_view.element);
+      }
+
+      this.gotoView(this.default_view);
+    }
+
+    SlideView.prototype.getElement = function () {
+      return this.element;
+    };
+
+    SlideView.prototype.gotoView = function (view_name) {
+      var before_open = true;
+
+      for (var view_ix = 0; view_ix < this.views.length; view_ix++) {
+        var cur_view = this.views[view_ix];
+
+        Utilities.removeClass(cur_view.element, "before");
+        Utilities.removeClass(cur_view.element, "after");
+
+        if (cur_view.name == view_name) {
+          before_open = false;
+        } else if (before_open) {
+          Utilities.addClass(cur_view.element, "before");
+        } else {
+          Utilities.addClass(cur_view.element, "after");
+        }
+      }
+    };
+
+    return SlideView;
+  })();
+
   return UILibrary;
 });

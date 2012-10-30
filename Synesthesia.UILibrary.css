@@ -119,3 +119,26 @@
   .Synesthesia_UILibrary_Menu.dropdown > .item:active {
     background-color: #c0c0c0;
   }
+
+/* SlideView */
+
+.Synesthesia_UILibrary_SlideView {
+  position: relative;
+  overflow: hidden;
+}
+  .Synesthesia_UILibrary_SlideView > .view {
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    width: 100%;
+    height: 100%;
+    -webkit-transition:
+      top ease-in-out 0.4s,
+      left ease-in-out 0.4s;
+  }
+  .Synesthesia_UILibrary_SlideView > .view.before {
+    left: -100%;
+  }
+  .Synesthesia_UILibrary_SlideView > .view.after {
+    left: 100%;
+  }
