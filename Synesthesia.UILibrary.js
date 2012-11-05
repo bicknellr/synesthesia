@@ -744,5 +744,26 @@ function () {
     return SlideView;
   })();
 
+  UILibrary.EnvelopeEditor = (function () {
+    function EnvelopeEditor (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.element = null;
+
+      this.build();
+    }
+
+    EnvelopeEditor.prototype.build = function () {
+      this.element = document.createElement("div");
+        Utilities.addClass(this.element, "Synesthesia_UILibrary_EnvelopeEditor");
+    };
+
+    EnvelopeEditor.prototype.getElement = function () {
+      return this.element;
+    };
+
+    return EnvelopeEditor;
+  })();
+
   return UILibrary;
 });

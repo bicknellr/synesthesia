@@ -257,7 +257,7 @@ function () {
                   content: document.createTextNode("Envelope Editor"),
                   callback: (function () {
 
-                    this.slideview.gotoView("testright");
+                    this.slideview.gotoView("envelopeeditor");
 
                   }).bind(this)
                 })
@@ -275,17 +275,16 @@ function () {
       var windowsystem_element = this.windowsystem.getElement();
         //Utilities.addClass(windowsystem_element, "windowsystem");
       //this.container.appendChild(windowsystem_element);
-      
-      var testright_element = document.createElement("div");
-        testright_element.style.setProperty("background-color", "#c0c0c0");
 
+      this.envelopeeditor = new UILibrary.EnvelopeEditor();
+      
       this.slideview = new UILibrary.SlideView({
         views: [
           { name: "windowsystem",
             element: windowsystem_element
           },
-          { name: "testright",
-            element: testright_element
+          { name: "envelopeeditor",
+            element: this.envelopeeditor.getElement()
           }
         ]
       });
