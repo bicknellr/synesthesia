@@ -142,3 +142,9 @@
   .Synesthesia_UILibrary_SlideView > .view.after {
     left: 100%;
   }
+
+/* EnvelopeEditor */
+
+.Synesthesia_UILibrary_EnvelopeEditor {
+  background-color: #202020;
+}

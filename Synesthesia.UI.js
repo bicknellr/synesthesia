@@ -314,10 +314,10 @@ function () {
                   }).bind(this)
                 }),
                 new UILibrary.MenuItem({
-                  content: document.createTextNode("Envelope Editor"),
+                  content: document.createTextNode("View 2"),
                   callback: (function () {
 
-                    this.slideview.gotoView("testright");
+                    this.slideview.gotoView("view2");
 
                   }).bind(this)
                 })
@@ -335,17 +335,17 @@ function () {
       var windowsystem_element = this.windowsystem.getElement();
         //Utilities.addClass(windowsystem_element, "windowsystem");
       //this.container.appendChild(windowsystem_element);
-      
-      var testright_element = document.createElement("div");
-        testright_element.style.setProperty("background-color", "#c0c0c0");
+
+      this.view2_element = document.createElement("div");
+        this.view2_element.style.backgroundColor = "red";
 
       this.slideview = new UILibrary.SlideView({
         views: [
           { name: "windowsystem",
             element: windowsystem_element
           },
-          { name: "testright",
-            element: testright_element
+          { name: "view2",
+            element: this.view2_element
           }
         ]
       });
