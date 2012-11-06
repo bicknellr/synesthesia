@@ -244,6 +244,53 @@ function () {
                         }).bind(this)
                       }),
                       new UILibrary.MenuItem({
+                        content: document.createTextNode("Envelope"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.EnvelopeSource({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("Envelope Trigger"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.EnvelopeTrigger({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("Trigger Button"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.TriggerButton({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createElement("hr"),
+                        callback: (function () {
+
+                          return false;
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
                         content: document.createTextNode("FlowUITestNode"),
                         callback: (function () {
 

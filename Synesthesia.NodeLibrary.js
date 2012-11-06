@@ -554,6 +554,7 @@ function () {
 
       Graph.Node.AudioSourceNode.apply(this, arguments);
       Graph.Node.AudioDestinationNode.apply(this, arguments);
+      Graph.Node.AudioParamProviderNode.apply(this, arguments);
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
@@ -617,7 +618,8 @@ function () {
 
     Gain.prototype = Utilities.extend(
       new Graph.Node.AudioSourceNode(),
-      new Graph.Node.AudioDestinationNode()
+      new Graph.Node.AudioDestinationNode(),
+      new Graph.Node.AudioParamProviderNode()
     );
 
     Gain.prototype.getWindow = function () {
@@ -675,6 +677,13 @@ function () {
       switch (input_endpoint) {
         case this.getInputDescriptors()["waveform"]:
           return this.node;
+        case this.getInputDescriptors()["gain"]:
+          return this.node.gain;
+      }
+    };
+
+    Gain.prototype.getAudioParamForEndpoint = function (endpoint) {
+      switch (endpoint) {
         case this.getInputDescriptors()["gain"]:
           return this.node.gain;
       }
@@ -2467,6 +2476,359 @@ function () {
     };
 
     return NumberMap;
+  })();
+
+  NodeLibrary.EnvelopeSource = (function () {
+    function EnvelopeSource (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Graph.Node.EnvelopeSourceNode.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+      this.context = this.synesthesia.getContext();
+
+      this.setInputDescriptors({
+      });
+
+      this.setOutputDescriptors({
+        "envelope": new Graph.Endpoint({
+          node: this,
+          name: "envelope",
+          type: "Envelope",
+          accepted_types: [
+            "Envelope",
+          ],
+          direction: "output"
+        })
+      });
+
+      this.ui_window = new WindowSystem.NodeWindow({
+        node: this,
+        title: "Envelope",
+        use_flex: true
+      });
+    }
+
+    EnvelopeSource.prototype = Utilities.extend(
+      new Graph.Node.EnvelopeSourceNode()
+    );
+
+    // UI
+
+    EnvelopeSource.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+    
+    EnvelopeSource.prototype.informWindowPrepared = function (div) {
+      //
+    };
+
+    EnvelopeSource.prototype.draw = function () {
+      //
+    };
+    
+    // Graph
+
+    EnvelopeSource.prototype.informConnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["envelope"]:
+          break;
+      }
+    };
+
+    EnvelopeSource.prototype.informDisconnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["envelope"]:
+          break;
+      }
+    };
+
+    EnvelopeSource.prototype.getEnvelopeForEndpoint = function (endpoint) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["envelope"]:
+          var TEST_ENVELOPE = new Envelope.Path();
+            TEST_ENVELOPE.addPoint(
+              new Envelope.Point({
+                value: 0,
+                time: 0,
+                transition: Envelope.Point.Transition.SET
+              })
+            );
+            TEST_ENVELOPE.addPoint(
+              new Envelope.Point({
+                value: 1,
+                time: 1,
+                transition: Envelope.Point.Transition.LINEAR
+              })
+            );
+            TEST_ENVELOPE.addPoint(
+              new Envelope.Point({
+                value: 0.5,
+                time: 2,
+                transition: Envelope.Point.Transition.LINEAR
+              })
+            );
+
+          return TEST_ENVELOPE;
+      }
+    };
+
+    return EnvelopeSource;
+  })();
+
+  NodeLibrary.EnvelopeTrigger = (function () {
+    function EnvelopeTrigger (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Graph.Node.TriggerNode.apply(this, arguments);
+      Graph.Node.EnvelopeDestinationNode.apply(this, arguments);
+      Graph.Node.AudioParamUtiliserNode.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+      this.context = this.synesthesia.getContext();
+
+      this.active_envelope = null;
+      this.active_audioparam = null;
+
+      this.setInputDescriptors({
+        "envelope": new Graph.Endpoint({
+          node: this,
+          name: "envelope",
+          type: "Envelope",
+          accepted_types: [
+            "Envelope",
+          ],
+          direction: "input"
+        }),
+        "trigger": new Graph.Endpoint({
+          node: this,
+          name: "trigger",
+          type: "Trigger",
+          accepted_types: [
+            "Trigger",
+          ],
+          direction: "input"
+        })
+      });
+
+      this.setOutputDescriptors({
+        "audioparam": new Graph.Endpoint({
+          node: this,
+          name: "audioparam",
+          type: "AudioParam",
+          accepted_types: [
+            "AudioParam",
+          ],
+          direction: "output"
+        })
+      });
+
+      this.setTriggerNames([
+        "apply_envelope",
+      ]);
+
+      // FOR DEBUGGING ONLY
+      this.addTriggerListener("apply_envelope", (function () {
+        console.log("apply_envelope");
+        if (!this.active_envelope) return;
+        if (!this.active_audioparam) return;
+
+        this.active_envelope.applyToAudioParamWithTimeOffset(
+          this.active_audioparam,
+          this.context.currentTime
+        );
+      }).bind(this));
+
+      this.ui_window = new WindowSystem.NodeWindow({
+        node: this,
+        title: "Envelope Trigger",
+        use_flex: true
+      });
+    }
+
+    EnvelopeTrigger.prototype = Utilities.extend(
+      new Graph.Node.TriggerNode(),
+      new Graph.Node.EnvelopeDestinationNode(),
+      new Graph.Node.AudioParamUtiliserNode()
+    );
+
+    // UI
+
+    EnvelopeTrigger.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+    
+    EnvelopeTrigger.prototype.informWindowPrepared = function (div) {
+      //
+    };
+
+    EnvelopeTrigger.prototype.draw = function () {
+      //
+    };
+    
+    // Graph
+
+    EnvelopeTrigger.prototype.informConnected = function (endpoint, connection) {
+      switch (endpoint) {
+        // INPUTS
+
+        case this.getInputDescriptors()["envelope"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
+          this.active_envelope = other_node.getEnvelopeForEndpoint(other_endpoint);
+          break;
+
+        case this.getInputDescriptors()["trigger"]:
+          // Do nothing, trigger source handles proxy creation.
+          break;
+
+        // OUTPUTS
+
+        case this.getOutputDescriptors()["audioparam"]:
+          var other_endpoint = connection.getOppositeEndpoint(endpoint);
+          var other_node = other_endpoint.getNode();
+          this.active_audioparam = other_node.getAudioParamForEndpoint(other_endpoint);
+          break;
+      }
+    };
+
+    EnvelopeTrigger.prototype.informDisconnected = function (endpoint, connection) {
+      switch (endpoint) {
+        // INPUTS
+
+        case this.getInputDescriptors()["envelope"]:
+          this.active_envelope = null;
+          break;
+
+        case this.getInputDescriptors()["trigger"]:
+          // Do nothing, trigger source handles proxy destruction.
+          break;
+
+        // OUTPUTS
+
+        case this.getOutputDescriptors()["audioparam"]:
+          this.active_audioparam = null;
+          break;
+      }
+    };
+
+    EnvelopeTrigger.prototype.getTriggerNameForEndpoint = function (endpoint) {
+      switch (endpoint) {
+        case this.getInputDescriptors()["trigger"]:
+          return "apply_envelope";
+        default:
+          return null;
+      }
+    };
+
+    return EnvelopeTrigger;
+  })();
+
+  NodeLibrary.TriggerButton = (function () {
+    function TriggerButton (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Graph.Node.TriggerNode.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+      this.context = this.synesthesia.getContext();
+
+      this.setInputDescriptors({
+      });
+
+      this.setOutputDescriptors({
+        "trigger": new Graph.Endpoint({
+          node: this,
+          name: "trigger",
+          type: "Trigger",
+          accepted_types: [
+            "Trigger",
+          ],
+          direction: "output"
+        })
+      });
+
+      this.setTriggerNames([
+        "trigger",
+      ]);
+
+      // FOR DEBUGGING ONLY
+      this.addTriggerListener("trigger", function () {
+        console.log("trigger");
+      });
+
+      this.ui_window = new WindowSystem.NodeWindow({
+        node: this,
+        title: "Trigger Button",
+        use_flex: true
+      });
+    }
+
+    TriggerButton.prototype = Utilities.extend(
+      new Graph.Node.TriggerNode()
+    );
+
+    // UI
+
+    TriggerButton.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+    
+    TriggerButton.prototype.informWindowPrepared = function (div) {
+      this.trigger_button = document.createElement("button");
+        this.trigger_button.addEventListener("click", (function () {
+          this.launchTrigger("trigger");
+        }).bind(this));
+        this.trigger_button.appendChild(
+          document.createTextNode("trigger")
+        );
+      div.appendChild(this.trigger_button);
+    };
+
+    TriggerButton.prototype.draw = function () {
+      //
+    };
+    
+    // Graph
+
+    TriggerButton.prototype.informConnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["trigger"]:
+          var opposite_endpoint = connection.getOppositeEndpoint(endpoint);
+          
+          this.addTriggerListenerProxy(
+            "trigger",
+            opposite_endpoint.getNode(),
+            opposite_endpoint.getNode().getTriggerNameForEndpoint(opposite_endpoint)
+          );
+          break;
+      }
+    };
+
+    TriggerButton.prototype.informDisconnected = function (endpoint, connection) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["trigger"]:
+          var opposite_endpoint = connection.getOppositeEndpoint(endpoint);
+          
+          this.removeTriggerListenerProxy(
+            "trigger",
+            opposite_endpoint.getNode(),
+            opposite_endpoint.getNode().getTriggerNameForEndpoint(opposite_endpoint)
+          );
+          break;
+      }
+    };
+
+    TriggerButton.prototype.getTriggerNameForEndpoint = function (endpoint) {
+      switch (endpoint) {
+        case this.getOutputDescriptors()["trigger"]:
+          return "trigger";
+        default:
+          return null;
+      }
+    };
+
+    return TriggerButton;
   })();
 
   NodeLibrary.FlowUITestNode = (function () {

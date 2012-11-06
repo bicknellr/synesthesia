@@ -429,7 +429,7 @@ function () {
     NodeWindow.prototype.build = function () {
       this.element = document.createElement("div");
         this.element.className = "Synesthesia_WindowSystem_NodeWindow__main";
-        if (!this.flex) {
+        if (!this.use_flex) {
           this.element.style.display = "block";
         }
         this.element.style.left = "" + this.x + "px";
@@ -607,7 +607,9 @@ function () {
       "Number": "rgba(192, 32, 32, 1)",
       notes: "rgba(128, 192, 128, 1)",
       AudioNode: "rgba(128, 128, 128, 1)",
-      AudioParam: "rgba(128, 128, 256, 1)"
+      AudioParam: "rgba(128, 128, 255, 1)",
+      Envelope: "rgba(128, 0, 192, 1)",
+      Trigger: "rgba(192, 64, 64, 1)"
     };
 
     Endpoint.prototype.getDescriptor = function () {
@@ -931,8 +933,8 @@ function () {
         if (!color) {
           color = WindowSystem.Endpoint.ColorMap[this.to_endpoint.type];
         }
-        context.fillStyle = color || "rgba(256, 0, 0, 1)";
-        context.strokeStyle = color || "rgba(256, 0, 0, 1)";
+        context.fillStyle = color || "rgba(255, 0, 0, 1)";
+        context.strokeStyle = color || "rgba(255, 0, 0, 1)";
 
         var start_point = this.from_endpoint.getPointForConnection(this);
         var end_point = this.to_endpoint.getPointForConnection(this);

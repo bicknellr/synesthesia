@@ -69,6 +69,10 @@
     cursor: -webkit-grab;
     cursor: grab;
 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
     height: 14px;
     font-size: 11px;
 

@@ -64,6 +64,8 @@ function () {
       "notes",
       "AudioNode",
       "AudioParam",
+      "Envelope",
+      "Trigger",
       "canvas" // Do audio first!
     ];
 
@@ -342,6 +344,8 @@ function () {
     return Node;
   })();
 
+  // Note
+
   Graph.Node.NoteSourceNode = (function () {
     function NoteSourceNode (params) {
       if (!params) return;
@@ -409,6 +413,8 @@ function () {
 
     return NoteDestinationNode;
   })();
+
+  // Audio
 
   Graph.Node.AudioNode = (function () {
     function AudioNode () {
@@ -492,15 +498,65 @@ function () {
     return AudioDestinationNode;
   })();
 
+  // AudioParam
+
+  Graph.Node.AudioParamNode = (function () {
+    function AudioParamNode () {
+      Graph.Node.apply(this, arguments);
+    }
+
+    AudioParamNode.prototype = Utilities.extend(
+      new Graph.Node()
+    );
+
+    return AudioParamNode;
+  })();
+
+  Graph.Node.AudioParamProviderNode = (function () {
+    function AudioParamProviderNode () {
+      Graph.Node.AudioParamNode.apply(this, arguments);
+    }
+
+    AudioParamProviderNode.prototype = Utilities.extend(
+      new Graph.Node.AudioParamNode()
+    );
+
+    AudioParamProviderNode.prototype.getAudioParamForEndpoint = function () {
+      throw new Error("Graph.Node.AudioParamProviderNode(.getAudioParamForEndpoint): Not implemented.");
+    };
+
+    return AudioParamProviderNode;
+  })();
+
+  Graph.Node.AudioParamUtiliserNode = (function () {
+    function AudioParamUtiliserNode () {
+      Graph.Node.AudioParamNode.apply(this, arguments);
+    }
+
+    AudioParamUtiliserNode.prototype = Utilities.extend(
+      new Graph.Node.AudioParamNode()
+    );
+
+    return AudioParamUtiliserNode;
+  })();
+
+  // Trigger
+
   Graph.Node.TriggerNode = (function () {
-    function TriggerNode () {
+    function TriggerNode (params) {
+      Graph.Node.apply(this, arguments);
+
       this.trigger_names = [];
 
       this.trigger_listeners = {};
       this.trigger_history = [];
 
-      this.trigger_induction_listeners = [];
+      this.trigger_proxy_listeners = [];
     }
+
+    TriggerNode.prototype = Utilities.extend(
+      new Graph.Node()
+    );
 
     TriggerNode.prototype.getTriggerNames = function () {
       return this.trigger_names;
@@ -516,7 +572,7 @@ function () {
 
     TriggerNode.prototype.addTriggerListener = function (trigger_name, new_listener) {
       if (this.trigger_names.indexOf(trigger_name) == -1) {
-        console.error("Graph.Node.TriggerNode(.removeTriggerListener): Attempted to remove listener for undeclared name.");
+        console.error("Graph.Node.TriggerNode(.addTriggerListener): Attempted to remove listener for undeclared name '" + trigger_name + "'.");
         return;
       }
 
@@ -529,7 +585,7 @@ function () {
 
     TriggerNode.prototype.removeTriggerListener = function (trigger_name, rm_listener) {
       if (this.trigger_names.indexOf(trigger_name) == -1) {
-        console.error("Graph.Node.TriggerNode(.removeTriggerListener): Attempted to remove listener for undeclared name.");
+        console.error("Graph.Node.TriggerNode(.removeTriggerListener): Attempted to remove listener for undeclared name '" + trigger_name + "'.");
         return;
       }
 
@@ -574,14 +630,86 @@ function () {
       return [].concat(this.trigger_history);
     };
 
-    TriggerNode.prototype.createInductionListener = function (source_name, destination_node, destination_name) {
-      var induction_listener = function () {
+    TriggerNode.prototype.addTriggerListenerProxy = function (source_name, destination_node, destination_name) {
+      var listener = function () {
         destination_node.launchTrigger(destination_name);
       };
-      this.addTriggerListener(source_name, induction_listener);
+      this.addTriggerListener(source_name, listener);
+      this.trigger_proxy_listeners.push({
+        source_name: source_name,
+        destination_node: destination_node,
+        destination_name: destination_name,
+        listener: listener
+      });
+    };
+
+    TriggerNode.prototype.removeTriggerListenerProxy = function (source_name, destination_node, destination_name) {
+      // Find all matching listeners
+      var matching_listeners = this.trigger_proxy_listeners.filter(
+        function (descriptor) {
+          return (
+            descriptor.source_name == source_name &&
+            descriptor.destination_node == destination_node &&
+            descriptor.destination_name == destination_name
+          );
+        }
+      );
+      // Remove all listeners matching the description.
+      // Should there be some key allowing specific removal for the case that
+      // there are multiple triggers assigned as the same proxy?
+      for (var i = 0; i < matching_listeners.length; i++) {
+        var cur_listener = matching_listeners[i];
+        this.trigger_proxy_listeners.splice(
+          this.trigger_proxy_listeners.indexOf(cur_listener),
+          1
+        );
+        this.removeTriggerListener(cur_listener.source_name, cur_listener.listener);
+      }
     };
 
     return TriggerNode;
+  })();
+
+  // Envelope
+
+  Graph.Node.EnvelopeNode = (function () {
+    function EnvelopeNode () {
+      Graph.Node.apply(this, arguments);
+    }
+
+    EnvelopeNode.prototype = Utilities.extend(
+      new Graph.Node()
+    );
+
+    return EnvelopeNode;
+  })();
+
+  Graph.Node.EnvelopeSourceNode = (function () {
+    function EnvelopeSourceNode () {
+      Graph.Node.EnvelopeNode.apply(this, arguments);
+    }
+
+    EnvelopeSourceNode.prototype = Utilities.extend(
+      new Graph.Node.EnvelopeNode()
+    );
+
+    EnvelopeSourceNode.prototype.getEnvelopeForEndpoint = function () {
+      throw new Error("Graph.Node.EnvelopeSourceNode(.getEnvelopeForEndpoint): Not implemented.");
+    };
+
+    return EnvelopeSourceNode;
+  })();
+
+  Graph.Node.EnvelopeDestinationNode = (function () {
+    function EnvelopeDestinationNode () {
+      Graph.Node.EnvelopeNode.apply(this, arguments);
+    }
+
+    EnvelopeDestinationNode.prototype = Utilities.extend(
+      new Graph.Node.EnvelopeNode()
+    );
+
+    return EnvelopeDestinationNode;
   })();
 
   return Graph;
