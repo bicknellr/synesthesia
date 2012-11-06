@@ -492,5 +492,97 @@ function () {
     return AudioDestinationNode;
   })();
 
+  Graph.Node.TriggerNode = (function () {
+    function TriggerNode () {
+      this.trigger_names = [];
+
+      this.trigger_listeners = {};
+      this.trigger_history = [];
+
+      this.trigger_induction_listeners = [];
+    }
+
+    TriggerNode.prototype.getTriggerNames = function () {
+      return this.trigger_names;
+    };
+
+    TriggerNode.prototype.setTriggerNames = function (new_trigger_names) {
+      this.trigger_names = new_trigger_names;
+    };
+
+    TriggerNode.prototype.getTriggerNameForEndpoint = function (endpoint) {
+      throw new Error("Graph.Node.TriggerNode(.getTriggerNameForEndpoint): Not implemented.");
+    };
+
+    TriggerNode.prototype.addTriggerListener = function (trigger_name, new_listener) {
+      if (this.trigger_names.indexOf(trigger_name) == -1) {
+        console.error("Graph.Node.TriggerNode(.removeTriggerListener): Attempted to remove listener for undeclared name.");
+        return;
+      }
+
+      if (!this.trigger_listeners[trigger_name]) {
+        this.trigger_listeners[trigger_name] = [];
+      }
+
+      this.trigger_listeners[trigger_name].push(new_listener);
+    };
+
+    TriggerNode.prototype.removeTriggerListener = function (trigger_name, rm_listener) {
+      if (this.trigger_names.indexOf(trigger_name) == -1) {
+        console.error("Graph.Node.TriggerNode(.removeTriggerListener): Attempted to remove listener for undeclared name.");
+        return;
+      }
+
+      var trigger_arr = this.trigger_listeners[trigger_name];
+
+      while (trigger_arr.indexOf(rm_listener) != -1) {
+        trigger_arr.splice(trigger_arr.indexOf(rm_listener), 1);
+      }
+    };
+
+    TriggerNode.prototype.launchTrigger = function (trigger_name) {
+      // Add the launch to history if it is a valid name, even if there are no listeners.
+      if (this.trigger_names.indexOf(trigger_name) != -1) {
+        this.trigger_history.push({
+          name: trigger_name,
+          time: Date.now()
+        });
+      }
+
+      if (!this.trigger_listeners.hasOwnProperty(trigger_name)) {
+        return; // No listeners to inform.
+      }
+
+      var trigger_arr = this.trigger_listeners[trigger_name];
+      for (var i = 0; i < trigger_arr.length; i++) {
+        var stop_propagation = false;
+        var result = trigger_arr[i]({
+          name: trigger_name,
+          source: this,
+          stopPropagation: function () {
+            stop_propagation = true;
+          }
+        });
+
+        if (stop_propagation) {
+          return;
+        }
+      }
+    };
+
+    TriggerNode.prototype.getTriggerLaunchHistory = function () {
+      return [].concat(this.trigger_history);
+    };
+
+    TriggerNode.prototype.createInductionListener = function (source_name, destination_node, destination_name) {
+      var induction_listener = function () {
+        destination_node.launchTrigger(destination_name);
+      };
+      this.addTriggerListener(source_name, induction_listener);
+    };
+
+    return TriggerNode;
+  })();
+
   return Graph;
 });
