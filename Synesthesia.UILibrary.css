@@ -145,6 +145,7 @@
 
 /* EnvelopeEditor */
 
-.Synesthesia_UILibrary_EnvelopeEditor {
+.Synesthesia_UILibrary_EnvelopePathsEditor {
+  position: relative;
   background-color: #202020;
 }

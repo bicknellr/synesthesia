@@ -2627,9 +2627,7 @@ function () {
         "apply_envelope",
       ]);
 
-      // FOR DEBUGGING ONLY
       this.addTriggerListener("apply_envelope", (function () {
-        console.log("apply_envelope");
         if (!this.active_envelope) return;
         if (!this.active_audioparam) return;
 
@@ -2829,6 +2827,65 @@ function () {
     };
 
     return TriggerButton;
+  })();
+
+  NodeLibrary.EnvelopePathsEditorTest = (function () {
+    function EnvelopePathsEditorTest (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Graph.Node.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+      this.context = this.synesthesia.getContext();
+
+      this.setInputDescriptors({
+      });
+
+      this.setOutputDescriptors({
+      });
+
+      this.ui_window = new WindowSystem.NodeWindow({
+        node: this,
+        title: "Envelope Paths Editor Test",
+        use_flex: false, resizable: false
+      });
+    }
+
+    EnvelopePathsEditorTest.prototype = Utilities.extend(
+      new Graph.Node()
+    );
+
+    // UI
+
+    EnvelopePathsEditorTest.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+    
+    EnvelopePathsEditorTest.prototype.informWindowPrepared = function (div) {
+      this.path_editor = new UILibrary.EnvelopePathsEditor({
+        x_min: -0.1, x_max: 1.1,
+        y_min: -0.1, y_max: 1.1,
+      });
+      div.appendChild(this.path_editor.getElement());
+    };
+
+    EnvelopePathsEditorTest.prototype.draw = function () {
+      //
+    };
+    
+    // Graph
+
+    EnvelopePathsEditorTest.prototype.informConnected = function (endpoint, connection) {
+      switch (endpoint) {
+      }
+    };
+
+    EnvelopePathsEditorTest.prototype.informDisconnected = function (endpoint, connection) {
+      switch (endpoint) {
+      }
+    };
+
+    return EnvelopePathsEditorTest;
   })();
 
   NodeLibrary.FlowUITestNode = (function () {

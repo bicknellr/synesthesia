@@ -15,6 +15,11 @@ function () {
     };
 
     Path.prototype.getPoints = function () {
+      this.points.sort(
+        function (a, b) {
+          return a.getTime() - b.getTime();
+        }
+      );
       return [].concat(this.points);
     };
 
@@ -28,8 +33,9 @@ function () {
     };
 
     Path.prototype.applyToAudioParamWithTimeOffset = function (audioparam, time_offset) {
-      for (var point_ix = 0; point_ix < this.points.length; point_ix++) {
-        var cur_point = this.points[point_ix];
+      var points = this.getPoints();
+      for (var point_ix = 0; point_ix < points.length; point_ix++) {
+        var cur_point = points[point_ix];
         console.log("applying " + cur_point.getTransition());
         switch (cur_point.getTransition()) {
           case Envelope.Point.Transition.SET:

@@ -1,8 +1,10 @@
 module.declare("Synesthesia:UILibrary",
-["Utilities"],
+["Utilities", "Synesthesia:Envelope"],
 function () {
   
   var Utilities = module.require("Utilities");
+
+  var Envelope = module.require("Synesthesia:Envelope");
 
   var UILibrary = {};
 
@@ -744,25 +746,577 @@ function () {
     return SlideView;
   })();
 
-  UILibrary.EnvelopeEditor = (function () {
-    function EnvelopeEditor (params) {
+  UILibrary.EnvelopePathDisplay = (function () {
+    function EnvelopePathDisplay (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.canvas = null;
+
+      this.width = this.params.width || 300;
+      this.height = this.params.height || 150;
+      this.x_min = this.params.x_min || 0;
+      this.x_max = this.params.x_max || 1;
+      this.y_min = this.params.y_min || 0;
+      this.y_max = this.params.y_max || 1;
+
+      this.point_radius = this.params.point_radius || 3;
+
+      this.initial_color = this.params.initial_color || "rgba(0, 128, 255, 1)";
+      this.selected_color = this.params.selected_color || "rgba(255, 192, 64, 1)";
+
+      this.path = null;
+      this.selected_points = [];
+
+      this.build();
+      this.draw();
+    }
+
+    EnvelopePathDisplay.prototype.getElement = function () {
+      return this.canvas;
+    };
+
+    EnvelopePathDisplay.prototype.build = function () {
+      this.canvas = document.createElement("canvas");
+        Utilities.addClass(this.canvas, "Synesthesia_UILibrary_EnvelopePathDisplay");
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+
+      this.draw();
+    };
+
+    EnvelopePathDisplay.prototype.setPath = function (new_path) {
+      this.path = new_path;
+
+      this.draw();
+    };
+
+    EnvelopePathDisplay.prototype.selectPoint = function (point) {
+      this.selected_points.push(point);
+    };
+
+    EnvelopePathDisplay.prototype.deselectPoint = function (point) {
+      while (this.selected_points.indexOf(point) != -1) {
+        this.selected_points.splice(
+          this.selected_points.indexOf(point),
+          1
+        );
+      }
+    };
+
+    EnvelopePathDisplay.prototype.getSelectedPoints = function () {
+      return [].concat(this.selected_points);
+    };
+
+    EnvelopePathDisplay.prototype.setSelectedPoints = function (points) {
+      var path_points = this.path.getPoints();
+      this.selected_points = points.filter(
+        function (point) {
+          return (path_points.indexOf(point) != -1);
+        }
+      );
+    };
+
+    EnvelopePathDisplay.prototype.setDisplayParameters = function (params) {
+      var param_list = ["width", "height", "x_min", "x_max", "y_min", "y_max", "initial_color", "selected_color"];
+      for (var i = 0; i < param_list.length; i++) {
+        var cur_param = param_list[i];
+        if (params.hasOwnProperty(cur_param)) {
+          this[cur_param] = params[cur_param];
+        }
+      }
+
+      this.draw();
+    };
+
+    // params.point is {x: Number, y: Number} not Envelope.Point
+    EnvelopePathDisplay.prototype.convertToDisplayCoords = function (params) {
+      var new_x = (params.point.x - params.x_min) / (params.x_max - params.x_min) * params.width;
+      var new_y = params.height - (params.point.y - params.y_min) / (params.y_max - params.y_min) * params.height;
+      return {x: new_x, y: new_y};
+    };
+
+    EnvelopePathDisplay.prototype.draw = function () {
+      //console.log("EnvelopePathDisplay(.draw)");
+      this.canvas.width = this.width;
+      this.canvas.height = this.height;
+
+      if (this.path == null) return;
+
+      var ctx = this.canvas.getContext("2d");
+      ctx.save();
+
+        var path_points = this.path.getPoints();
+
+        for (var point_ix = 1; point_ix < path_points.length; point_ix++) {
+          var cur_point_l = path_points[point_ix - 1];
+          var cur_point_r = path_points[point_ix];
+
+          var display_coords_l = this.convertToDisplayCoords({
+            point: {x: cur_point_l.getTime(), y: cur_point_l.getValue()},
+            x_min: this.x_min, x_max: this.x_max,
+            y_min: this.y_min, y_max: this.y_max,
+            width: this.canvas.width,
+            height: this.canvas.height
+          });
+          var display_coords_r = this.convertToDisplayCoords({
+            point: {x: cur_point_r.getTime(), y: cur_point_r.getValue()},
+            x_min: this.x_min, x_max: this.x_max,
+            y_min: this.y_min, y_max: this.y_max,
+            width: this.canvas.width,
+            height: this.canvas.height
+          });
+
+          ctx.beginPath();
+            ctx.moveTo(display_coords_l.x, display_coords_l.y);
+            ctx.lineTo(display_coords_r.x, display_coords_r.y);
+
+          ctx.lineWidth = this.point_radius * (2 / 3);
+          if (this.selected_points.indexOf(cur_point_r) == -1) {
+            ctx.strokeStyle = this.initial_color;
+          } else {
+            ctx.strokeStyle = this.selected_color;
+          }
+          ctx.stroke();
+        }
+
+        for (var point_ix = 0; point_ix < path_points.length; point_ix++) {
+          var cur_point = path_points[point_ix];
+
+          var display_coords = this.convertToDisplayCoords({
+            point: {x: cur_point.getTime(), y: cur_point.getValue()},
+            x_min: this.x_min, x_max: this.x_max,
+            y_min: this.y_min, y_max: this.y_max,
+            width: this.canvas.width,
+            height: this.canvas.height
+          });
+
+          ctx.beginPath();
+            ctx.arc(display_coords.x, display_coords.y, this.point_radius + 2, 0, 2 * Math.PI);
+          ctx.globalCompositeOperation = "destination-out";
+          ctx.fill();
+        }
+
+        for (var point_ix = 0; point_ix < path_points.length; point_ix++) {
+          var cur_point = path_points[point_ix];
+
+          var display_coords = this.convertToDisplayCoords({
+            point: {x: cur_point.getTime(), y: cur_point.getValue()},
+            x_min: this.x_min, x_max: this.x_max,
+            y_min: this.y_min, y_max: this.y_max,
+            width: this.canvas.width,
+            height: this.canvas.height
+          });
+
+          ctx.beginPath();
+            ctx.arc(display_coords.x, display_coords.y, this.point_radius + 1, 0, 2 * Math.PI);
+          ctx.globalCompositeOperation = "source-over";
+            ctx.fillStyle = "rgba(64, 64, 64, 0.5)";
+          ctx.fill();
+
+          ctx.beginPath();
+            ctx.arc(display_coords.x, display_coords.y, this.point_radius, 0, 2 * Math.PI);
+          ctx.globalCompositeOperation = "source-over";
+          if (this.selected_points.indexOf(cur_point) == -1) {
+            ctx.fillStyle = this.initial_color;
+          } else {
+            ctx.fillStyle = this.selected_color;
+          }
+          ctx.fill();
+        }
+
+      ctx.restore();
+    };
+
+    return EnvelopePathDisplay;
+  })();
+
+  UILibrary.EnvelopePathsEditor = (function () {
+    function EnvelopePathsEditor (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
       this.element = null;
 
+      this.width = this.params.width || 500;
+      this.height = this.params.height || 300;
+      this.x_min = this.params.x_min || 0;
+      this.x_max = this.params.x_max || 1;
+      this.y_min = this.params.y_min || 0;
+      this.y_max = this.params.y_max || 1;
+
+      this.selection_radius = this.params.selection_radius || 5;
+      this.selection_parameters = null;
+      this.selection_map = new Utilities.Map();
+      this.selection_map_stage = new Utilities.Map();
+      this.selection_map_deselect_stage = new Utilities.Map();
+
+      this.paths = [];
+      this.display_map = new Utilities.Map();
+
       this.build();
+
+      // DEBUGGING ONLY!
+      var TEST_PATH_1 = new Envelope.Path();
+        for (var i = 0; i <= 25; i++) {
+          TEST_PATH_1.addPoint(
+            new Envelope.Point({
+              time: (1 / i),
+              value: (1 / i) * (1 / i),
+              transition: Envelope.Point.Transition.LINEAR
+            })
+          );
+        }
+      this.addPath(TEST_PATH_1);
+      var TEST_PATH_2 = new Envelope.Path();
+      this.addPath(TEST_PATH_2);
+        for (var i = 0; i <= 25; i++) {
+          var new_point = new Envelope.Point({
+            time: i * (1 / 25),
+            value: 1 - i * (1 / 25) * i * (1 / 25),
+            transition: Envelope.Point.Transition.LINEAR
+          });
+
+          TEST_PATH_2.addPoint(new_point);
+        }
+
+      this.draw();
     }
 
-    EnvelopeEditor.prototype.build = function () {
-      this.element = document.createElement("div");
-        Utilities.addClass(this.element, "Synesthesia_UILibrary_EnvelopeEditor");
-    };
-
-    EnvelopeEditor.prototype.getElement = function () {
+    EnvelopePathsEditor.prototype.getElement = function () {
       return this.element;
     };
 
-    return EnvelopeEditor;
+    EnvelopePathsEditor.prototype.build = function () {
+      this.element = document.createElement("div");
+        Utilities.addClass(this.element, "Synesthesia_UILibrary_EnvelopePathsEditor");
+        this.element.style.width = "" + this.width + "px";
+        this.element.style.height = "" + this.height + "px";
+
+      this.selection_overlay = document.createElement("canvas");
+        this.selection_overlay.style.position = "absolute";
+        this.selection_overlay.style.top = "0px";
+        this.selection_overlay.style.left = "0px";
+        this.selection_overlay.width = this.width;
+        this.selection_overlay.height = this.height;
+
+      this.element.appendChild(this.selection_overlay);
+
+      this.element.addEventListener("mousedown", this.handle_mousedown.bind(this));
+      this.element.addEventListener("mousemove", this.handle_mousemove.bind(this));
+      this.element.addEventListener("mouseup", this.handle_mouseup.bind(this));
+      this.element.addEventListener("mouseout", this.handle_mouseup.bind(this));
+    };
+
+    EnvelopePathsEditor.prototype.handle_mousedown = function (e) {
+      var element_page_position = Utilities.getPagePosition(this.element);
+      var graph_x = e.pageX - element_page_position.left;
+      var graph_y = e.pageY - element_page_position.top;
+
+      var selectable_point = this.getSelectablePointWithinRadius({
+        x: graph_x, y: graph_y,
+        radius: this.selection_radius
+      });
+
+      this.selection_params = {
+        x: graph_x, y: graph_y,
+        shiftKey: e.shiftKey,
+        start_point_params: selectable_point
+      };
+
+      this.draw();
+    };
+
+    EnvelopePathsEditor.prototype.handle_mousemove = function (e) {
+      var element_page_position = Utilities.getPagePosition(this.element);
+      var graph_x = e.pageX - element_page_position.left;
+      var graph_y = e.pageY - element_page_position.top;
+
+      // set up selection_map_stage
+      for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
+        var cur_path = this.paths[path_ix];
+        this.selection_map_stage.set(cur_path, []);
+        this.selection_map_deselect_stage.set(cur_path, []);
+      }
+      
+      // Get the selectable point under the mouse if any.
+      var selectable_point = this.getSelectablePointWithinRadius({
+        x: graph_x, y: graph_y,
+        radius: this.selection_radius
+      });
+
+      if (this.selection_params && !this.selection_params.start_point_params.point) {
+        // If we didn't start by mousedown on a point.
+
+        // Draw the selection box.
+        var overlay_ctx = this.selection_overlay.getContext("2d");
+        overlay_ctx.save();
+          overlay_ctx.clearRect(0, 0, this.selection_overlay.width, this.selection_overlay.height);
+
+          overlay_ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+          overlay_ctx.fillRect(
+            this.selection_params.x - 0.5, this.selection_params.y - 0.5,
+            graph_x - this.selection_params.x, graph_y - this.selection_params.y
+          );
+
+          overlay_ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+          overlay_ctx.strokeRect(
+            this.selection_params.x - 0.5, this.selection_params.y - 0.5,
+            graph_x - this.selection_params.x, graph_y - this.selection_params.y
+          );
+        overlay_ctx.restore();
+
+        if (!this.selection_params.shiftKey) {
+          // If we aren't using shift selection.
+          
+          // Deselect all currently selected points.
+          for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
+            var cur_path = this.paths[path_ix];
+            this.selection_map.set(cur_path, []);
+          }
+        }
+
+        // Find and stage the points within the box.
+        this.selection_map_stage = this.getPathToPointsWithinBoundsMap({
+          x_min: Math.min(this.selection_params.x, graph_x), y_min: Math.min(this.selection_params.y, graph_y),
+          x_max: Math.max(this.selection_params.x, graph_x), y_max: Math.max(this.selection_params.y, graph_y)
+        });
+
+        if (this.selection_params.shiftKey) {
+          // If we are using shift selection.
+
+          // Move already selected points that are within the selection
+          // bounds to the deselect stage.
+          for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
+            var cur_path = this.paths[path_ix];
+            
+            var path_selected_points = this.selection_map.get(cur_path) || [];
+            var path_select_stage = this.selection_map_stage.get(cur_path) || [];
+            var path_deselect_stage = this.selection_map_deselect_stage.get(cur_path) || [];
+            for (var point_ix = 0; point_ix < path_select_stage.length; point_ix++) {
+              var cur_point = path_select_stage[point_ix];
+
+              if (path_selected_points.indexOf(cur_point) != -1) {
+                // If the staged point is already selected.
+
+                // Move it to the deselect stage.
+                path_deselect_stage.push(cur_point);
+                path_select_stage[point_ix] = null;
+              }
+            }
+            path_select_stage.filter(
+              function (point) {
+                return point != null;
+              }
+            );
+            this.selection_map_stage.set(cur_path, path_select_stage);
+            this.selection_map_deselect_stage.set(cur_path, path_deselect_stage);
+          }
+        }
+        
+      } else if (selectable_point.point) {
+        // If we're hovering over a point.
+
+        // Stage the point.
+        var staged_points_for_path = this.selection_map_stage.get(selectable_point.path);
+        staged_points_for_path.push(selectable_point.point);
+      }
+
+      this.draw();
+    };
+
+    EnvelopePathsEditor.prototype.handle_mouseup = function (e) {
+      var element_page_position = Utilities.getPagePosition(this.element);
+      var graph_x = e.pageX - element_page_position.left;
+      var graph_y = e.pageY - element_page_position.top;
+      
+      // Destroy the selection box, if any.
+      var overlay_ctx = this.selection_overlay.getContext("2d");
+      overlay_ctx.save();
+        overlay_ctx.clearRect(0, 0, this.selection_overlay.width, this.selection_overlay.height);
+      overlay_ctx.restore();
+
+      // Get the selectable point under the mouse if any.
+      var selectable_point = this.getSelectablePointWithinRadius({
+        x: graph_x, y: graph_y,
+        radius: this.selection_radius
+      });
+
+      if (this.selection_params && !this.selection_params.shiftKey && selectable_point.point) {
+        // If they didn't push shift and we're clicking a point.
+
+        // Select only that point.
+        for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
+          var cur_path = this.paths[path_ix];
+          this.selection_map.set(cur_path, []);
+        }
+        this.selection_map.get(selectable_point.path).push(selectable_point.point);
+      } else {
+        // Select the staged points.
+        for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
+          var cur_path = this.paths[path_ix];
+
+          var selected_points = this.selection_map.get(cur_path);
+          if (!selected_points) {
+            selected_points = [];
+            this.selection_map.set(cur_path, selected_points);
+          }
+          // Add points in the select map and stage.
+          var selected_points = (this.selection_map.get(cur_path) || []).concat(this.selection_map_stage.get(cur_path) || []);
+          // Remove points in the deselect stage.
+          var deselected_points = (this.selection_map_deselect_stage.get(cur_path) || []);
+          deselected_points.forEach(
+            function (deselect_point) {
+              while (selected_points.indexOf(deselect_point) != -1) {
+                selected_points.splice(
+                  selected_points.indexOf(deselect_point),
+                  1
+                );
+              }
+            }
+          );
+
+          this.selection_map.set(cur_path, selected_points);
+        }
+      }
+      this.selection_map_stage.set(cur_path, []);
+      this.selection_map_deselect_stage.set(cur_path, []);
+
+      this.selection_params = null;
+      this.draw();
+    };
+
+    EnvelopePathsEditor.prototype.addPath = function (new_path) {
+      if (this.paths.indexOf(new_path) != -1) return;
+
+      this.paths.push(new_path);
+
+      var new_display = new UILibrary.EnvelopePathDisplay();
+        new_display.setPath(new_path);
+
+      this.display_map.set(new_path, new_display);
+
+      if (this.display_map.getKeys().length != 1) {
+        new_display.getElement().style.position = "absolute";
+        new_display.getElement().style.top = "0px";
+        new_display.getElement().style.left = "0px";
+        new_display.setDisplayParameters({
+          initial_color: "rgba(255, 0, 128, 1)"
+        });
+      }
+      
+      this.element.insertBefore(
+        new_display.getElement(),
+        this.selection_overlay
+      );
+    };
+
+    EnvelopePathsEditor.prototype.removePath = function (rm_path) {
+      while (this.paths.indexOf(rm_path) != -1) {
+        this.paths.splice(this.paths.indexOf(rm_path), 1);
+      }
+    };
+
+    // bounds : {x_min: Number, y_min: Number, x_max: Number, y_max: Number}
+    EnvelopePathsEditor.prototype.getPathToPointsWithinBoundsMap = function (bounds) {
+      var path_to_bounded_points_map = new Utilities.Map();
+      for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
+        var cur_path = this.paths[path_ix];
+
+        var valid_points = [];
+
+        var path_points = cur_path.getPoints();
+        for (var point_ix = 0; point_ix < path_points.length; point_ix++) {
+          var cur_point = path_points[point_ix];
+          var cur_point_coords = this.display_map.get(cur_path).convertToDisplayCoords({
+            point: {x: cur_point.getTime(), y: cur_point.getValue()},
+            width: this.width, height: this.height,
+            x_min: this.x_min, x_max: this.x_max,
+            y_min: this.y_min, y_max: this.y_max
+          });
+
+          if (
+            bounds.x_min <= cur_point_coords.x &&
+            cur_point_coords.x <= bounds.x_max &&
+            bounds.y_min <= cur_point_coords.y &&
+            cur_point_coords.y <= bounds.y_max
+          ) {
+            valid_points.push(cur_point);
+          }
+        }
+
+        path_to_bounded_points_map.set(cur_path, valid_points);
+      }
+
+      return path_to_bounded_points_map;
+    };
+
+    // point : {x: Number, y: Number, radius: Number}
+    EnvelopePathsEditor.prototype.getSelectablePointWithinRadius = function (point) {
+      var nearest_point = null;
+      var nearest_point_path = null;
+      var nearest_point_distance = -1;
+
+      for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
+        var cur_path = this.paths[path_ix];
+
+        var path_points = cur_path.getPoints();
+        for (var point_ix = 0; point_ix < path_points.length; point_ix++) {
+          var cur_point = path_points[point_ix];
+          var cur_point_coords = this.display_map.get(cur_path).convertToDisplayCoords({
+            point: {x: cur_point.getTime(), y: cur_point.getValue()},
+            width: this.width, height: this.height,
+            x_min: this.x_min, x_max: this.x_max,
+            y_min: this.y_min, y_max: this.y_max
+          });
+
+          var point_distance = Math.sqrt(Math.pow(point.x - cur_point_coords.x, 2) + Math.pow(point.y - cur_point_coords.y, 2));
+
+          if (point_distance < point.radius) {
+            if (nearest_point == null || point_distance < nearest_point_distance) {
+              nearest_point = cur_point;
+              nearest_point_path = cur_path;
+              nearest_point_distance = point_distance;
+            }
+          }
+        }
+      }
+
+      return {point: nearest_point, path: nearest_point_path};
+    };
+
+    EnvelopePathsEditor.prototype.draw = function () {
+      for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
+        var cur_path = this.paths[path_ix];
+
+        var cur_display = this.display_map.get(cur_path);
+
+        // Add points in the select map and stage.
+        var selected_points = (this.selection_map.get(cur_path) || []).concat(this.selection_map_stage.get(cur_path) || []);
+        // Remove points in the deselect stage.
+        var deselected_points = (this.selection_map_deselect_stage.get(cur_path) || []);
+        deselected_points.forEach(
+          function (deselect_point) {
+            while (selected_points.indexOf(deselect_point) != -1) {
+              selected_points.splice(
+                selected_points.indexOf(deselect_point),
+                1
+              );
+            }
+          }
+        );
+
+        cur_display.setSelectedPoints(selected_points);
+
+        cur_display.setDisplayParameters({
+          width: this.width, height: this.height,
+          x_min: this.x_min, x_max: this.x_max,
+          y_min: this.y_min, y_max: this.y_max
+        });
+
+        cur_display.draw();
+      }
+    };
+
+    return EnvelopePathsEditor;
   })();
 
   return UILibrary;

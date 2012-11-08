@@ -283,6 +283,19 @@ function () {
                         }).bind(this)
                       }),
                       new UILibrary.MenuItem({
+                        content: document.createTextNode("Envelope Paths Editor Test"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.EnvelopePathsEditorTest({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
                         content: document.createElement("hr"),
                         callback: (function () {
 

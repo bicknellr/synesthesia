@@ -241,6 +241,10 @@ module.declare("Utilities", [], function () {
 
     SynchronizedValue.prototype.setValue = function (source, new_value) {
       this.value = new_value;
+      this.informUpdated(source);
+    };
+
+    SynchronizedValue.prototype.informUpdated = function (source) {
       for (var i = 0; i < this.listeners.length; i++) {
         if (this.listeners[i].source == source) continue;
 
@@ -250,6 +254,11 @@ module.declare("Utilities", [], function () {
 
     SynchronizedValue.prototype.getValue = function () {
       return this.value;
+    };
+
+    SynchronizedValue.prototype.editValue = function (source, edit_function) {
+      this.value = edit_function(this.value);
+      this.informUpdated(source);
     };
 
     SynchronizedValue.prototype.addListener = function (new_source, new_listener) {
