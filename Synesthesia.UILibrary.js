@@ -945,9 +945,9 @@ function () {
 
       this.selection_radius = this.params.selection_radius || 5;
       this.selection_parameters = null;
-      this.selection_map = new Utilities.Map();
-      this.selection_map_stage = new Utilities.Map();
-      this.selection_map_deselect_stage = new Utilities.Map();
+      this.selected_points = new Utilities.Set();
+      this.selection_stage = new Utilities.Set();
+      this.deselection_stage = new Utilities.Set();
 
       this.paths = [];
       this.display_map = new Utilities.Map();
@@ -1001,9 +1001,8 @@ function () {
       this.element.appendChild(this.selection_overlay);
 
       this.element.addEventListener("mousedown", this.handle_mousedown.bind(this));
-      this.element.addEventListener("mousemove", this.handle_mousemove.bind(this));
-      this.element.addEventListener("mouseup", this.handle_mouseup.bind(this));
-      this.element.addEventListener("mouseout", this.handle_mouseup.bind(this));
+      window.addEventListener("mousemove", this.handle_mousemove.bind(this));
+      window.addEventListener("mouseup", this.handle_mouseup.bind(this));
     };
 
     EnvelopePathsEditor.prototype.handle_mousedown = function (e) {
@@ -1019,7 +1018,7 @@ function () {
       this.selection_params = {
         x: graph_x, y: graph_y,
         shiftKey: e.shiftKey,
-        start_point_params: selectable_point
+        start_point: selectable_point
       };
 
       this.draw();
@@ -1031,11 +1030,8 @@ function () {
       var graph_y = e.pageY - element_page_position.top;
 
       // set up selection_map_stage
-      for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
-        var cur_path = this.paths[path_ix];
-        this.selection_map_stage.set(cur_path, []);
-        this.selection_map_deselect_stage.set(cur_path, []);
-      }
+      this.selection_stage.clear();
+      this.deselection_stage.clear();
       
       // Get the selectable point under the mouse if any.
       var selectable_point = this.getSelectablePointWithinRadius({
@@ -1043,7 +1039,7 @@ function () {
         radius: this.selection_radius
       });
 
-      if (this.selection_params && !this.selection_params.start_point_params.point) {
+      if (this.selection_params && !this.selection_params.start_point) {
         // If we didn't start by mousedown on a point.
 
         // Draw the selection box.
@@ -1068,14 +1064,11 @@ function () {
           // If we aren't using shift selection.
           
           // Deselect all currently selected points.
-          for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
-            var cur_path = this.paths[path_ix];
-            this.selection_map.set(cur_path, []);
-          }
+          this.selected_points.clear();
         }
 
         // Find and stage the points within the box.
-        this.selection_map_stage = this.getPathToPointsWithinBoundsMap({
+        this.selection_stage = this.getPointsWithinBoundsSet({
           x_min: Math.min(this.selection_params.x, graph_x), y_min: Math.min(this.selection_params.y, graph_y),
           x_max: Math.max(this.selection_params.x, graph_x), y_max: Math.max(this.selection_params.y, graph_y)
         });
@@ -1085,39 +1078,16 @@ function () {
 
           // Move already selected points that are within the selection
           // bounds to the deselect stage.
-          for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
-            var cur_path = this.paths[path_ix];
-            
-            var path_selected_points = this.selection_map.get(cur_path) || [];
-            var path_select_stage = this.selection_map_stage.get(cur_path) || [];
-            var path_deselect_stage = this.selection_map_deselect_stage.get(cur_path) || [];
-            for (var point_ix = 0; point_ix < path_select_stage.length; point_ix++) {
-              var cur_point = path_select_stage[point_ix];
-
-              if (path_selected_points.indexOf(cur_point) != -1) {
-                // If the staged point is already selected.
-
-                // Move it to the deselect stage.
-                path_deselect_stage.push(cur_point);
-                path_select_stage[point_ix] = null;
-              }
-            }
-            path_select_stage.filter(
-              function (point) {
-                return point != null;
-              }
-            );
-            this.selection_map_stage.set(cur_path, path_select_stage);
-            this.selection_map_deselect_stage.set(cur_path, path_deselect_stage);
-          }
+          var points_to_deselect = this.selection_stage.intersection(this.selected_points);
+          this.selection_stage.removeAll(points_to_deselect.toArray());
+          this.deselection_stage.addAll(points_to_deselect.toArray());
         }
         
-      } else if (selectable_point.point) {
+      } else if (selectable_point) {
         // If we're hovering over a point.
 
         // Stage the point.
-        var staged_points_for_path = this.selection_map_stage.get(selectable_point.path);
-        staged_points_for_path.push(selectable_point.point);
+        this.selection_stage.add(selectable_point);
       }
 
       this.draw();
@@ -1140,45 +1110,18 @@ function () {
         radius: this.selection_radius
       });
 
-      if (this.selection_params && !this.selection_params.shiftKey && selectable_point.point) {
+      if (this.selection_params && !this.selection_params.shiftKey && selectable_point) {
         // If they didn't push shift and we're clicking a point.
 
         // Select only that point.
-        for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
-          var cur_path = this.paths[path_ix];
-          this.selection_map.set(cur_path, []);
-        }
-        this.selection_map.get(selectable_point.path).push(selectable_point.point);
+        this.selected_points.clear();
+        this.selected_points.add(selectable_point);
       } else {
         // Select the staged points.
-        for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
-          var cur_path = this.paths[path_ix];
-
-          var selected_points = this.selection_map.get(cur_path);
-          if (!selected_points) {
-            selected_points = [];
-            this.selection_map.set(cur_path, selected_points);
-          }
-          // Add points in the select map and stage.
-          var selected_points = (this.selection_map.get(cur_path) || []).concat(this.selection_map_stage.get(cur_path) || []);
-          // Remove points in the deselect stage.
-          var deselected_points = (this.selection_map_deselect_stage.get(cur_path) || []);
-          deselected_points.forEach(
-            function (deselect_point) {
-              while (selected_points.indexOf(deselect_point) != -1) {
-                selected_points.splice(
-                  selected_points.indexOf(deselect_point),
-                  1
-                );
-              }
-            }
-          );
-
-          this.selection_map.set(cur_path, selected_points);
-        }
+        this.selected_points = this.selected_points.union(this.selection_stage).difference(this.deselection_stage);
       }
-      this.selection_map_stage.set(cur_path, []);
-      this.selection_map_deselect_stage.set(cur_path, []);
+      this.selection_stage.clear();
+      this.deselection_stage.clear();
 
       this.selection_params = null;
       this.draw();
@@ -1216,8 +1159,8 @@ function () {
     };
 
     // bounds : {x_min: Number, y_min: Number, x_max: Number, y_max: Number}
-    EnvelopePathsEditor.prototype.getPathToPointsWithinBoundsMap = function (bounds) {
-      var path_to_bounded_points_map = new Utilities.Map();
+    EnvelopePathsEditor.prototype.getPointsWithinBoundsSet = function (bounds) {
+      var bounded_points_set = new Utilities.Set();
       for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
         var cur_path = this.paths[path_ix];
 
@@ -1243,16 +1186,15 @@ function () {
           }
         }
 
-        path_to_bounded_points_map.set(cur_path, valid_points);
+        bounded_points_set.addAll(valid_points);
       }
 
-      return path_to_bounded_points_map;
+      return bounded_points_set;
     };
 
     // point : {x: Number, y: Number, radius: Number}
     EnvelopePathsEditor.prototype.getSelectablePointWithinRadius = function (point) {
       var nearest_point = null;
-      var nearest_point_path = null;
       var nearest_point_distance = -1;
 
       for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
@@ -1273,38 +1215,31 @@ function () {
           if (point_distance < point.radius) {
             if (nearest_point == null || point_distance < nearest_point_distance) {
               nearest_point = cur_point;
-              nearest_point_path = cur_path;
               nearest_point_distance = point_distance;
             }
           }
         }
       }
 
-      return {point: nearest_point, path: nearest_point_path};
+      return nearest_point;
     };
 
     EnvelopePathsEditor.prototype.draw = function () {
+      var selected_points_arr = this.selected_points.union(this.selection_stage).difference(this.deselection_stage).toArray();
       for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
         var cur_path = this.paths[path_ix];
 
         var cur_display = this.display_map.get(cur_path);
 
         // Add points in the select map and stage.
-        var selected_points = (this.selection_map.get(cur_path) || []).concat(this.selection_map_stage.get(cur_path) || []);
         // Remove points in the deselect stage.
-        var deselected_points = (this.selection_map_deselect_stage.get(cur_path) || []);
-        deselected_points.forEach(
-          function (deselect_point) {
-            while (selected_points.indexOf(deselect_point) != -1) {
-              selected_points.splice(
-                selected_points.indexOf(deselect_point),
-                1
-              );
-            }
+        var selected_points_for_path = selected_points_arr.filter(
+          function (point) {
+            return (point.getPaths().indexOf(cur_path) != -1);
           }
         );
 
-        cur_display.setSelectedPoints(selected_points);
+        cur_display.setSelectedPoints(selected_points_for_path);
 
         cur_display.setDisplayParameters({
           width: this.width, height: this.height,
