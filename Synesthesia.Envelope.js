@@ -10,10 +10,10 @@ function () {
       this.points = [];
     }
 
-    Path.prototype.addPoint = function (new_point) {
-      this.points.push(new_point);
-    };
-
+    /* getPoints
+     * rm_point : Envelope.Point
+     * return : [Envelope.Point]
+     */
     Path.prototype.getPoints = function () {
       this.points.sort(
         function (a, b) {
@@ -23,15 +23,36 @@ function () {
       return [].concat(this.points);
     };
 
+    /* addPoint
+     * new_point : Envelope.Point
+     */
+    Path.prototype.addPoint = function (new_point) {
+      if (this.points.indexOf(new_point) != -1) return;
+
+      this.points.push(new_point);
+
+      new_point.addPath(this);
+    };
+
+    /* removePoint
+     * rm_point : Envelope.Point
+     * return : Envelope.Point
+     */
     Path.prototype.removePoint = function (rm_point) {
       if (this.points.indexOf(rm_point) == -1) return null;
 
-      return this.points.splice(
-        this.points.indexOf(rm_point),
-        1
-      );
+      while (this.points.indexOf(rm_point) != -1) {
+        this.points.splice(this.points.indexOf(rm_point), 1);
+      }
+
+      rm_point.removePath(this);
+      return rm_point;
     };
 
+    /* applyToAudioParamWithTimeOffset
+     * audio_param : AudioParam
+     * time_offset : Number
+     */
     Path.prototype.applyToAudioParamWithTimeOffset = function (audioparam, time_offset) {
       var points = this.getPoints();
       for (var point_ix = 0; point_ix < points.length; point_ix++) {
@@ -84,6 +105,8 @@ function () {
     function Point (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
+      this.paths = [];
+
       this.value = this.params.value || 0;
       this.time = this.params.time || 0;
       this.transition = this.params.transition || Envelope.Point.Transition.SET;
@@ -100,6 +123,29 @@ function () {
       EXPONENTIAL: 2,
       EXPONENTIAL_TARGET: 3,
       CURVE: 4
+    };
+
+    Point.prototype.getPaths = function () {
+      return [].concat(this.paths);
+    };
+
+    Point.prototype.addPath = function (new_path) {
+      if (this.paths.indexOf(new_path) != -1) return;
+
+      this.paths.push(new_path);
+
+      new_path.addPoint(this);
+    };
+
+    Point.prototype.removePath = function (rm_path) {
+      if (this.paths.indexOf(rm_path) == -1) return null;
+
+      while (this.paths.indexOf(rm_path) != -1) {
+        this.paths.splice(this.paths.indexOf(rm_path), 1);
+      }
+
+      rm_path.removePoint(this);
+      return rm_path;
     };
 
     Point.prototype.getValue = function () {
