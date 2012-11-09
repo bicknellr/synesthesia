@@ -118,6 +118,36 @@ module.declare("Utilities", [], function () {
     return Map;
   })();
 
+  var Set = (function () {
+    function Set () {
+      this.items = [];
+    }
+
+    Set.prototype.add = function (new_item) {
+      if (this.items.indexOf(new_item) != -1) return false;
+
+      this.items.push(new_item);
+
+      return new_item;
+    };
+
+    Set.prototype.remove = function (rm_item) {
+      if (this.items.indexOf(rm_item) == -1) return false;
+
+      return this.items.splice(this.items.indexOf(rm_item), 1);
+    };
+
+    Set.prototype.contains = function (test_item) {
+      return (this.items.indexOf(test_item) != -1);
+    };
+
+    Set.prototype.toArray = function () {
+      return [].concat(this.items);
+    };
+
+    return Set;
+  })();
+
   var range = function (n) {
     var output = [];
     for (var i = 0; i < n; i++) {
@@ -229,8 +259,10 @@ module.declare("Utilities", [], function () {
     addClass: addClass,
     removeClass: removeClass,
 
-    Flaggable: Flaggable,
     Map: Map,
+    Set: Set,
+
+    Flaggable: Flaggable,
     SynchronizedValue: SynchronizedValue,
 
     range: range,
