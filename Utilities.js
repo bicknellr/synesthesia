@@ -204,7 +204,6 @@ module.declare("Utilities", [], function () {
     };
 
     Set.prototype.subset = function (other_set) {
-      var new_set = new Set();
       var arr_other = other_set.toArray();
       for (var i = 0; i < arr_other.length; i++) {
         if (!this.contains(arr_other[i])) {
