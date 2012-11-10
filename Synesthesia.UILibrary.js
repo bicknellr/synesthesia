@@ -894,9 +894,25 @@ function () {
       }
     */
     EnvelopePathDisplay.prototype.convertToDisplayCoords = function (params) {
-      var new_x = (params.point.x - params.x_min) / (params.x_max - params.x_min) * params.width;
-      var new_y = params.height - (params.point.y - params.y_min) / (params.y_max - params.y_min) * params.height;
-      return {x: new_x, y: new_y};
+      return {
+        x: (params.point.x - params.x_min) / (params.x_max - params.x_min) * params.width,
+        y: params.height - (params.point.y - params.y_min) / (params.y_max - params.y_min) * params.height
+      };
+    };
+
+    /*
+      params: {
+        point: {x: Number, y: Number},
+        x_min: Number, x_max: Number,
+        y_min: Number, y_max: Number,
+        width: Number, height: Number
+      }
+    */
+    EnvelopePathDisplay.prototype.convertToPathCoords = function (params) {
+      return {
+        x: params.point.x * (params.x_max - params.x_min) / params.width + params.x_min,
+        y: (params.height - params.point.y) * (params.y_max - params.y_min) / params.height + params.y_min
+      };
     };
 
     EnvelopePathDisplay.prototype.draw = function () {
@@ -1093,8 +1109,17 @@ function () {
         radius: this.selection_radius
       });
 
+      if (!e.shiftKey && !this.selected_points.contains(selectable_point)) {
+        this.selected_points.clear();
+      }
+
+      if (selectable_point) {
+        this.selected_points.add(selectable_point);
+      }
+
       this.selection_params = {
-        x: graph_x, y: graph_y,
+        start_x: graph_x, start_y: graph_y,
+        last_x: graph_x, last_y: graph_y,
         shiftKey: e.shiftKey,
         start_point: selectable_point
       };
@@ -1117,51 +1142,94 @@ function () {
         radius: this.selection_radius
       });
 
-      if (this.selection_params && !this.selection_params.start_point) {
-        // If we didn't start by mousedown on a point.
+      if (this.selection_params) {
+        if (!this.selection_params.start_point) {
+          // If we didn't start by mousedown on a point.
 
-        // Draw the selection box.
-        var overlay_ctx = this.selection_overlay.getContext("2d");
-        overlay_ctx.save();
-          overlay_ctx.clearRect(0, 0, this.selection_overlay.width, this.selection_overlay.height);
+          // Draw the selection box.
+          var overlay_ctx = this.selection_overlay.getContext("2d");
+          overlay_ctx.save();
+            overlay_ctx.clearRect(0, 0, this.selection_overlay.width, this.selection_overlay.height);
 
-          overlay_ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-          overlay_ctx.fillRect(
-            this.selection_params.x - 0.5, this.selection_params.y - 0.5,
-            graph_x - this.selection_params.x, graph_y - this.selection_params.y
-          );
+            overlay_ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+            overlay_ctx.fillRect(
+              this.selection_params.start_x - 0.5, this.selection_params.start_y - 0.5,
+              graph_x - this.selection_params.start_x, graph_y - this.selection_params.start_y
+            );
 
-          overlay_ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-          overlay_ctx.strokeRect(
-            this.selection_params.x - 0.5, this.selection_params.y - 0.5,
-            graph_x - this.selection_params.x, graph_y - this.selection_params.y
-          );
-        overlay_ctx.restore();
+            overlay_ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+            overlay_ctx.strokeRect(
+              this.selection_params.start_x - 0.5, this.selection_params.start_y - 0.5,
+              graph_x - this.selection_params.start_x, graph_y - this.selection_params.start_y
+            );
+          overlay_ctx.restore();
 
-        if (!this.selection_params.shiftKey) {
-          // If we aren't using shift selection.
+          if (!this.selection_params.shiftKey) {
+            // If we aren't using shift selection.
+            
+            // Deselect all currently selected points.
+            this.selected_points.clear();
+          }
+
+          // Find and stage the points within the box.
+          this.selection_stage = this.getPointsWithinBoundsSet({
+            x_min: Math.min(this.selection_params.start_x, graph_x), y_min: Math.min(this.selection_params.start_y, graph_y),
+            x_max: Math.max(this.selection_params.start_x, graph_x), y_max: Math.max(this.selection_params.start_y, graph_y)
+          });
+
+          if (this.selection_params.shiftKey) {
+            // If we are using shift selection.
+
+            // Move already selected points that are within the selection
+            // bounds to the deselect stage.
+            var points_to_deselect = this.selection_stage.intersection(this.selected_points);
+            this.selection_stage.removeAll(points_to_deselect.toArray());
+            this.deselection_stage.addAll(points_to_deselect.toArray());
+          }
           
-          // Deselect all currently selected points.
-          this.selected_points.clear();
+        } else {
+          // If we did start by mousing down on a point.
+
+          var d_x = graph_x - this.selection_params.last_x;
+          var d_y = graph_y - this.selection_params.last_y;
+
+          var paths_set = new Utilities.Set();
+            paths_set.addAll(this.paths);
+
+          // Move the selected points.
+          var selected_points_arr = this.selected_points.toArray();
+          for (var point_ix = 0; point_ix < selected_points_arr.length; point_ix++) {
+            var cur_point = selected_points_arr[point_ix];
+
+            var point_paths_set = new Utilities.Set();
+              point_paths_set.addAll(cur_point.getPaths());
+            // Get the first path being displayed that this point is associated with.
+            var cur_path = point_paths_set.intersection(paths_set).toArray()[0];
+
+            var cur_origin_coords = this.display_map.get(cur_path).convertToPathCoords({
+              point: {x: 0, y: 0},
+              width: this.width, height: this.height,
+              x_min: this.x_min, x_max: this.x_max,
+              y_min: this.y_min, y_max: this.y_max
+            });
+            var cur_change_coords = this.display_map.get(cur_path).convertToPathCoords({
+              point: {x: d_x, y: d_y},
+              width: this.width, height: this.height,
+              x_min: this.x_min, x_max: this.x_max,
+              y_min: this.y_min, y_max: this.y_max
+            });
+
+            cur_point.setTime(cur_point.getTime() + (cur_change_coords.x - cur_origin_coords.x));
+            cur_point.setValue(cur_point.getValue() + (cur_change_coords.y - cur_origin_coords.y));
+          }
+
+          // Update the last_x and last_y.
+          this.selection_params.last_x = graph_x;
+          this.selection_params.last_y = graph_y;
         }
-
-        // Find and stage the points within the box.
-        this.selection_stage = this.getPointsWithinBoundsSet({
-          x_min: Math.min(this.selection_params.x, graph_x), y_min: Math.min(this.selection_params.y, graph_y),
-          x_max: Math.max(this.selection_params.x, graph_x), y_max: Math.max(this.selection_params.y, graph_y)
-        });
-
-        if (this.selection_params.shiftKey) {
-          // If we are using shift selection.
-
-          // Move already selected points that are within the selection
-          // bounds to the deselect stage.
-          var points_to_deselect = this.selection_stage.intersection(this.selected_points);
-          this.selection_stage.removeAll(points_to_deselect.toArray());
-          this.deselection_stage.addAll(points_to_deselect.toArray());
-        }
-        
-      } else if (selectable_point) {
+      }
+      
+      if (selectable_point) {
         // If we're hovering over a point.
 
         // Stage the point.
@@ -1188,7 +1256,7 @@ function () {
         radius: this.selection_radius
       });
 
-      if (this.selection_params && !this.selection_params.shiftKey && selectable_point) {
+      if (this.selection_params && !this.selection_params.shiftKey && selectable_point && !this.selected_points.contains(selectable_point)) {
         // If they didn't push shift and we're clicking a point.
 
         // Select only that point.
