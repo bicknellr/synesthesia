@@ -759,13 +759,17 @@ function () {
       this.y_min = this.params.y_min || 0;
       this.y_max = this.params.y_max || 1;
 
-      this.point_radius = this.params.point_radius || 3;
-
-      this.initial_color = this.params.initial_color || "rgba(0, 128, 255, 1)";
-      this.selected_color = this.params.selected_color || "rgba(255, 192, 64, 1)";
-
       this.path = null;
       this.selected_points = [];
+      this.point_styles = new Utilities.Map();
+      this.initial_point_style = this.params.initial_point_style || {
+        lineWidth: 2,
+        lineColor: "rgba(0, 128, 255, 1)",
+        pointRadius: 3,
+        pointColor: "rgba(0, 128, 255, 1)",
+        pointOutlineWidth: 1,
+        pointOutlineColor: "rgba(64, 64, 64, 0.5)"
+      };
 
       this.build();
       this.draw();
@@ -780,44 +784,95 @@ function () {
         Utilities.addClass(this.canvas, "Synesthesia_UILibrary_EnvelopePathDisplay");
         this.canvas.width = this.width;
         this.canvas.height = this.height;
-
-      this.draw();
     };
 
+    /*
+      new_path: Envelope.Path
+    */
     EnvelopePathDisplay.prototype.setPath = function (new_path) {
       this.path = new_path;
 
       this.draw();
     };
 
-    EnvelopePathDisplay.prototype.selectPoint = function (point) {
-      this.selected_points.push(point);
-    };
+    /*
+      point: Envelope.Point
+      style: {
+        *lineWidth: Number,
+        *lineColor: String,
+        *pointRadius: Number,
+        *pointColor: String,
+        *pointOutlineWidth: Number,
+        *pointOutlineColor: String
+      }
+      *do_draw: Boolean
+    */
+    EnvelopePathDisplay.prototype.setPointStyle = function (point, style, do_draw) {
+      this.point_styles.set(point, style);
 
-    EnvelopePathDisplay.prototype.deselectPoint = function (point) {
-      while (this.selected_points.indexOf(point) != -1) {
-        this.selected_points.splice(
-          this.selected_points.indexOf(point),
-          1
-        );
+      if (typeof do_draw == "undefined" || do_draw) {
+        this.draw();
       }
     };
 
-    EnvelopePathDisplay.prototype.getSelectedPoints = function () {
-      return [].concat(this.selected_points);
+    /*
+      point: Envelope.Point
+      *do_draw: Boolean
+    */
+    EnvelopePathDisplay.prototype.clearPointStyle = function (point, do_draw) {
+      this.point_styles.remove(point);
+
+      if (typeof do_draw == "undefined" || do_draw) {
+        this.draw();
+      }
     };
 
-    EnvelopePathDisplay.prototype.setSelectedPoints = function (points) {
-      var path_points = this.path.getPoints();
-      this.selected_points = points.filter(
-        function (point) {
-          return (path_points.indexOf(point) != -1);
-        }
-      );
+    /*
+      points: [Envelope.Point]
+      style: {
+        *lineWidth: Number,
+        *lineColor: String,
+        *pointRadius: Number,
+        *pointColor: String,
+        *pointOutlineWidth: Number,
+        *pointOutlineColor: String
+      }
+      *do_draw: Boolean
+    */
+    EnvelopePathDisplay.prototype.setPointsStyle = function (points, style, do_draw) {
+      for (var i = 0; i < points.length; i++) {
+        this.setPointStyle(points[i], style, false);
+      }
+
+      if (typeof do_draw == "undefined" || do_draw) {
+        this.draw();
+      }
+    };
+    
+    /*
+      points: [Envelope.Point]
+      *do_draw: Boolean
+    */
+    EnvelopePathDisplay.prototype.clearPointsStyle = function (points, do_draw) {
+      for (var i = 0; i < points.length; i++) {
+        this.clearPointStyle(points[i], false);
+      }
+
+      if (typeof do_draw == "undefined" || do_draw) {
+        this.draw();
+      }
     };
 
-    EnvelopePathDisplay.prototype.setDisplayParameters = function (params) {
-      var param_list = ["width", "height", "x_min", "x_max", "y_min", "y_max", "initial_color", "selected_color"];
+    /*
+      params: {
+        *x_min: Number, *x_max: Number,
+        *y_min: Number, *y_max: Number,
+        *width: Number, *height: Number
+      }
+      *do_draw: Boolean
+    */
+    EnvelopePathDisplay.prototype.setDisplayParameters = function (params, do_draw) {
+      var param_list = ["width", "height", "x_min", "x_max", "y_min", "y_max"];
       for (var i = 0; i < param_list.length; i++) {
         var cur_param = param_list[i];
         if (params.hasOwnProperty(cur_param)) {
@@ -825,10 +880,19 @@ function () {
         }
       }
 
-      this.draw();
+      if (typeof do_draw == "undefined" || do_draw) {
+        this.draw();
+      }
     };
 
-    // params.point is {x: Number, y: Number} not Envelope.Point
+    /*
+      params: {
+        point: {x: Number, y: Number},
+        x_min: Number, x_max: Number,
+        y_min: Number, y_max: Number,
+        width: Number, height: Number
+      }
+    */
     EnvelopePathDisplay.prototype.convertToDisplayCoords = function (params) {
       var new_x = (params.point.x - params.x_min) / (params.x_max - params.x_min) * params.width;
       var new_y = params.height - (params.point.y - params.y_min) / (params.y_max - params.y_min) * params.height;
@@ -836,7 +900,6 @@ function () {
     };
 
     EnvelopePathDisplay.prototype.draw = function () {
-      //console.log("EnvelopePathDisplay(.draw)");
       this.canvas.width = this.width;
       this.canvas.height = this.height;
 
@@ -850,6 +913,8 @@ function () {
         for (var point_ix = 1; point_ix < path_points.length; point_ix++) {
           var cur_point_l = path_points[point_ix - 1];
           var cur_point_r = path_points[point_ix];
+
+          var point_style = this.point_styles.get(cur_point_r) || {};
 
           var display_coords_l = this.convertToDisplayCoords({
             point: {x: cur_point_l.getTime(), y: cur_point_l.getValue()},
@@ -870,17 +935,16 @@ function () {
             ctx.moveTo(display_coords_l.x, display_coords_l.y);
             ctx.lineTo(display_coords_r.x, display_coords_r.y);
 
-          ctx.lineWidth = this.point_radius * (2 / 3);
-          if (this.selected_points.indexOf(cur_point_r) == -1) {
-            ctx.strokeStyle = this.initial_color;
-          } else {
-            ctx.strokeStyle = this.selected_color;
-          }
+          ctx.lineWidth = point_style.lineWidth || this.initial_point_style.lineWidth;
+          ctx.strokeStyle = point_style.lineColor || this.initial_point_style.lineColor;
           ctx.stroke();
         }
 
+        ctx.globalCompositeOperation = "destination-out";
         for (var point_ix = 0; point_ix < path_points.length; point_ix++) {
           var cur_point = path_points[point_ix];
+
+          var point_style = this.point_styles.get(cur_point) || {};
 
           var display_coords = this.convertToDisplayCoords({
             point: {x: cur_point.getTime(), y: cur_point.getValue()},
@@ -891,13 +955,22 @@ function () {
           });
 
           ctx.beginPath();
-            ctx.arc(display_coords.x, display_coords.y, this.point_radius + 2, 0, 2 * Math.PI);
-          ctx.globalCompositeOperation = "destination-out";
+            ctx.arc(
+              display_coords.x, display_coords.y,
+              (point_style.pointRadius || this.initial_point_style.pointRadius) +
+                (point_style.pointOutlineWidth || this.initial_point_style.pointOutlineWidth),
+              0,
+              2 * Math.PI
+            );
+          ctx.fillStyle = point_style.pointColor || this.initial_point_style.pointColor;
           ctx.fill();
         }
 
+        ctx.globalCompositeOperation = "source-over";
         for (var point_ix = 0; point_ix < path_points.length; point_ix++) {
           var cur_point = path_points[point_ix];
+
+          var point_style = this.point_styles.get(cur_point) || {};
 
           var display_coords = this.convertToDisplayCoords({
             point: {x: cur_point.getTime(), y: cur_point.getValue()},
@@ -908,19 +981,24 @@ function () {
           });
 
           ctx.beginPath();
-            ctx.arc(display_coords.x, display_coords.y, this.point_radius + 1, 0, 2 * Math.PI);
-          ctx.globalCompositeOperation = "source-over";
-            ctx.fillStyle = "rgba(64, 64, 64, 0.5)";
+            ctx.arc(
+              display_coords.x, display_coords.y,
+              (point_style.pointRadius || this.initial_point_style.pointRadius) +
+                (point_style.pointOutlineWidth || this.initial_point_style.pointOutlineWidth),
+              0,
+              2 * Math.PI
+            );
+            ctx.fillStyle = point_style.pointOutlineColor || this.initial_point_style.pointOutlineColor;
           ctx.fill();
 
           ctx.beginPath();
-            ctx.arc(display_coords.x, display_coords.y, this.point_radius, 0, 2 * Math.PI);
-          ctx.globalCompositeOperation = "source-over";
-          if (this.selected_points.indexOf(cur_point) == -1) {
-            ctx.fillStyle = this.initial_color;
-          } else {
-            ctx.fillStyle = this.selected_color;
-          }
+            ctx.arc(
+              display_coords.x, display_coords.y,
+              point_style.pointRadius || this.initial_point_style.pointRadius,
+              0,
+              2 * Math.PI
+            );
+          ctx.fillStyle = point_style.pointColor || this.initial_point_style.pointColor;
           ctx.fill();
         }
 
@@ -1239,7 +1317,12 @@ function () {
           }
         );
 
-        cur_display.setSelectedPoints(selected_points_for_path);
+        //cur_display.setSelectedPoints(selected_points_for_path);
+        cur_display.clearPointsStyle(cur_path.getPoints());
+        cur_display.setPointsStyle(selected_points_arr, {
+          lineColor: "rgba(255, 192, 64, 1)",
+          pointColor: "rgba(255, 192, 64, 1)"
+        });
 
         cur_display.setDisplayParameters({
           width: this.width, height: this.height,
