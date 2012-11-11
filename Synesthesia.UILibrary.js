@@ -753,15 +753,88 @@ function () {
       this.canvas = document.createElement("canvas");
       this.context = this.canvas.getContext("2d");
 
-      this.width = this.params.width || 500;
-      this.height = this.params.height || 300;
-      this.x_min = this.params.x_min || 0;
-      this.x_max = this.params.x_max || 1;
-      this.y_min = this.params.y_min || 0;
-      this.y_max = this.params.y_max || 1;
+      if (this.params.width_sync) {
+        this.width_sync = this.params.width_sync;
+      } else {
+        this.width_sync = new Utilities.SynchronizedValue();
+      }
+      this.width_sync.addListener(this, (function (new_value) {
+        this.canvas.width = new_value;
+      }).bind(this));
+      if (this.width_sync.getValue()) {
+        this.canvas.width = this.width_sync.getValue();
+      } else {
+        this.width_sync.setValue(null, 0);
+      }
+
+      if (this.params.height_sync) {
+        this.height_sync = this.params.height_sync;
+      } else {
+        this.height_sync = new Utilities.SynchronizedValue();
+      }
+      this.height_sync.addListener(this, (function (new_value) {
+        this.canvas.height = new_value;
+      }).bind(this));
+      if (this.height_sync.getValue()) {
+        this.canvas.height = this.height_sync.getValue();
+      } else {
+        this.height_sync.setValue(null, 0);
+      }
+
+      if (this.params.x_min_sync) {
+        this.x_min_sync = this.params.x_min_sync;
+      } else {
+        this.x_min_sync = new Utilities.SynchronizedValue();
+      }
+      this.x_min_sync.addListener(this, (function (new_value) {
+        this.draw();
+      }).bind(this));
+      if (!this.x_min_sync.getValue()) {
+        this.x_min_sync.setValue(this, 0);
+      }
+
+      if (this.params.x_max_sync) {
+        this.x_max_sync = this.params.x_max_sync;
+      } else {
+        this.x_max_sync = new Utilities.SynchronizedValue();
+      }
+      this.x_max_sync.addListener(this, (function (new_value) {
+        this.draw();
+      }).bind(this));
+      if (!this.x_max_sync.getValue()) {
+        this.x_max_sync.setValue(this, 1);
+      }
+
+      if (this.params.y_min_sync) {
+        this.y_min_sync = this.params.y_min_sync;
+      } else {
+        this.y_min_sync = new Utilities.SynchronizedValue();
+      }
+      this.y_min_sync.addListener(this, (function (new_value) {
+        this.draw();
+      }).bind(this));
+      if (!this.y_min_sync.getValue()) {
+        this.y_min_sync.setValue(this, 0);
+      }
+
+      if (this.params.y_max_sync) {
+        this.y_max_sync = this.params.y_max_sync;
+      } else {
+        this.y_max_sync = new Utilities.SynchronizedValue();
+      }
+      this.y_max_sync.addListener(this, (function (new_value) {
+        this.draw();
+      }).bind(this));
+      if (!this.y_max_sync.getValue()) {
+        this.y_max_sync.setValue(this, 1);
+      }
 
       this.build();
     }
+
+    GridCanvas.prototype.setupSyncValuesFromParams = function (values_and_defaults) {
+
+    };
 
     GridCanvas.prototype.getElement = function () {
       return this.canvas;
@@ -769,8 +842,6 @@ function () {
 
     GridCanvas.prototype.build = function () {
       Utilities.addClass(this.canvas, "Synesthesia_UILibrary_GridCanvas");
-      this.canvas.width = this.width;
-      this.canvas.height = this.height;
     };
 
     /*
@@ -791,8 +862,8 @@ function () {
 
     GridCanvas.prototype.draw = function () {
       // Clear canvas.
-      this.canvas.width = this.width;
-      this.canvas.height = this.height;
+      this.canvas.width = this.canvas.width;
+      this.canvas.height = this.canvas.height;
 
       this.context.save();
 
@@ -800,24 +871,24 @@ function () {
         var x_div = 1;
 
         var x_start = 0;
-        while (x_start > this.x_min) {
+        while (x_start >= this.x_min_sync.getValue()) {
           x_start -= x_div;
         }
         x_start += x_div;
 
-        for (var x = x_start; x < this.x_max; x += x_div) {
+        for (var x = x_start; x <= this.x_max_sync.getValue(); x += x_div) {
           var display_coords = this.convertToDisplayCoords({
               point: {x: x, y: 0},
-              width: this.width, height: this.height,
-              x_min: this.x_min, x_max: this.x_max,
-              y_min: this.y_min, y_max: this.y_max
+              width: this.canvas.width, height: this.canvas.height,
+              x_min: this.x_min_sync.getValue(), x_max: this.x_max_sync.getValue(),
+              y_min: this.y_min_sync.getValue(), y_max: this.y_max_sync.getValue()
           });
 
           display_coords.x = Math.floor(display_coords.x) + 0.5;
 
           this.context.beginPath();
             this.context.moveTo(display_coords.x, 0);
-            this.context.lineTo(display_coords.x, this.height);
+            this.context.lineTo(display_coords.x, this.canvas.height);
           this.context.strokeStyle = "rgba(64, 64, 64, 1)";
           this.context.stroke();
         }
@@ -826,24 +897,24 @@ function () {
         var y_div = 1;
 
         var y_start = 0;
-        while (y_start > this.y_min) {
+        while (y_start >= this.y_min_sync.getValue()) {
           y_start -= y_div;
         }
         y_start += y_div;
 
-        for (var y = y_start; y < this.y_max; y += y_div) {
+        for (var y = y_start; y <= this.y_max_sync.getValue(); y += y_div) {
           var display_coords = this.convertToDisplayCoords({
               point: {x: 0, y: y},
-              width: this.width, height: this.height,
-              x_min: this.x_min, x_max: this.x_max,
-              y_min: this.y_min, y_max: this.y_max
+              width: this.canvas.width, height: this.canvas.height,
+              x_min: this.x_min_sync.getValue(), x_max: this.x_max_sync.getValue(),
+              y_min: this.y_min_sync.getValue(), y_max: this.y_max_sync.getValue()
           });
 
           display_coords.y = Math.floor(display_coords.y) + 0.5;
 
           this.context.beginPath();
             this.context.moveTo(0, display_coords.y);
-            this.context.lineTo(this.width, display_coords.y);
+            this.context.lineTo(this.canvas.width, display_coords.y);
           this.context.strokeStyle = "rgba(64, 64, 64, 1)";
           this.context.stroke();
         }
@@ -858,14 +929,83 @@ function () {
     function EnvelopePathDisplay (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      this.canvas = null;
+      this.canvas = document.createElement("canvas");
 
-      this.width = this.params.width || 300;
-      this.height = this.params.height || 150;
-      this.x_min = this.params.x_min || 0;
-      this.x_max = this.params.x_max || 1;
-      this.y_min = this.params.y_min || 0;
-      this.y_max = this.params.y_max || 1;
+      if (this.params.width_sync) {
+        this.width_sync = this.params.width_sync;
+      } else {
+        this.width_sync = new Utilities.SynchronizedValue();
+      }
+      this.width_sync.addListener(this, (function (new_value) {
+        this.canvas.width = new_value;
+      }).bind(this));
+      if (this.width_sync.getValue()) {
+        this.canvas.width = this.width_sync.getValue();
+      } else {
+        this.width_sync.setValue(null, 500);
+      }
+
+      if (this.params.height_sync) {
+        this.height_sync = this.params.height_sync;
+      } else {
+        this.height_sync = new Utilities.SynchronizedValue();
+      }
+      this.height_sync.addListener(this, (function (new_value) {
+        this.canvas.height = new_value;
+      }).bind(this));
+      if (this.height_sync.getValue()) {
+        this.canvas.height = this.height_sync.getValue();
+      } else {
+        this.height_sync.setValue(null, 300);
+      }
+
+      if (this.params.x_min_sync) {
+        this.x_min_sync = this.params.x_min_sync;
+      } else {
+        this.x_min_sync = new Utilities.SynchronizedValue();
+      }
+      this.x_min_sync.addListener(this, (function (new_value) {
+        this.draw();
+      }).bind(this));
+      if (!this.x_min_sync.getValue()) {
+        this.x_min_sync.setValue(this, 0);
+      }
+
+      if (this.params.x_max_sync) {
+        this.x_max_sync = this.params.x_max_sync;
+      } else {
+        this.x_max_sync = new Utilities.SynchronizedValue();
+      }
+      this.x_max_sync.addListener(this, (function (new_value) {
+        this.draw();
+      }).bind(this));
+      if (!this.x_max_sync.getValue()) {
+        this.x_max_sync.setValue(this, 1);
+      }
+
+      if (this.params.y_min_sync) {
+        this.y_min_sync = this.params.y_min_sync;
+      } else {
+        this.y_min_sync = new Utilities.SynchronizedValue();
+      }
+      this.y_min_sync.addListener(this, (function (new_value) {
+        this.draw();
+      }).bind(this));
+      if (!this.y_min_sync.getValue()) {
+        this.y_min_sync.setValue(this, 0);
+      }
+
+      if (this.params.y_max_sync) {
+        this.y_max_sync = this.params.y_max_sync;
+      } else {
+        this.y_max_sync = new Utilities.SynchronizedValue();
+      }
+      this.y_max_sync.addListener(this, (function (new_value) {
+        this.draw();
+      }).bind(this));
+      if (!this.y_max_sync.getValue()) {
+        this.y_max_sync.setValue(this, 1);
+      }
 
       this.path = null;
       this.selected_points = [];
@@ -888,10 +1028,7 @@ function () {
     };
 
     EnvelopePathDisplay.prototype.build = function () {
-      this.canvas = document.createElement("canvas");
-        Utilities.addClass(this.canvas, "Synesthesia_UILibrary_EnvelopePathDisplay");
-        this.canvas.width = this.width;
-        this.canvas.height = this.height;
+      Utilities.addClass(this.canvas, "Synesthesia_UILibrary_EnvelopePathDisplay");
     };
 
     /*
@@ -973,28 +1110,6 @@ function () {
 
     /*
       params: {
-        *x_min: Number, *x_max: Number,
-        *y_min: Number, *y_max: Number,
-        *width: Number, *height: Number
-      }
-      *do_draw: Boolean
-    */
-    EnvelopePathDisplay.prototype.setDisplayParameters = function (params, do_draw) {
-      var param_list = ["width", "height", "x_min", "x_max", "y_min", "y_max"];
-      for (var i = 0; i < param_list.length; i++) {
-        var cur_param = param_list[i];
-        if (params.hasOwnProperty(cur_param)) {
-          this[cur_param] = params[cur_param];
-        }
-      }
-
-      if (typeof do_draw == "undefined" || do_draw) {
-        this.draw();
-      }
-    };
-
-    /*
-      params: {
         point: {x: Number, y: Number},
         x_min: Number, x_max: Number,
         y_min: Number, y_max: Number,
@@ -1024,8 +1139,8 @@ function () {
     };
 
     EnvelopePathDisplay.prototype.draw = function () {
-      this.canvas.width = this.width;
-      this.canvas.height = this.height;
+      this.canvas.width = this.canvas.width;
+      this.canvas.height = this.canvas.height;
 
       if (this.path == null) return;
 
@@ -1042,17 +1157,15 @@ function () {
 
           var display_coords_l = this.convertToDisplayCoords({
             point: {x: cur_point_l.getTime(), y: cur_point_l.getValue()},
-            x_min: this.x_min, x_max: this.x_max,
-            y_min: this.y_min, y_max: this.y_max,
-            width: this.canvas.width,
-            height: this.canvas.height
+            x_min: this.x_min_sync.getValue(), x_max: this.x_max_sync.getValue(),
+            y_min: this.y_min_sync.getValue(), y_max: this.y_max_sync.getValue(),
+            width: this.canvas.width, height: this.canvas.height
           });
           var display_coords_r = this.convertToDisplayCoords({
             point: {x: cur_point_r.getTime(), y: cur_point_r.getValue()},
-            x_min: this.x_min, x_max: this.x_max,
-            y_min: this.y_min, y_max: this.y_max,
-            width: this.canvas.width,
-            height: this.canvas.height
+            x_min: this.x_min_sync.getValue(), x_max: this.x_max_sync.getValue(),
+            y_min: this.y_min_sync.getValue(), y_max: this.y_max_sync.getValue(),
+            width: this.canvas.width, height: this.canvas.height
           });
 
           ctx.beginPath();
@@ -1072,10 +1185,9 @@ function () {
 
           var display_coords = this.convertToDisplayCoords({
             point: {x: cur_point.getTime(), y: cur_point.getValue()},
-            x_min: this.x_min, x_max: this.x_max,
-            y_min: this.y_min, y_max: this.y_max,
-            width: this.canvas.width,
-            height: this.canvas.height
+            x_min: this.x_min_sync.getValue(), x_max: this.x_max_sync.getValue(),
+            y_min: this.y_min_sync.getValue(), y_max: this.y_max_sync.getValue(),
+            width: this.canvas.width, height: this.canvas.height
           });
 
           ctx.beginPath();
@@ -1098,10 +1210,9 @@ function () {
 
           var display_coords = this.convertToDisplayCoords({
             point: {x: cur_point.getTime(), y: cur_point.getValue()},
-            x_min: this.x_min, x_max: this.x_max,
-            y_min: this.y_min, y_max: this.y_max,
-            width: this.canvas.width,
-            height: this.canvas.height
+            x_min: this.x_min_sync.getValue(), x_max: this.x_max_sync.getValue(),
+            y_min: this.y_min_sync.getValue(), y_max: this.y_max_sync.getValue(),
+            width: this.canvas.width, height: this.canvas.height
           });
 
           ctx.beginPath();
@@ -1136,14 +1247,86 @@ function () {
     function EnvelopePathsEditor (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      this.element = null;
+      this.element = document.createElement("div");
 
-      this.width = this.params.width || 500;
-      this.height = this.params.height || 300;
-      this.x_min = this.params.x_min || 0;
-      this.x_max = this.params.x_max || 1;
-      this.y_min = this.params.y_min || 0;
-      this.y_max = this.params.y_max || 1;
+      this.selection_overlay = document.createElement("canvas");
+        this.selection_overlay.style.position = "absolute";
+        this.selection_overlay.style.top = "0px";
+        this.selection_overlay.style.left = "0px";
+
+      if (this.params.width_sync) {
+        this.width_sync = this.params.width_sync;
+      } else {
+        this.width_sync = new Utilities.SynchronizedValue();
+      }
+      this.width_sync.addListener(this, (function (new_value) {
+        this.element.style.width = "" + new_value + "px";
+        this.selection_overlay.width = new_value;
+      }).bind(this));
+      if (!this.width_sync.getValue()) {
+        this.width_sync.setValue(null, 500);
+      }
+
+      if (this.params.height_sync) {
+        this.height_sync = this.params.height_sync;
+      } else {
+        this.height_sync = new Utilities.SynchronizedValue();
+      }
+      this.height_sync.addListener(this, (function (new_value) {
+        this.element.style.height = "" + new_value + "px";
+        this.selection_overlay.height = new_value;
+      }).bind(this));
+      if (!this.height_sync.getValue()) {
+        this.height_sync.setValue(null, 300);
+      }
+
+      if (this.params.x_min_sync) {
+        this.x_min_sync = this.params.x_min_sync;
+      } else {
+        this.x_min_sync = new Utilities.SynchronizedValue();
+      }
+      this.x_min_sync.addListener(this, (function (new_value) {
+        this.draw();
+      }).bind(this));
+      if (!this.x_min_sync.getValue()) {
+        this.x_min_sync.setValue(this, 0);
+      }
+
+      if (this.params.x_max_sync) {
+        this.x_max_sync = this.params.x_max_sync;
+      } else {
+        this.x_max_sync = new Utilities.SynchronizedValue();
+      }
+      this.x_max_sync.addListener(this, (function (new_value) {
+        this.draw();
+      }).bind(this));
+      if (!this.x_max_sync.getValue()) {
+        this.x_max_sync.setValue(this, 1);
+      }
+
+      if (this.params.y_min_sync) {
+        this.y_min_sync = this.params.y_min_sync;
+      } else {
+        this.y_min_sync = new Utilities.SynchronizedValue();
+      }
+      this.y_min_sync.addListener(this, (function (new_value) {
+        this.draw();
+      }).bind(this));
+      if (!this.y_min_sync.getValue()) {
+        this.y_min_sync.setValue(this, 0);
+      }
+
+      if (this.params.y_max_sync) {
+        this.y_max_sync = this.params.y_max_sync;
+      } else {
+        this.y_max_sync = new Utilities.SynchronizedValue();
+      }
+      this.y_max_sync.addListener(this, (function (new_value) {
+        this.draw();
+      }).bind(this));
+      if (!this.y_max_sync.getValue()) {
+        this.y_max_sync.setValue(this, 1);
+      }
 
       this.selection_radius = this.params.selection_radius || 5;
       this.selection_parameters = null;
@@ -1188,15 +1371,12 @@ function () {
     };
 
     EnvelopePathsEditor.prototype.build = function () {
-      this.element = document.createElement("div");
-        Utilities.addClass(this.element, "Synesthesia_UILibrary_EnvelopePathsEditor");
-        this.element.style.width = "" + this.width + "px";
-        this.element.style.height = "" + this.height + "px";
+      Utilities.addClass(this.element, "Synesthesia_UILibrary_EnvelopePathsEditor");
 
       this.grid_underlay = new UILibrary.GridCanvas({
-        width: this.width, height: this.height,
-        x_min: this.x_min, x_max: this.x_max,
-        y_min: this.y_min, y_max: this.y_max
+        width_sync: this.width_sync, height_sync: this.height_sync,
+        x_min_sync: this.x_min_sync, x_max_sync: this.x_max_sync,
+        y_min_sync: this.y_min_sync, y_max_sync: this.y_max_sync
       });
 
       var grid_element = this.grid_underlay.getElement();
@@ -1205,13 +1385,6 @@ function () {
         grid_element.style.left = "0px";
       
       this.element.appendChild(grid_element);
-
-      this.selection_overlay = document.createElement("canvas");
-        this.selection_overlay.style.position = "absolute";
-        this.selection_overlay.style.top = "0px";
-        this.selection_overlay.style.left = "0px";
-        this.selection_overlay.width = this.width;
-        this.selection_overlay.height = this.height;
 
       this.element.appendChild(this.selection_overlay);
 
@@ -1329,15 +1502,15 @@ function () {
 
             var cur_origin_coords = this.display_map.get(cur_path).convertToPathCoords({
               point: {x: 0, y: 0},
-              width: this.width, height: this.height,
-              x_min: this.x_min, x_max: this.x_max,
-              y_min: this.y_min, y_max: this.y_max
+              width: this.width_sync.getValue(), height: this.height_sync.getValue(),
+              x_min: this.x_min_sync.getValue(), x_max: this.x_max_sync.getValue(),
+              y_min: this.y_min_sync.getValue(), y_max: this.y_max_sync.getValue(),
             });
             var cur_change_coords = this.display_map.get(cur_path).convertToPathCoords({
               point: {x: d_x, y: d_y},
-              width: this.width, height: this.height,
-              x_min: this.x_min, x_max: this.x_max,
-              y_min: this.y_min, y_max: this.y_max
+              width: this.width_sync.getValue(), height: this.height_sync.getValue(),
+              x_min: this.x_min_sync.getValue(), x_max: this.x_max_sync.getValue(),
+              y_min: this.y_min_sync.getValue(), y_max: this.y_max_sync.getValue(),
             });
 
             cur_point.setTime(cur_point.getTime() + (cur_change_coords.x - cur_origin_coords.x));
@@ -1399,14 +1572,15 @@ function () {
 
       this.paths.push(new_path);
 
-      var new_display = new UILibrary.EnvelopePathDisplay();
+      var new_display = new UILibrary.EnvelopePathDisplay({
+        width_sync: this.width_sync, height_sync: this.height_sync,
+        x_min_sync: this.x_min_sync, x_max_sync: this.x_max_sync,
+        y_min_sync: this.y_min_sync, y_max_sync: this.y_max_sync
+      });
         new_display.setPath(new_path);
         new_display.getElement().style.position = "absolute";
         new_display.getElement().style.top = "0px";
         new_display.getElement().style.left = "0px";
-        new_display.setDisplayParameters({
-          initial_color: "rgba(255, 0, 128, 1)"
-        });
 
       this.display_map.set(new_path, new_display);
       
@@ -1435,9 +1609,9 @@ function () {
           var cur_point = path_points[point_ix];
           var cur_point_coords = this.display_map.get(cur_path).convertToDisplayCoords({
             point: {x: cur_point.getTime(), y: cur_point.getValue()},
-            width: this.width, height: this.height,
-            x_min: this.x_min, x_max: this.x_max,
-            y_min: this.y_min, y_max: this.y_max
+            width: this.width_sync.getValue(), height: this.height_sync.getValue(),
+            x_min: this.x_min_sync.getValue(), x_max: this.x_max_sync.getValue(),
+            y_min: this.y_min_sync.getValue(), y_max: this.y_max_sync.getValue(),
           });
 
           if (
@@ -1469,9 +1643,9 @@ function () {
           var cur_point = path_points[point_ix];
           var cur_point_coords = this.display_map.get(cur_path).convertToDisplayCoords({
             point: {x: cur_point.getTime(), y: cur_point.getValue()},
-            width: this.width, height: this.height,
-            x_min: this.x_min, x_max: this.x_max,
-            y_min: this.y_min, y_max: this.y_max
+            width: this.width_sync.getValue(), height: this.height_sync.getValue(),
+            x_min: this.x_min_sync.getValue(), x_max: this.x_max_sync.getValue(),
+            y_min: this.y_min_sync.getValue(), y_max: this.y_max_sync.getValue(),
           });
 
           var point_distance = Math.sqrt(Math.pow(point.x - cur_point_coords.x, 2) + Math.pow(point.y - cur_point_coords.y, 2));
@@ -1510,12 +1684,6 @@ function () {
         cur_display.setPointsStyle(selected_points_arr, {
           lineColor: "rgba(255, 192, 64, 1)",
           pointColor: "rgba(255, 192, 64, 1)"
-        });
-
-        cur_display.setDisplayParameters({
-          width: this.width, height: this.height,
-          x_min: this.x_min, x_max: this.x_max,
-          y_min: this.y_min, y_max: this.y_max
         });
 
         cur_display.draw();

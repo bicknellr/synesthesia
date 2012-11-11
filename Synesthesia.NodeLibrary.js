@@ -2862,9 +2862,18 @@ function () {
     };
     
     EnvelopePathsEditorTest.prototype.informWindowPrepared = function (div) {
+      var editor_x_min = new Utilities.SynchronizedValue();
+        editor_x_min.setValue(null, -0.1);
+      var editor_x_max = new Utilities.SynchronizedValue();
+        editor_x_max.setValue(null, 5.1);
+      var editor_y_min = new Utilities.SynchronizedValue();
+        editor_y_min.setValue(null, -0.1);
+      var editor_y_max = new Utilities.SynchronizedValue();
+        editor_y_max.setValue(null, 3.1);
+
       this.path_editor = new UILibrary.EnvelopePathsEditor({
-        x_min: -0.1, x_max: 5.1,
-        y_min: -0.1, y_max: 3.1,
+        x_min_sync: editor_x_min, x_max_sync: editor_x_max,
+        y_min_sync: editor_y_min, y_max_sync: editor_y_max
       });
       div.appendChild(this.path_editor.getElement());
     };
