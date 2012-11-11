@@ -1415,6 +1415,7 @@ function () {
         start_x: graph_x, start_y: graph_y,
         last_x: graph_x, last_y: graph_y,
         shiftKey: e.shiftKey,
+        altKey: e.altKey,
         start_point: selectable_point
       };
 
@@ -1429,6 +1430,8 @@ function () {
       // set up selection_map_stage
       this.selection_stage.clear();
       this.deselection_stage.clear();
+
+      if (!this.selection_params) return;
       
       // Get the selectable point under the mouse if any.
       var selectable_point = this.getSelectablePointWithinRadius({
@@ -1436,7 +1439,70 @@ function () {
         radius: this.selection_radius
       });
 
-      if (this.selection_params) {
+      if (this.selection_params.altKey) {
+        if (e.metaKey) {
+          // If we are scaling the viewport.
+
+          var d_x = graph_x - this.selection_params.last_x;
+          var d_y = graph_y - this.selection_params.last_y;
+
+          var scale_x = Math.pow(2, 1 - d_x / 100) / 2 - 1;
+          var scale_y = Math.pow(2, 1 - d_y / 100) / 2 - 1;
+
+          var x_range = this.x_max_sync.getValue() - this.x_min_sync.getValue();
+          var y_range = this.y_max_sync.getValue() - this.y_min_sync.getValue();
+
+          this.x_min_sync.setValue(this,
+            this.x_min_sync.getValue() - x_range * scale_x
+          );
+          this.x_max_sync.setValue(this,
+            this.x_max_sync.getValue() + x_range * scale_x
+          );
+          this.y_min_sync.setValue(this,
+            this.y_min_sync.getValue() - y_range * scale_y
+          );
+          this.y_max_sync.setValue(this,
+            this.y_max_sync.getValue() + y_range * scale_y
+          );
+        } else {
+          // If we are panning the viewport.
+
+          var d_x = graph_x - this.selection_params.last_x;
+          var d_y = graph_y - this.selection_params.last_y;
+
+          var use_path = this.paths[0]; // Use the first path to get coordinates from.
+          var cur_origin_coords = this.display_map.get(use_path).convertToPathCoords({
+            point: {x: 0, y: 0},
+            width: this.width_sync.getValue(), height: this.height_sync.getValue(),
+            x_min: this.x_min_sync.getValue(), x_max: this.x_max_sync.getValue(),
+            y_min: this.y_min_sync.getValue(), y_max: this.y_max_sync.getValue(),
+          });
+          var cur_change_coords = this.display_map.get(use_path).convertToPathCoords({
+            point: {x: d_x, y: d_y},
+            width: this.width_sync.getValue(), height: this.height_sync.getValue(),
+            x_min: this.x_min_sync.getValue(), x_max: this.x_max_sync.getValue(),
+            y_min: this.y_min_sync.getValue(), y_max: this.y_max_sync.getValue(),
+          });
+
+          var path_d_x = cur_origin_coords.x - cur_change_coords.x;
+          var path_d_y = cur_origin_coords.y - cur_change_coords.y;
+
+          this.x_min_sync.setValue(this,
+            this.x_min_sync.getValue() + path_d_x
+          );
+          this.x_max_sync.setValue(this,
+            this.x_max_sync.getValue() + path_d_x
+          );
+          this.y_min_sync.setValue(this,
+            this.y_min_sync.getValue() + path_d_y
+          );
+          this.y_max_sync.setValue(this,
+            this.y_max_sync.getValue() + path_d_y
+          );
+        }
+      } else {
+        // If we are not changing the viewport.
+
         if (!this.selection_params.start_point) {
           // If we didn't start by mousedown on a point.
 
@@ -1480,7 +1546,6 @@ function () {
             this.selection_stage.removeAll(points_to_deselect.toArray());
             this.deselection_stage.addAll(points_to_deselect.toArray());
           }
-          
         } else {
           // If we did start by mousing down on a point.
 
@@ -1517,18 +1582,19 @@ function () {
             cur_point.setValue(cur_point.getValue() + (cur_change_coords.y - cur_origin_coords.y));
           }
 
-          // Update the last_x and last_y.
-          this.selection_params.last_x = graph_x;
-          this.selection_params.last_y = graph_y;
         }
       }
-      
+
       if (selectable_point) {
         // If we're hovering over a point.
 
         // Stage the point.
         this.selection_stage.add(selectable_point);
       }
+      
+      // Update the last_x and last_y.
+      this.selection_params.last_x = graph_x;
+      this.selection_params.last_y = graph_y;
 
       this.draw();
     };
