@@ -2863,8 +2863,8 @@ function () {
     
     EnvelopePathsEditorTest.prototype.informWindowPrepared = function (div) {
       this.path_editor = new UILibrary.EnvelopePathsEditor({
-        x_min: -0.1, x_max: 1.1,
-        y_min: -0.1, y_max: 1.1,
+        x_min: -0.1, x_max: 5.1,
+        y_min: -0.1, y_max: 3.1,
       });
       div.appendChild(this.path_editor.getElement());
     };

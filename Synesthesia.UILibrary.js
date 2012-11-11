@@ -746,6 +746,114 @@ function () {
     return SlideView;
   })();
 
+  UILibrary.GridCanvas = (function () {
+    function GridCanvas (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.canvas = document.createElement("canvas");
+      this.context = this.canvas.getContext("2d");
+
+      this.width = this.params.width || 500;
+      this.height = this.params.height || 300;
+      this.x_min = this.params.x_min || 0;
+      this.x_max = this.params.x_max || 1;
+      this.y_min = this.params.y_min || 0;
+      this.y_max = this.params.y_max || 1;
+
+      this.build();
+    }
+
+    GridCanvas.prototype.getElement = function () {
+      return this.canvas;
+    };
+
+    GridCanvas.prototype.build = function () {
+      Utilities.addClass(this.canvas, "Synesthesia_UILibrary_GridCanvas");
+      this.canvas.width = this.width;
+      this.canvas.height = this.height;
+    };
+
+    /*
+      params: {
+        point: {x: Number, y: Number},
+        x_min: Number, x_max: Number,
+        y_min: Number, y_max: Number,
+        width: Number, height: Number
+      }
+    */
+    GridCanvas.prototype.convertToDisplayCoords = function (params) {
+      return {
+        x: (params.point.x - params.x_min) / (params.x_max - params.x_min) * params.width,
+        y: params.height - (params.point.y - params.y_min) / (params.y_max - params.y_min) * params.height
+      };
+    };
+
+
+    GridCanvas.prototype.draw = function () {
+      // Clear canvas.
+      this.canvas.width = this.width;
+      this.canvas.height = this.height;
+
+      this.context.save();
+
+        // Draw x grid lines.
+        var x_div = 1;
+
+        var x_start = 0;
+        while (x_start > this.x_min) {
+          x_start -= x_div;
+        }
+        x_start += x_div;
+
+        for (var x = x_start; x < this.x_max; x += x_div) {
+          var display_coords = this.convertToDisplayCoords({
+              point: {x: x, y: 0},
+              width: this.width, height: this.height,
+              x_min: this.x_min, x_max: this.x_max,
+              y_min: this.y_min, y_max: this.y_max
+          });
+
+          display_coords.x = Math.floor(display_coords.x) + 0.5;
+
+          this.context.beginPath();
+            this.context.moveTo(display_coords.x, 0);
+            this.context.lineTo(display_coords.x, this.height);
+          this.context.strokeStyle = "rgba(64, 64, 64, 1)";
+          this.context.stroke();
+        }
+
+        // Draw y grid lines.
+        var y_div = 1;
+
+        var y_start = 0;
+        while (y_start > this.y_min) {
+          y_start -= y_div;
+        }
+        y_start += y_div;
+
+        for (var y = y_start; y < this.y_max; y += y_div) {
+          var display_coords = this.convertToDisplayCoords({
+              point: {x: 0, y: y},
+              width: this.width, height: this.height,
+              x_min: this.x_min, x_max: this.x_max,
+              y_min: this.y_min, y_max: this.y_max
+          });
+
+          display_coords.y = Math.floor(display_coords.y) + 0.5;
+
+          this.context.beginPath();
+            this.context.moveTo(0, display_coords.y);
+            this.context.lineTo(this.width, display_coords.y);
+          this.context.strokeStyle = "rgba(64, 64, 64, 1)";
+          this.context.stroke();
+        }
+
+      this.context.restore();
+    };
+
+    return GridCanvas;
+  })();
+
   UILibrary.EnvelopePathDisplay = (function () {
     function EnvelopePathDisplay (params) {
       this.params = (typeof params !== "undefined" ? params : {});
@@ -1085,6 +1193,19 @@ function () {
         this.element.style.width = "" + this.width + "px";
         this.element.style.height = "" + this.height + "px";
 
+      this.grid_underlay = new UILibrary.GridCanvas({
+        width: this.width, height: this.height,
+        x_min: this.x_min, x_max: this.x_max,
+        y_min: this.y_min, y_max: this.y_max
+      });
+
+      var grid_element = this.grid_underlay.getElement();
+        grid_element.style.position = "absolute";
+        grid_element.style.top = "0px";
+        grid_element.style.left = "0px";
+      
+      this.element.appendChild(grid_element);
+
       this.selection_overlay = document.createElement("canvas");
         this.selection_overlay.style.position = "absolute";
         this.selection_overlay.style.top = "0px";
@@ -1280,17 +1401,14 @@ function () {
 
       var new_display = new UILibrary.EnvelopePathDisplay();
         new_display.setPath(new_path);
-
-      this.display_map.set(new_path, new_display);
-
-      if (this.display_map.getKeys().length != 1) {
         new_display.getElement().style.position = "absolute";
         new_display.getElement().style.top = "0px";
         new_display.getElement().style.left = "0px";
         new_display.setDisplayParameters({
           initial_color: "rgba(255, 0, 128, 1)"
         });
-      }
+
+      this.display_map.set(new_path, new_display);
       
       this.element.insertBefore(
         new_display.getElement(),
@@ -1371,6 +1489,8 @@ function () {
     };
 
     EnvelopePathsEditor.prototype.draw = function () {
+      this.grid_underlay.draw();
+
       var selected_points_arr = this.selected_points.union(this.selection_stage).difference(this.deselection_stage).toArray();
       for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
         var cur_path = this.paths[path_ix];
