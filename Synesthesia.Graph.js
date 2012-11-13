@@ -52,6 +52,8 @@ function () {
         throw new Error("Graph.Endpoint: Invalid flow.");
       }
 
+      this.flow_listeners = [];
+
       this.max_connections = this.params.max_connections || Infinity;
 
       this.connections = [];
@@ -82,6 +84,11 @@ function () {
       actively request that data type. The only case where the flow type
       can match is when nodes have a null flow type. This indicates that
       flow is not associated with this node.
+
+      In the case that flow is not associated, this indicates the node
+      knows how to handle the data associated with the endpoint itself
+      rather than using the flow packeting model. This behavior should
+      probably be phased out in favor of the flow model.
     */
     Endpoint.FlowTypes = [
       undefined,
@@ -162,6 +169,69 @@ function () {
         );
       }
       this.node.informDisconnected(this, rm_connection);
+    };
+
+    /*
+      This method is only applicable to endpoints with "active" flow.
+      This method propagates the data to all other connected nodes.
+      The 'data' argument should be of the specified data type for
+      that node.
+    */
+    Endpoint.prototype.initateFlow = function (data) {
+      if (this.flow != "active") {
+        throw new Error("Graph.Endpoint(.initiateFlow): This method can't be called from an endpoint with flow type '" + this.flow + "'.");
+      }
+
+      var results = [];
+      for (var conn_ix = 0; conn_ix < this.connections.length; conn_ix++) {
+        results = results.concat(
+          this.connections[i].getOppositeEndpoint(this).handleFlow(data)
+        );
+      }
+      return results;
+    };
+
+    /*
+      This method should not be called directly.
+    */
+    Endpoint.prototype.handleFlow = function (data) {
+      var results = [];
+      for (var listener_ix = 0; listener_ix < this.flow_listeners.length; listener_ix++) {
+        results = results.concat(
+          this.flow_listeners[listener_ix](data)
+        );
+      }
+      return results;
+    };
+
+    /*
+      This method is only applicable to endpoints with "passive" flow.
+      This method is used to attach a listener to the endpoint to respond
+      when flow data is sent to it.
+    */
+    Endpoint.prototype.addFlowListener = function (listener) {
+      if (this.flow != "passive") {
+        throw new Error("Graph.Endpoint(.addFlowListener): This method can't be called from an endpoint with flow type '" + this.flow + "'.");
+      }
+
+      this.flow_listeners.push(listener);
+    };
+
+    /*
+      This method is only applicable to endpoints with "passive" flow.
+      This method is used to remove a listener from an endpoint.
+    */
+    Endpoint.prototype.removeFlowListener = function (listener) {
+      if (this.flow != "passive") {
+        throw new Error("Graph.Endpoint(.removeFlowListener): This method can't be called from an endpoint with flow type '" + this.flow + "'.");
+      }
+
+      while (this.flow_listeners.indexOf(listener) != -1) {
+        this.flow_listeners.splice(
+          this.flow_listeners.indexOf(listener),
+          1
+        );
+      }
     };
 
     return Endpoint;
