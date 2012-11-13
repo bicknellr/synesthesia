@@ -234,7 +234,28 @@ function () {
                           );
 
                         }).bind(this)
-                      })
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createElement("hr"),
+                        callback: (function () {
+
+                          return false;
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("FlowUITestNode"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.FlowUITestNode({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
                     ]
                   })
                 })

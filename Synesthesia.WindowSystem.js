@@ -569,6 +569,7 @@ function () {
 
         cur_endpoint.setPosition(this.x + rel_x, this.y + rel_y);
         cur_endpoint.draw(canvas);
+        last_endpoint_bottom += cur_endpoint.height;
       }
     };
 
@@ -724,6 +725,8 @@ function () {
       var context = canvas.getContext("2d");
       context.save();
 
+      var descriptor = this.getDescriptor();
+
       var strokeStyle = Endpoint.ColorMap.initial;
       if (Endpoint.ColorMap[this.type]) {
         strokeStyle = Endpoint.ColorMap[this.type];
@@ -782,16 +785,97 @@ function () {
         context.lineWidth = (this.hasFlag("hovering") ? 3 : 2);
         context.stroke();
       } else {
-        context.translate(this.x, this.y);
-        context.beginPath();
-        context.arc(
-          10, 10,
-          (this.hasFlag("hovering") ? 6 : 5),
-          0, 2 * Math.PI
-        );
-        context.strokeStyle = strokeStyle;
-        context.lineWidth = 2;
-        context.stroke();
+        if (descriptor.getFlow()) {
+          if (
+            (descriptor.getFlow() == "passive" && descriptor.getDirection() == "input") || 
+            (descriptor.getFlow() == "active" && descriptor.getDirection() == "output")
+          ) {
+            context.translate(this.x, this.y);
+            context.beginPath();
+              // Dot
+              context.beginPath();
+                context.arc(
+                  10.5 + 7 * Math.cos(Math.PI),
+                  10 + 7 * Math.sin(Math.PI),
+                  (this.hasFlag("hovering") ? 2 : 1.5),
+                  0,
+                  2 * Math.PI
+                );
+              context.fillStyle = strokeStyle;
+              context.fill();
+
+              // Arrow
+              context.beginPath();
+                context.moveTo(
+                  10 + 7 * Math.cos(-Math.PI / 2),
+                  10 + 7 * Math.sin(-Math.PI / 2)
+                );
+                context.lineTo(
+                  10 + 7 * Math.cos(0),
+                  10 + 7 * Math.sin(0)
+                );
+                context.lineTo(
+                  10 + 7 * Math.cos(Math.PI / 2),
+                  10 + 7 * Math.sin(Math.PI / 2)
+                );
+              context.strokeStyle = strokeStyle;
+              context.lineWidth = (this.hasFlag("hovering") ? 3 : 2);
+              context.stroke();
+            context.strokeStyle = strokeStyle;
+            context.lineJoin = "round";
+            context.lineCap = "round";
+            context.lineWidth = 2;
+            context.stroke();
+          } else {
+            context.translate(this.x, this.y);
+            context.beginPath();
+              // Dot
+              context.beginPath();
+                context.arc(
+                  9.5 + 7 * Math.cos(0),
+                  10 + 7 * Math.sin(0),
+                  (this.hasFlag("hovering") ? 2 : 1.5),
+                  0,
+                  2 * Math.PI
+                );
+              context.fillStyle = strokeStyle;
+              context.fill();
+
+              // Arrow
+              context.beginPath();
+                context.moveTo(
+                  10 + 7 * Math.cos(-Math.PI / 2),
+                  10 + 7 * Math.sin(-Math.PI / 2)
+                );
+                context.lineTo(
+                  10 + 7 * Math.cos(Math.PI),
+                  10 + 7 * Math.sin(Math.PI)
+                );
+                context.lineTo(
+                  10 + 7 * Math.cos(Math.PI / 2),
+                  10 + 7 * Math.sin(Math.PI / 2)
+                );
+              context.strokeStyle = strokeStyle;
+              context.lineWidth = (this.hasFlag("hovering") ? 3 : 2);
+              context.stroke();
+            context.strokeStyle = strokeStyle;
+            context.lineJoin = "round";
+            context.lineCap = "round";
+            context.lineWidth = 2;
+            context.stroke();
+          }
+        } else {
+          context.translate(this.x, this.y);
+          context.beginPath();
+          context.arc(
+            10, 10,
+            (this.hasFlag("hovering") ? 6 : 5),
+            0, 2 * Math.PI
+          );
+          context.strokeStyle = strokeStyle;
+          context.lineWidth = 2;
+          context.stroke();
+        }
       }
 
       context.restore();

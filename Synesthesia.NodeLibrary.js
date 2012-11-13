@@ -2212,5 +2212,91 @@ function () {
     return Oscilloscope;
   })();
 
+  NodeLibrary.FlowUITestNode = (function () {
+    function FlowUITestNode (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Graph.Node.apply(this, arguments);
+
+      this.setInputDescriptors({
+        "passive_in": new Graph.Endpoint({
+          node: this,
+          name: "passive_in",
+          type: "notes",
+          flow: "passive",
+          accepted_types: [
+            "notes"
+          ],
+          direction: "input"
+        }),
+        "active_in": new Graph.Endpoint({
+          node: this,
+          name: "passive_in",
+          type: "notes",
+          flow: "active",
+          accepted_types: [
+            "notes"
+          ],
+          direction: "input"
+        })
+      });
+
+      this.setOutputDescriptors({
+        "passive_out": new Graph.Endpoint({
+          node: this,
+          name: "passive_out",
+          type: "notes",
+          flow: "passive",
+          accepted_types: [
+            "notes"
+          ],
+          direction: "output"
+        }),
+        "active_out": new Graph.Endpoint({
+          node: this,
+          name: "passive_out",
+          type: "notes",
+          flow: "active",
+          accepted_types: [
+            "notes"
+          ],
+          direction: "output"
+        })
+      });
+
+      this.ui_window = new WindowSystem.NodeWindow({
+        node: this,
+        title: "FlowUITestNode",
+        draw_callback: this.draw.bind(this)
+      });
+    }
+
+    FlowUITestNode.prototype = Utilities.extend(
+      new Graph.Node()
+    );
+
+    FlowUITestNode.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    FlowUITestNode.prototype.informWindowPrepared = function (div) {
+
+    };
+
+    FlowUITestNode.prototype.informConnected = function (endpoint, connection) {
+
+    };
+
+    FlowUITestNode.prototype.informDisconnected = function (endpoint, connection) {
+
+    };
+
+    FlowUITestNode.prototype.draw = function () {
+
+    };
+
+    return FlowUITestNode;
+  })();
+
   return NodeLibrary;
 });
