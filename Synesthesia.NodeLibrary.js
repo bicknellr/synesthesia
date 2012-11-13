@@ -2847,7 +2847,7 @@ function () {
       this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Envelope Paths Editor Test",
-        use_flex: false, resizable: false
+        width: 600, height: 400
       });
     }
 
