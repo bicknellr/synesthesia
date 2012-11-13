@@ -31,13 +31,13 @@ function () {
       this.name = this.params.name;
 
       this.type = this.params.type;
-      if (Endpoint.Types.indexOf(this.type) == -1) {
+      if (Endpoint.DataTypes.indexOf(this.type) == -1) {
         throw new Error("Graph.Endpoint: Invalid type '" + this.type + "'.");
       }
 
       this.accepted_types = this.params.accepted_types;
       for (var i = 0; i < this.accepted_types.length; i++) {
-        if (Endpoint.Types.indexOf(this.accepted_types[i]) == -1) {
+        if (Endpoint.DataTypes.indexOf(this.accepted_types[i]) == -1) {
           throw new Error("Graph.Endpoint: Invalid accepted type '" + this.accpeted_types[i] + "'.");
         }
       }
@@ -47,12 +47,17 @@ function () {
         throw new Error("Graph.Endpoint: Invalid direction.");
       }
 
+      this.flow = this.params.flow;
+      if (Endpoint.FlowTypes.indexOf(this.flow) == -1) {
+        throw new Error("Graph.Endpoint: Invalid flow.");
+      }
+
       this.max_connections = this.params.max_connections || Infinity;
 
       this.connections = [];
     }
 
-    Endpoint.Types = [
+    Endpoint.DataTypes = [
       "notes",
       "AudioNode",
       "AudioParam",
@@ -62,6 +67,26 @@ function () {
     Endpoint.Directions = [
       "input",
       "output"
+    ];
+
+    /*
+      Flow type designates if the endpoint is either passive or active
+      in how it supplies or requests chunks of data. Flow type might not
+      be applicable to certain types of connections where data is either
+      not sent in discrete chunks, or these chunks of data are handled
+      in parallel to the graph (such as AudioNode).
+
+      Connections between nodes must not match flow types (if they have
+      an associated flow type). For example, a connection that passively
+      supplies a specific data type can only connect to nodes that
+      actively request that data type. The only case where the flow type
+      can match is when nodes have a null flow type. This indicates that
+      flow is not associated with this node.
+    */
+    Endpoint.FlowTypes = [
+      undefined,
+      "passive",
+      "active"
     ];
 
     Endpoint.prototype.getNode = function () {
@@ -88,6 +113,10 @@ function () {
       return this.direction;
     };
 
+    Endpoint.prototype.getFlow = function () {
+      return this.flow;
+    };
+
     Endpoint.prototype.getConnections = function () {
       return [].concat(this.connections);
     };
@@ -95,6 +124,17 @@ function () {
     Endpoint.prototype.canConnectTo = function (other_endpoint) {
       // Can't be the same direction.
       if (this.direction == other_endpoint.getDirection()) return false;
+      
+      if (
+        (this.flow && !other_endpoint.getFlow()) ||
+        (!this.flow && other_endpoint.getFlow())
+      ) {
+        // Must have matching flow applicability.
+        return false;
+      } else if (this.flow == other_endpoint.getFlow()) {
+        // Can't be the same flow.
+        return false;
+      }
       
       // Other endpoint must accept this endpoint type.
       if (other_endpoint.getAcceptedTypes().indexOf(this.type) == -1) return false;
