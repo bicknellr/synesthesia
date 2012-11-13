@@ -351,7 +351,9 @@ function () {
 
       this.window_system = null
 
-      this.node = params.node;
+      this.node = this.params.node;
+
+      this.draw_callback = this.params.draw_callback || function () {};
 
       this.element = null;
 
@@ -417,7 +419,7 @@ function () {
 
     NodeWindow.prototype.draw = function () {
       this.title_div.innerHTML = this.title;
-      this.node.draw();
+      this.draw_callback();
     };
 
     NodeWindow.prototype.getElement = function () {

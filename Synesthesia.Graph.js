@@ -223,13 +223,6 @@ function () {
       throw new Error("Graph.Node(.informDisconnected): Not implemented.");
     };
 
-    // UI
-    // TODO: Should this method be part of a UI class?
-
-    Node.prototype.draw = function () {
-      throw new Error("Graph.Node(.draw): Not implemented.");
-    };
-
     return Node;
   })();
 

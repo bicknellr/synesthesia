@@ -37,7 +37,8 @@ function () {
       // MUST BE DEFINED AFTER ENDPOINTS
       this.ui_window = new WindowSystem.NodeWindow({
         node: this,
-        title: "Main Output"
+        title: "Main Output",
+        draw_callback: this.draw.bind(this)
       });
     }
 
@@ -152,7 +153,8 @@ function () {
       // DEFINE LAST
       this.ui_window = new WindowSystem.NodeWindow({
         node: this,
-        title: "Keyboard"
+        title: "Keyboard",
+        draw_callback: this.draw.bind(this)
       });
     }
 
@@ -253,6 +255,7 @@ function () {
       this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Live Input",
+        draw_callback: this.draw.bind(this),
         resizable: false,
         use_flex: false
       });
@@ -376,6 +379,7 @@ function () {
       this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "File",
+        draw_callback: this.draw.bind(this),
         resizable: false,
         use_flex: false
       });
@@ -528,6 +532,7 @@ function () {
       this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Gain",
+        draw_callback: this.draw.bind(this),
         resizable: false,
         use_flex: false
       });
@@ -688,6 +693,7 @@ function () {
       this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Delay",
+        draw_callback: this.draw.bind(this),
         resizable: false,
         use_flex: false
       });
@@ -859,6 +865,7 @@ function () {
       this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Dynamics Compressor",
+        draw_callback: this.draw.bind(this),
         resizable: false,
         width: 400, height: 70
       });
@@ -1223,6 +1230,7 @@ function () {
       this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Panner",
+        draw_callback: this.draw.bind(this),
         resizable: false,
         use_flex: false
       });
@@ -1683,6 +1691,7 @@ function () {
       this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Biquad Filter",
+        draw_callback: this.draw.bind(this),
         use_flex: false,
         resizable: false
       });
@@ -1923,6 +1932,7 @@ function () {
       this.ui_window = new WindowSystem.NodeWindow({
         node: this,
         title: "Oscillator",
+        draw_callback: this.draw.bind(this),
         resizable: false,
         use_flex: false
       });
@@ -2102,7 +2112,8 @@ function () {
 
       this.ui_window = new WindowSystem.NodeWindow({
         node: this,
-        title: "Oscilloscope"
+        title: "Oscilloscope",
+        draw_callback: this.draw.bind(this)
       });
     }
 
