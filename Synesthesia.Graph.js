@@ -138,7 +138,12 @@ function () {
       ) {
         // Must have matching flow applicability.
         return false;
-      } else if (this.flow == other_endpoint.getFlow()) {
+      }
+      
+      if (
+        (this.flow && other_endpoint.getFlow()) &&
+        (this.flow == other_endpoint.getFlow())
+      ) {
         // Can't be the same flow.
         return false;
       }
