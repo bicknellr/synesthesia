@@ -218,6 +218,83 @@ function () {
     return KeyboardInput;
   })();
 
+  NodeLibrary.KeyboardInputNumbers = (function () {
+    function KeyboardInputNumbers (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Graph.Node.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+      this.notes = {};
+
+      window.addEventListener("keydown", this.keydown.bind(this), false);
+      window.addEventListener("keyup", this.keyup.bind(this), false);
+
+      this.setInputDescriptors({});
+
+      this.setOutputDescriptors({
+        "keydown": new Graph.Endpoint({
+          node: this,
+          name: "keydown",
+          type: "Number",
+          flow: "active",
+          accepted_types: [
+            "Number"
+          ],
+          direction: "output"
+        }),
+
+        "keyup": new Graph.Endpoint({
+          node: this,
+          name: "keyup",
+          type: "Number",
+          flow: "active",
+          accepted_types: [
+            "Number"
+          ],
+          direction: "output"
+        })
+      });
+
+      // DEFINE LAST
+      this.ui_window = new WindowSystem.NodeWindow({
+        node: this,
+        title: "Keyboard [Raw]",
+        draw_callback: this.draw.bind(this)
+      });
+    }
+
+    KeyboardInputNumbers.prototype = Utilities.extend(
+      new Graph.Node()
+    );
+
+    KeyboardInputNumbers.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    KeyboardInputNumbers.prototype.informConnected = function (endpoint, new_connection) {
+    };
+
+    KeyboardInputNumbers.prototype.informDisconnected = function (endpoint, rm_connection) {
+    };
+
+    KeyboardInputNumbers.prototype.informWindowPrepared = function (div) {
+    };
+
+    KeyboardInputNumbers.prototype.draw = function () {
+    };
+
+    KeyboardInputNumbers.prototype.keydown = function (e) {
+      this.getOutputDescriptors()["keydown"].initiateFlow(e.keyCode);
+    };
+
+    KeyboardInputNumbers.prototype.keyup = function (e) {
+      this.getOutputDescriptors()["keyup"].initiateFlow(e.keyCode);
+    };
+
+    return KeyboardInputNumbers;
+  })();
+
   NodeLibrary.LiveInput = (function () {
     function LiveInput (params) {
       this.params = (typeof params !== "undefined" ? params : {});
@@ -2210,6 +2287,71 @@ function () {
     };
 
     return Oscilloscope;
+  })();
+
+  NodeLibrary.NumberDisplay = (function () {
+    function NumberDisplay (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Graph.Node.apply(this, arguments);
+
+      this.setInputDescriptors({
+        "number": new Graph.Endpoint({
+          node: this,
+          name: "number",
+          type: "Number",
+          flow: "passive",
+          accepted_types: [
+            "Number"
+          ],
+          direction: "input"
+        })
+      });
+
+      this.setOutputDescriptors({});
+
+      this.build();
+
+      this.ui_window = new WindowSystem.NodeWindow({
+        node: this,
+        title: "NumberDisplay",
+        draw_callback: this.draw.bind(this)
+      });
+    }
+
+    NumberDisplay.prototype = Utilities.extend(
+      new Graph.Node()
+    );
+
+    NumberDisplay.prototype.build = function () {
+      this.output_span = document.createElement("span");
+        this.output_span.style.fontSize = "3em";
+      this.getInputDescriptors()["number"].addFlowListener((function (data) {
+        this.output_span.innerHTML = data;
+      }).bind(this));
+    };
+
+    NumberDisplay.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    NumberDisplay.prototype.informWindowPrepared = function (div) {
+      div.appendChild(this.output_span);
+    };
+
+    NumberDisplay.prototype.informConnected = function (endpoint, connection) {
+
+    };
+
+    NumberDisplay.prototype.informDisconnected = function (endpoint, connection) {
+
+    };
+
+    NumberDisplay.prototype.draw = function () {
+
+    };
+
+    return NumberDisplay;
   })();
 
   NodeLibrary.FlowUITestNode = (function () {

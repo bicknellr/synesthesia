@@ -604,6 +604,7 @@ function () {
 
     Endpoint.ColorMap = {
       initial: "rgba(0, 0, 0, 1)",
+      "Number": "rgba(128, 32, 32, 1)",
       notes: "rgba(128, 192, 128, 1)",
       AudioNode: "rgba(128, 128, 128, 1)",
       AudioParam: "rgba(128, 128, 256, 1)"

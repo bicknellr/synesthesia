@@ -60,6 +60,7 @@ function () {
     }
 
     Endpoint.DataTypes = [
+      "Number",
       "notes",
       "AudioNode",
       "AudioParam",

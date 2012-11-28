@@ -256,6 +256,32 @@ function () {
 
                         }).bind(this)
                       }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("KeyboardInputNumbers"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.KeyboardInputNumbers({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("NumberDisplay"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.NumberDisplay({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
                     ]
                   })
                 })
