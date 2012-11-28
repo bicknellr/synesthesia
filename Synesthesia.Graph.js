@@ -182,7 +182,7 @@ function () {
       The 'data' argument should be of the specified data type for
       that node.
     */
-    Endpoint.prototype.initateFlow = function (data) {
+    Endpoint.prototype.initiateFlow = function (data) {
       if (this.flow != "active") {
         throw new Error("Graph.Endpoint(.initiateFlow): This method can't be called from an endpoint with flow type '" + this.flow + "'.");
       }
@@ -190,7 +190,7 @@ function () {
       var results = [];
       for (var conn_ix = 0; conn_ix < this.connections.length; conn_ix++) {
         results = results.concat(
-          this.connections[i].getOppositeEndpoint(this).handleFlow(data)
+          this.connections[conn_ix].getOppositeEndpoint(this).handleFlow(data)
         );
       }
       return results;
