@@ -282,6 +282,19 @@ function () {
 
                         }).bind(this)
                       }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("NumberMap"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.NumberMap({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
                     ]
                   })
                 })

@@ -2354,6 +2354,121 @@ function () {
     return NumberDisplay;
   })();
 
+  NodeLibrary.NumberMap = (function () {
+    function NumberMap (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Graph.Node.apply(this, arguments);
+
+      this.setInputDescriptors({
+        "number": new Graph.Endpoint({
+          node: this,
+          name: "number",
+          type: "Number",
+          flow: "passive",
+          accepted_types: [
+            "Number"
+          ],
+          direction: "input"
+        })
+      });
+
+      this.setOutputDescriptors({
+        "mapped_number": new Graph.Endpoint({
+          node: this,
+          name: "mapped_number",
+          type: "Number",
+          flow: "active",
+          accepted_types: [
+            "Number"
+          ],
+          direction: "output"
+        }),
+        "unmapped_number": new Graph.Endpoint({
+          node: this,
+          name: "unmapped_number",
+          type: "Number",
+          flow: "active",
+          accepted_types: [
+            "Number"
+          ],
+          direction: "output"
+        })
+      });
+
+      this.element = document.createElement("div");
+      this.build();
+
+      this.ui_window = new WindowSystem.NodeWindow({
+        node: this,
+        title: "NumberMap",
+        draw_callback: this.draw.bind(this)
+      });
+    }
+
+    NumberMap.prototype = Utilities.extend(
+      new Graph.Node()
+    );
+
+    NumberMap.prototype.build = function () {
+      this.output_div = document.createElement("span");
+        this.output_div.style.fontSize = "3em";
+        this.output_div.innerHTML = "&nbsp;";
+      this.element.appendChild(this.output_div);
+
+      this.element.appendChild(
+        document.createElement("br")
+      );
+      
+      this.map_textarea = document.createElement("textarea");
+        this.map_textarea.style.outline = "none";
+      this.element.appendChild(this.map_textarea);
+
+      this.getInputDescriptors()["number"].addFlowListener((function (data) {
+        this.output_div.innerHTML = data;
+
+        var map = {};
+        try {
+          map = JSON.parse(this.map_textarea.value);
+          this.map_textarea.style.border = "1px solid gray";
+        } catch (e) {
+          this.map_textarea.style.border = "1px solid red";
+          console.error(e);
+        }
+
+        if (map.hasOwnProperty(data)) {
+          // if the number is in the map.
+          this.getOutputDescriptors()["mapped_number"].initiateFlow(map[data]);
+        } else {
+          // if the number isn't in the map.
+          this.getOutputDescriptors()["unmapped_number"].initiateFlow(data);
+        }
+      }).bind(this));
+    };
+
+    NumberMap.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    NumberMap.prototype.informWindowPrepared = function (div) {
+      div.appendChild(this.element);
+    };
+
+    NumberMap.prototype.informConnected = function (endpoint, connection) {
+
+    };
+
+    NumberMap.prototype.informDisconnected = function (endpoint, connection) {
+
+    };
+
+    NumberMap.prototype.draw = function () {
+
+    };
+
+    return NumberMap;
+  })();
+
   NodeLibrary.FlowUITestNode = (function () {
     function FlowUITestNode (params) {
       this.params = (typeof params !== "undefined" ? params : {});
