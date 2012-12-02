@@ -868,15 +868,18 @@ function () {
       this.context.save();
 
         // Draw x grid lines.
-        var x_div = 1;
+        var x_div_minor = Math.pow(10, Math.floor(Math.log(this.x_max_sync.getValue() - this.x_min_sync.getValue()) / Math.log(10)) - 1);
+        var x_div_major = Math.pow(10, Math.floor(Math.log(this.x_max_sync.getValue() - this.x_min_sync.getValue()) / Math.log(10)));
+        console.log("x_div_minor " + x_div_minor);
+        console.log("x_div_major " + x_div_major);
 
         var x_start = 0;
         while (x_start >= this.x_min_sync.getValue()) {
-          x_start -= x_div;
+          x_start -= x_div_minor;
         }
-        x_start += x_div;
+        x_start += x_div_minor;
 
-        for (var x = x_start; x <= this.x_max_sync.getValue(); x += x_div) {
+        for (var x = x_start; x <= this.x_max_sync.getValue(); x += x_div_minor) {
           var display_coords = this.convertToDisplayCoords({
               point: {x: x, y: 0},
               width: this.canvas.width, height: this.canvas.height,
@@ -889,20 +892,27 @@ function () {
           this.context.beginPath();
             this.context.moveTo(display_coords.x, 0);
             this.context.lineTo(display_coords.x, this.canvas.height);
-          this.context.strokeStyle = "rgba(64, 64, 64, 1)";
+          if (x % x_div_major == 0) {
+            this.context.strokeStyle = "rgba(128, 64, 64, 1)";
+          } else {
+            this.context.strokeStyle = "rgba(64, 64, 64, 1)";
+          }
           this.context.stroke();
         }
 
         // Draw y grid lines.
-        var y_div = 1;
+        var y_div_minor = Math.pow(10, Math.floor(Math.log(this.y_max_sync.getValue() - this.y_min_sync.getValue()) / Math.log(10)) - 1);
+        var y_div_major = Math.pow(10, Math.floor(Math.log(this.y_max_sync.getValue() - this.y_min_sync.getValue()) / Math.log(10)));
+        console.log("y_div_minor " + y_div_minor);
+        console.log("y_div_major " + y_div_major);
 
         var y_start = 0;
         while (y_start >= this.y_min_sync.getValue()) {
-          y_start -= y_div;
+          y_start -= y_div_minor;
         }
-        y_start += y_div;
+        y_start += y_div_minor;
 
-        for (var y = y_start; y <= this.y_max_sync.getValue(); y += y_div) {
+        for (var y = y_start; y <= this.y_max_sync.getValue(); y += y_div_minor) {
           var display_coords = this.convertToDisplayCoords({
               point: {x: 0, y: y},
               width: this.canvas.width, height: this.canvas.height,
@@ -915,7 +925,11 @@ function () {
           this.context.beginPath();
             this.context.moveTo(0, display_coords.y);
             this.context.lineTo(this.canvas.width, display_coords.y);
-          this.context.strokeStyle = "rgba(64, 64, 64, 1)";
+          if (y % y_div_major == 0) {
+            this.context.strokeStyle = "rgba(128, 64, 64, 1)";
+          } else {
+            this.context.strokeStyle = "rgba(64, 64, 64, 1)";
+          }
           this.context.stroke();
         }
 
