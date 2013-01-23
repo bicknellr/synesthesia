@@ -225,7 +225,7 @@ function () {
       Graph.Node.apply(this, arguments);
 
       this.synesthesia = this.params.synesthesia;
-      this.notes = {};
+      this.activeKeys = [];
 
       window.addEventListener("keydown", this.keydown.bind(this), false);
       window.addEventListener("keyup", this.keyup.bind(this), false);
@@ -285,14 +285,127 @@ function () {
     };
 
     KeyboardInputNumbers.prototype.keydown = function (e) {
-      this.getOutputDescriptors()["keydown"].initiateFlow(e.keyCode);
+      if (this.activeKeys.indexOf(e.keyCode) == -1) {
+        this.getOutputDescriptors()["keydown"].initiateFlow(e.keyCode);
+        this.activeKeys.push(e.keyCode);
+      }
     };
 
     KeyboardInputNumbers.prototype.keyup = function (e) {
       this.getOutputDescriptors()["keyup"].initiateFlow(e.keyCode);
+      while (this.activeKeys.indexOf(e.keyCode) != -1) {
+        this.activeKeys.splice(
+          this.activeKeys.indexOf(e.keyCode),
+          1
+        );
+      }
     };
 
     return KeyboardInputNumbers;
+  })();
+
+  NodeLibrary.PassiveClock = (function () {
+    function PassiveClock (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Graph.Node.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+
+      this.time_zero = Date.now();
+
+      this.setInputDescriptors({
+        "clock_set": new Graph.Endpoint({
+          node: this,
+          name: "clock_set",
+          type: "Number",
+          flow: "passive",
+          accepted_types: [
+            "Number"
+          ],
+          direction: "input"
+        })
+      });
+
+      this.getInputDescriptors()["clock_set"].addFlowListener(
+        (function (data) {
+          this.time_zero = data;
+        }).bind(this)
+      );
+
+      this.setOutputDescriptors({
+        "clock": new Graph.Endpoint({
+          node: this,
+          name: "clock",
+          type: "Number",
+          flow: "passive",
+          accepted_types: [
+            "Number"
+          ],
+          direction: "output"
+        })
+      });
+
+      this.getOutputDescriptors()["clock"].addFlowListener(
+        (function (data) {
+          return Date.now() - this.time_zero;
+        }).bind(this)
+      );
+
+      // DEFINE LAST
+      this.ui_window = new WindowSystem.NodeWindow({
+        node: this,
+        title: "PassiveClock",
+        draw_callback: this.draw.bind(this)
+      });
+
+      this.clock_update_interval = setInterval(this.updateClock.bind(this, 10));
+    }
+
+    PassiveClock.prototype = Utilities.extend(
+      new Graph.Node()
+    );
+
+    PassiveClock.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    PassiveClock.prototype.informWindowPrepared = function (div) {
+      this.element = document.createElement("div");
+        this.reset_button = document.createElement("button");
+          this.reset_button.appendChild(
+            document.createTextNode("reset")
+          );
+          this.reset_button.addEventListener("click", (function (e) {
+            this.time_zero = Date.now();
+          }).bind(this));
+        this.element.appendChild(this.reset_button);
+
+        this.element.appendChild(
+          document.createElement("br")
+        );
+
+        this.clock_span = document.createElement("span");
+          this.clock_span.innerHTML = (Date.now() - this.time_zero);
+        this.element.appendChild(this.clock_span);
+
+      div.appendChild(this.element);
+    };
+
+    PassiveClock.prototype.informConnected = function (endpoint, new_connection) {
+    };
+
+    PassiveClock.prototype.informDisconnected = function (endpoint, rm_connection) {
+    };
+
+    PassiveClock.prototype.draw = function () {
+    };
+
+    PassiveClock.prototype.updateClock = function () {
+      this.clock_span.innerHTML = (Date.now() - this.time_zero);
+    };
+
+    return PassiveClock;
   })();
 
   NodeLibrary.LiveInput = (function () {
@@ -2478,6 +2591,135 @@ function () {
     return NumberMap;
   })();
 
+  NodeLibrary.NumberToEnvelopes = (function () {
+    function NumberToEnvelopes (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Graph.Node.apply(this, arguments);
+
+      this.setInputDescriptors({
+        "on": new Graph.Endpoint({
+          node: this,
+          name: "on",
+          type: "Number",
+          flow: "passive",
+          accepted_types: [
+            "Number"
+          ],
+          direction: "input"
+        }),
+        "off": new Graph.Endpoint({
+          node: this,
+          name: "off",
+          type: "Number",
+          flow: "passive",
+          accepted_types: [
+            "Number"
+          ],
+          direction: "input"
+        }),
+        "clock": new Graph.Endpoint({
+          node: this,
+          name: "clock",
+          type: "Number",
+          flow: "active",
+          accepted_types: [
+            "Number"
+          ],
+          direction: "input"
+        })
+      });
+
+      this.setOutputDescriptors({
+        "envelopes": new Graph.Endpoint({
+          node: this,
+          name: "envelopes",
+          type: "Envelope",
+          flow: "active",
+          accepted_types: [
+            "Envelope"
+          ],
+          direction: "output"
+        })
+      });
+
+      this.envelopes_map = {};
+
+      this.getInputDescriptors()["on"].addFlowListener((function (data) {
+        var new_envelope = new Envelope.Path();
+        var clock_data = this.getInputDescriptors()["clock"].initiateFlow();
+        var start_time = (typeof clock_data[0] !== "undefined" ? clock_data[0] : 0);
+
+        new_envelope.addPoint(
+          new Envelope.Point({
+            value: data,
+            time: start_time,
+            transition: Envelope.Point.Transition.SET
+          })
+        );
+        this.envelopes_map[data] = {
+          envelope: new_envelope,
+          time: Date.now() + start_time
+        };
+        this.getOutputDescriptors()["envelopes"].initiateFlow(new_envelope);
+      }).bind(this));
+
+      this.getInputDescriptors()["off"].addFlowListener((function (data) {
+        if (this.envelopes_map.hasOwnProperty(data)) {
+          var clock_data = this.getInputDescriptors()["clock"].initiateFlow();
+          var end_time = (typeof clock_data[0] !== "undefined" ? clock_data[0] : 0);
+
+          this.envelopes_map[data].envelope.addPoint(
+            new Envelope.Point({
+              value: data,
+              time: end_time,
+              transition: Envelope.Point.Transition.CANCEL
+            })
+          );
+          console.log(this.envelopes_map[data].envelope);
+        }
+      }).bind(this));
+ 
+      this.element = document.createElement("div");
+      this.build();
+
+      this.ui_window = new WindowSystem.NodeWindow({
+        node: this,
+        title: "Number To Envelopes",
+        draw_callback: this.draw.bind(this)
+      });
+    }
+
+    NumberToEnvelopes.prototype = Utilities.extend(
+      new Graph.Node()
+    );
+
+    NumberToEnvelopes.prototype.build = function () {
+    };
+
+    NumberToEnvelopes.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    NumberToEnvelopes.prototype.informWindowPrepared = function (div) {
+      div.appendChild(this.element);
+    };
+
+    NumberToEnvelopes.prototype.informConnected = function (endpoint, connection) {
+
+    };
+
+    NumberToEnvelopes.prototype.informDisconnected = function (endpoint, connection) {
+
+    };
+
+    NumberToEnvelopes.prototype.draw = function () {
+
+    };
+
+    return NumberToEnvelopes;
+  })();
+
   NodeLibrary.EnvelopeSource = (function () {
     function EnvelopeSource (params) {
       this.params = (typeof params !== "undefined" ? params : {});
@@ -2839,6 +3081,16 @@ function () {
       this.context = this.synesthesia.getContext();
 
       this.setInputDescriptors({
+        "envelopes": new Graph.Endpoint({
+          node: this,
+          name: "envelopes",
+          type: "Envelope",
+          flow: "passive",
+          accepted_types: [
+            "Envelope",
+          ],
+          direction: "input"
+        })
       });
 
       this.setOutputDescriptors({
@@ -2862,6 +3114,12 @@ function () {
     };
     
     EnvelopePathsEditorTest.prototype.informWindowPrepared = function (div) {
+      this.div = div;
+
+      this.editor_width_sync = new Utilities.SynchronizedValue();
+        this.editor_width_sync.setValue(null, 500);
+      this.editor_height_sync = new Utilities.SynchronizedValue();
+        this.editor_height_sync.setValue(null, 500);
       var editor_x_min = new Utilities.SynchronizedValue();
         editor_x_min.setValue(null, -0.1);
       var editor_x_max = new Utilities.SynchronizedValue();
@@ -2872,14 +3130,23 @@ function () {
         editor_y_max.setValue(null, 3.1);
 
       this.path_editor = new UILibrary.EnvelopePathsEditor({
+        width_sync: this.editor_width_sync, height_sync: this.editor_height_sync,
         x_min_sync: editor_x_min, x_max_sync: editor_x_max,
         y_min_sync: editor_y_min, y_max_sync: editor_y_max
       });
       div.appendChild(this.path_editor.getElement());
+      this.getInputDescriptors()["envelopes"].addFlowListener((function (data) {
+        console.log("adding");
+        this.path_editor.addPath(data);
+        this.path_editor.fitAll();
+      }).bind(this));
     };
 
     EnvelopePathsEditorTest.prototype.draw = function () {
-      //
+      console.log("DIV width " + this.div.getAttribute("data-width"));
+      this.editor_width_sync.setValue(null, this.div.getAttribute("data-width"));
+      this.editor_height_sync.setValue(null, this.div.getAttribute("data-height"));
+      this.path_editor.draw();
     };
     
     // Graph

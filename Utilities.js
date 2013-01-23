@@ -325,6 +325,41 @@ module.declare("Utilities", [], function () {
     return Flaggable;
   })();
 
+  var Eventable = (function () {
+    function Eventable () {
+      this._event_listeners = {};
+    }
+
+    Eventable.prototype.addEventListener = function (event_key, listener) {
+      if (this._event_listeners.hasOwnProperty(event_key)) {
+        this._event_listeners[event_key].push(listener);
+      } else {
+        this._event_listeners[event_key] = [listener];
+      }
+    };
+
+    Eventable.prototype.removeEventListener = function (event_key, listener) {
+      if (!this._event_listeners.hasOwnProperty(event_key)) return;
+
+      while (this._event_listeners.indexOf(listener) != -1) {
+        this._event_listeners.splice(
+          this._event_listeners.indexOf(listener),
+          1
+        );
+      }
+    };
+
+    Eventable.prototype.launchEvent = function (event_key, data) {
+      if (!this._event_listeners.hasOwnProperty(event_key)) return;
+
+      for (var i = 0; i < this._event_listeners[event_key].length; i++) {
+        this._event_listeners[event_key][i](data);
+      }
+    };
+
+    return Eventable;
+  })();
+
   return {
     copy_properties: copy_properties,
 
@@ -340,6 +375,7 @@ module.declare("Utilities", [], function () {
     Set: Set,
 
     Flaggable: Flaggable,
+    Eventable: Eventable,
     SynchronizedValue: SynchronizedValue,
 
     range: range,

@@ -296,6 +296,19 @@ function () {
                         }).bind(this)
                       }),
                       new UILibrary.MenuItem({
+                        content: document.createTextNode("Number to Envelopes"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.NumberToEnvelopes({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
                         content: document.createElement("hr"),
                         callback: (function () {
 
@@ -348,6 +361,19 @@ function () {
 
                           this.addNode(
                             new NodeLibrary.NumberMap({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
+                        content: document.createTextNode("PassiveClock"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.PassiveClock({
                               synesthesia: this.synesthesia
                             }),
                             {x: 10, y: 10}

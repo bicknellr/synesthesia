@@ -870,8 +870,8 @@ function () {
         // Draw x grid lines.
         var x_div_minor = Math.pow(10, Math.floor(Math.log(this.x_max_sync.getValue() - this.x_min_sync.getValue()) / Math.log(10)) - 1);
         var x_div_major = Math.pow(10, Math.floor(Math.log(this.x_max_sync.getValue() - this.x_min_sync.getValue()) / Math.log(10)));
-        console.log("x_div_minor " + x_div_minor);
-        console.log("x_div_major " + x_div_major);
+        //console.log("x_div_minor " + x_div_minor);
+        //console.log("x_div_major " + x_div_major);
 
         var x_start = 0;
         while (x_start >= this.x_min_sync.getValue()) {
@@ -903,8 +903,8 @@ function () {
         // Draw y grid lines.
         var y_div_minor = Math.pow(10, Math.floor(Math.log(this.y_max_sync.getValue() - this.y_min_sync.getValue()) / Math.log(10)) - 1);
         var y_div_major = Math.pow(10, Math.floor(Math.log(this.y_max_sync.getValue() - this.y_min_sync.getValue()) / Math.log(10)));
-        console.log("y_div_minor " + y_div_minor);
-        console.log("y_div_major " + y_div_major);
+        //console.log("y_div_minor " + y_div_minor);
+        //console.log("y_div_major " + y_div_major);
 
         var y_start = 0;
         while (y_start >= this.y_min_sync.getValue()) {
@@ -1279,6 +1279,8 @@ function () {
       }).bind(this));
       if (!this.width_sync.getValue()) {
         this.width_sync.setValue(null, 500);
+      } else {
+        this.width_sync.setValue(null, this.width_sync.getValue());
       }
 
       if (this.params.height_sync) {
@@ -1292,6 +1294,8 @@ function () {
       }).bind(this));
       if (!this.height_sync.getValue()) {
         this.height_sync.setValue(null, 300);
+      } else {
+        this.height_sync.setValue(null, this.height_sync.getValue());
       }
 
       if (this.params.x_min_sync) {
@@ -1354,6 +1358,7 @@ function () {
       this.build();
 
       // DEBUGGING ONLY!
+      /*
       var TEST_PATH_1 = new Envelope.Path();
         for (var i = 0; i <= 25; i++) {
           TEST_PATH_1.addPoint(
@@ -1376,6 +1381,7 @@ function () {
 
           TEST_PATH_2.addPoint(new_point);
         }
+      */
 
       this.draw();
     }
@@ -1668,6 +1674,11 @@ function () {
         new_display.getElement(),
         this.selection_overlay
       );
+
+      new_path.addEventListener("addPoint", (function (data) {
+        console.log("addPoint");
+        this.draw();
+      }).bind(this));
     };
 
     EnvelopePathsEditor.prototype.removePath = function (rm_path) {
@@ -1740,6 +1751,37 @@ function () {
       }
 
       return nearest_point;
+    };
+
+    EnvelopePathsEditor.prototype.fitAll = function () {
+      var new_x_min = this.x_min_sync.getValue();
+      var new_x_max = this.x_max_sync.getValue();
+      var new_y_min = this.y_min_sync.getValue();
+      var new_y_max = this.y_max_sync.getValue();
+      for (var path_ix = 0; path_ix < this.paths.length; path_ix++) {
+        var cur_path = this.paths[path_ix];
+        var cur_path_points = cur_path.getPoints();
+        for (var point_ix = 0; point_ix < cur_path_points.length; point_ix++) {
+          var cur_point = cur_path_points[point_ix];
+          if (cur_point.getTime() < new_x_min) {
+            new_x_min = cur_point.getTime();
+          }
+          if (cur_point.getTime() > new_x_max) {
+            new_x_max = cur_point.getTime();
+          }
+
+          if (cur_point.getValue() < new_y_min) {
+            new_y_min = cur_point.getValue();
+          }
+          if (cur_point.getValue() > new_y_max) {
+            new_y_max = cur_point.getValue();
+          }
+        }
+      }
+      this.x_min_sync.setValue(this, new_x_min);
+      this.x_max_sync.setValue(this, new_x_max);
+      this.y_min_sync.setValue(this, new_y_min);
+      this.y_max_sync.setValue(this, new_y_max);
     };
 
     EnvelopePathsEditor.prototype.draw = function () {

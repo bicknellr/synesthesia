@@ -477,6 +477,8 @@ function () {
       this.div.setAttribute("data-height", this.height - this.title_div.offsetHeight);
 
       this.node.informWindowPrepared(this.div);
+
+      this.node.draw();
     };
 
     NodeWindow.prototype.handle_drag = function (params) {
@@ -517,11 +519,15 @@ function () {
 
       this.reflow();
 
+      this.node.draw();
+
       params.e.preventDefault();
     };
 
     NodeWindow.prototype.handle_resize_mouseup = function (params) {
       this.handle_resize_mousedown.apply(this, arguments);
+
+      this.node.draw();
     };
 
     NodeWindow.prototype.setZIndex = function (index) {

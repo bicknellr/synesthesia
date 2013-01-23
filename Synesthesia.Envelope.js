@@ -1,14 +1,22 @@
 module.declare("Synesthesia:Envelope",
-[],
+["Utilities"],
 function () {
+  var Utilities = module.require("Utilities");
+
   var Envelope = {};
   
   Envelope.Path = (function () {
     function Path (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
+      Utilities.Eventable.apply(this);
+
       this.points = [];
     }
+
+    Path.prototype = Utilities.extend(
+      new Utilities.Eventable()
+    );
 
     /* getPoints
      * rm_point : Envelope.Point
@@ -32,6 +40,8 @@ function () {
       this.points.push(new_point);
 
       new_point.addPath(this);
+
+      this.launchEvent("addPoint", new_point);
     };
 
     /* removePoint
@@ -118,11 +128,12 @@ function () {
     }
 
     Point.Transition = {
-      SET: 0,
-      LINEAR: 1,
-      EXPONENTIAL: 2,
-      EXPONENTIAL_TARGET: 3,
-      CURVE: 4
+      CANCEL: 0,
+      SET: 1,
+      LINEAR: 2,
+      EXPONENTIAL: 3,
+      EXPONENTIAL_TARGET: 4,
+      CURVE: 5
     };
 
     Point.prototype.getPaths = function () {
