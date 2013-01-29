@@ -12,3 +12,7 @@
   .Synesthesia_UI .slideview {
     -webkit-flex: 1 0 0;
   }
+
+  .Synesthesia_UI .timeline {
+    -webkit-flex: 0 0 auto;
+  }

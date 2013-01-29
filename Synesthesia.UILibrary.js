@@ -751,5 +751,72 @@ function () {
     return SlideView;
   })();
 
+  UILibrary.Timeline = (function () {
+    function Timeline (params) {
+      
+      this.open = false;
+      this.open_height = 300;
+
+      this.build();
+    }
+
+    Timeline.prototype.getElement = function () {
+      return this.element;
+    };
+
+    Timeline.prototype.build = function () {
+      this.element = document.createElement("div");
+        Utilities.addClass(this.element, "Synesthesia_UILibrary_Timeline");
+
+        this.title = document.createElement("div");
+          Utilities.addClass(this.title, "title");
+          this.title.appendChild(
+            document.createTextNode("Timeline")
+          );
+          this.title.addEventListener("dblclick", (function () {
+            console.log("" + this.open + " " + this.open_height);
+            if (this.open) {
+              this.content_container.style.height = "0px";
+            } else {
+              this.content_container.style.height = "" + this.open_height + "px";
+            }
+
+            this.open = !this.open;
+          }).bind(this));
+          this.title_draggable = new UILibrary.Draggable({
+            handle: this.title,
+            callback_mousedown: (function (info) {
+              this.content_container.style.webkitTransition = "none";
+              this.open_height = parseInt(window.getComputedStyle(this.content_container).height);
+              this.adjusted_height = this.open_height;
+            }).bind(this),
+            callback_mousemove: (function (info) {
+              console.log("dx_total " + info.dx_total + " dy_total " + info.dy_total);
+              this.adjusted_height = Math.max(this.open_height + -1 * info.dy_total, 0);
+              this.content_container.style.height = "" + this.adjusted_height + "px";
+            }).bind(this),
+            callback_mouseup: (function (info) {
+              this.content_container.style.webkitTransition = "height 0.4s";
+
+              if (this.adjusted_height < 200) {
+                this.open_height = 300;
+                this.content_container.style.height = "0px";
+                this.open = false;
+              } else {
+                this.open_height = this.adjusted_height;
+                this.open = true;
+              }
+            }).bind(this)
+          });
+        this.element.appendChild(this.title);
+
+        this.content_container = document.createElement("div");
+          Utilities.addClass(this.content_container, "content_container");
+        this.element.appendChild(this.content_container);
+    };
+
+    return Timeline;
+  })();
+
   return UILibrary;
 });

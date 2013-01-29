@@ -293,6 +293,11 @@ function () {
         Utilities.addClass(this.slideview.getElement(), "slideview");
       this.container.appendChild(this.slideview.getElement());
 
+      this.timeline = new UILibrary.Timeline({});
+        Utilities.addClass(this.timeline.getElement(), "timeline");
+
+      this.container.appendChild(this.timeline.getElement());
+
       this.windowsystem.draw();
     }
 
