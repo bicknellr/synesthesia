@@ -24,6 +24,9 @@ function () {
     };
 
     Draggable.prototype.handle_mousedown = function (e) {
+      this.start_pageX = e.pageX;
+      this.start_pageY = e.pageY;
+
       this.last_pageX = e.pageX;
       this.last_pageY = e.pageY;
 
@@ -46,13 +49,17 @@ function () {
         e: e,
         x: e.pageX, y: e.pageY,
         dx: e.pageX - this.last_pageX,
-        dy: e.pageY - this.last_pageY
+        dy: e.pageY - this.last_pageY,
+        dx_total: e.pageX - this.start_pageX,
+        dy_total: e.pageY - this.start_pageY
       });
       this.callback_mousemove({
         e: e,
         x: e.pageX, y: e.pageY,
         dx: e.pageX - this.last_pageX,
-        dy: e.pageY - this.last_pageY
+        dy: e.pageY - this.last_pageY,
+        dx_total: e.pageX - this.start_pageX,
+        dy_total: e.pageY - this.start_pageY
       });
 
 
