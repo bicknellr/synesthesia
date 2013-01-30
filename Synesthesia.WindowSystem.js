@@ -12,6 +12,8 @@ function () {
     function WindowSystem (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
+      this.ui = this.params.ui;
+
       this.container = document.createElement("div");
         Utilities.addClass(this.container, "Synesthesia_WindowSystem");
 
@@ -31,6 +33,10 @@ function () {
 
     WindowSystem.prototype.getElement = function () {
       return this.container;
+    };
+
+    WindowSystem.prototype.getUI = function () {
+      return this.ui;
     };
 
     WindowSystem.prototype.getDimensions = function () {
@@ -53,6 +59,19 @@ function () {
       }
       node_window.reflow();
       this.node_canvas.addNodeWindow(node_window);
+    };
+
+    WindowSystem.prototype.removeWindow = function (node_window) {
+      this.node_canvas.removeNodeWindow(node_window);
+
+      this.node_div.removeChild(
+        node_window.getElement()
+      );
+
+      this.nodes.splice(
+        this.nodes.indexOf(node_window),
+        1
+      );
     };
 
     WindowSystem.prototype.bringToFront = function (node_window) {
@@ -88,7 +107,7 @@ function () {
       this.context = this.canvas.getContext("2d");
 
       this.node_windows = [];
-      this.connections = [];
+      this.connections_map = new Utilities.Map();
 
       this.selected_endpoint = null;
       this.temporary_connection = null;
@@ -110,6 +129,15 @@ function () {
 
     NodeCanvas.prototype.addNodeWindow = function (new_node_window) {
       this.node_windows.push(new_node_window);
+
+      this.draw();
+    };
+
+    NodeCanvas.prototype.removeNodeWindow = function (rm_node_window) {
+      this.node_windows.splice(
+        this.node_windows.indexOf(rm_node_window),
+        1
+      );
 
       this.draw();
     };
@@ -184,7 +212,7 @@ function () {
               })
             });
           }
-          this.connections.push(this.temporary_connection);
+          this.connections_map.set(this.temporary_connection.getDescriptor(), this.temporary_connection);
         }
       }
 
@@ -258,10 +286,7 @@ function () {
         if (!did_finalize_connection) {
           this.temporary_connection.from_endpoint.informDisconnected(this.temporary_connection);
           this.temporary_connection.to_endpoint.informDisconnected(this.temporary_connection);
-          this.connections.splice(
-            this.connections.indexOf(this.temporary_connection),
-            1
-          );
+          this.connections_map.remove(this.temporary_connection.getDescriptor());
         }
         this.temporary_connection = null;
       }
@@ -324,6 +349,8 @@ function () {
 
       // draw windows (includes endpoints)
 
+      var graph_connections_to_draw = new Utilities.Set();
+
       for (var window_ix = 0; window_ix < this.node_windows.length; window_ix++) {
         var cur_node_window = this.node_windows[window_ix];
         // Inform node that it should do it's own internal drawing now.
@@ -332,13 +359,31 @@ function () {
         this.context.save();
           cur_node_window.drawEndpoints(this.canvas);
         this.context.restore();
+
+        var cur_node = cur_node_window.getNode();
+
+        var input_endpoints = cur_node.getInputDescriptors();
+        for (var input_name in input_endpoints) {
+          graph_connections_to_draw.addAll(input_endpoints[input_name].getConnections());
+        }
+
+        var output_endpoints = cur_node.getOutputDescriptors();
+        for (var output_name in output_endpoints) {
+          graph_connections_to_draw.addAll(output_endpoints[output_name].getConnections());
+        }
       }
 
       // draw connections
 
-      for (var conn_ix = 0; conn_ix < this.connections.length; conn_ix++) {
-        var cur_connection = this.connections[conn_ix];
-        cur_connection.draw(this.canvas);
+      if (this.temporary_connection) {
+        graph_connections_to_draw.add(this.temporary_connection.getDescriptor());
+      }
+
+      graph_connections_to_draw = graph_connections_to_draw.toArray();
+
+      for (var conn_ix = 0; conn_ix < graph_connections_to_draw.length; conn_ix++) {
+        var cur_ui_connection = this.connections_map.get(graph_connections_to_draw[conn_ix]);
+        cur_ui_connection.draw(this.canvas);
       }
     };
 
@@ -401,8 +446,20 @@ function () {
       this.window_system = window_system;
     };
 
+    NodeWindow.prototype.getWindowSystem = function () {
+      return this.window_system;
+    };
+
     NodeWindow.prototype.setTitle = function (new_title) {
       this.title = new_title;
+    };
+
+    NodeWindow.prototype.getInputEndpoints = function () {
+      return this.input_endpoints;
+    };
+
+    NodeWindow.prototype.getOutputEndpoints = function () {
+      return this.output_endpoints;
     };
 
     NodeWindow.prototype.getEndpoints = function () {
@@ -418,7 +475,6 @@ function () {
     };
 
     NodeWindow.prototype.draw = function () {
-      this.title_div.innerHTML = this.title;
       this.draw_callback();
     };
 
@@ -441,17 +497,35 @@ function () {
           this.window_system.bringToFront(this);
         }).bind(this), false);
 
-      this.title_div = document.createElement("div");
-        this.title_div.className = "title";
-        this.title_div.innerHTML = this.title;
-      this.element.appendChild(this.title_div);
+      this.title_menu = new UILibrary.Menu({
+        self_closeable: false,
+        type: "bar",
+        hover: false,
+        items: [
+          new UILibrary.MenuItem({
+            content: document.createTextNode(this.title),
+            submenu: new UILibrary.Menu({
+              items: [
+                new UILibrary.MenuItem({
+                  content: document.createTextNode("Remove"),
+                  callback: (function () {
+                    this.window_system.getUI().removeNode(this.node);
+                  }).bind(this)
+                })
+              ]
+            })
+          })
+        ]
+      });
+        Utilities.addClass(this.title_menu.getElement(), "title");
+      this.element.appendChild(this.title_menu.getElement());
 
       this.div = document.createElement("div");
         this.div.className = "content";
       this.element.appendChild(this.div);
 
       this._draggable = new UILibrary.Draggable({
-        handle: this.title_div,
+        handle: this.title_menu.getElement(),
         cursor: "-webkit-grabbing",
         callback: this.handle_drag.bind(this)
       });
@@ -474,9 +548,29 @@ function () {
       // HACK: Work around for Chrome flex-box css width/height reporting bug.
       //var title_style = window.getComputedStyle(this.title_div);
       this.div.setAttribute("data-width", this.width);
-      this.div.setAttribute("data-height", this.height - this.title_div.offsetHeight);
+      this.div.setAttribute("data-height", this.height - this.title_menu.getElement().offsetHeight);
 
       this.node.informWindowPrepared(this.div);
+    };
+
+    NodeWindow.prototype.destroy = function () {
+      // Disconnect UI endpoints.
+      var endpoints = this.getEndpoints();
+      for (var endpoint_ix = 0; endpoint_ix < endpoints.length; endpoint_ix++) {
+        var cur_endpoint = endpoints[endpoint_ix];
+
+        var connections = cur_endpoint.getConnections();
+        for (var connection_ix = 0; connection_ix < connections.length; connection_ix++) {
+          var cur_connection = connections[connection_ix];
+
+          cur_endpoint.informDisconnected(cur_connection);
+          cur_connection.getOppositeEndpoint(cur_endpoint).informDisconnected(cur_connection);
+        }
+      }
+
+      if (typeof this.node.onDestroy === "function") {
+        this.node.onDestroy();
+      }
     };
 
     NodeWindow.prototype.handle_drag = function (params) {
@@ -513,7 +607,7 @@ function () {
       // HACK: Work around for Chrome flex-box css width/height reporting bug.
       //var title_style = window.getComputedStyle(this.title_div);
       this.div.setAttribute("data-width", this.width);
-      this.div.setAttribute("data-height", this.height - this.title_div.offsetHeight);
+      this.div.setAttribute("data-height", this.height - this.title_menu.getElement().offsetHeight);
 
       this.reflow();
 
@@ -535,7 +629,7 @@ function () {
         this.element.style.width = "" + this.width + "px";
         this.element.style.height = "" + this.height + "px";
         this.div.setAttribute("data-width", this.width);
-        this.div.setAttribute("data-height", this.height - this.title_div.offsetHeight);
+        this.div.setAttribute("data-height", this.height - this.title_menu.getElement().offsetHeight);
       } else {
         var container_style = window.getComputedStyle(this.element);
         this.width = parseInt(container_style.getPropertyValue("width"));
@@ -610,6 +704,10 @@ function () {
 
     Endpoint.prototype.getDescriptor = function () {
       return this.descriptor;
+    };
+
+    Endpoint.prototype.getConnections = function () {
+      return this.connections;
     };
 
     Endpoint.prototype.setPosition = function (x, y) {

@@ -73,6 +73,10 @@ function () {
 
     };
 
+    MainOutput.prototype.onDestroy = function () {
+      console.log("MainOutput(.onDestroy): Firing.");
+    };
+
     return MainOutput;
   })();
 

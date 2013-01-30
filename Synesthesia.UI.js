@@ -270,6 +270,7 @@ function () {
       this.container.appendChild(this.mainmenu_menubar.getElement());
 
       this.windowsystem = new WindowSystem({
+        ui: this,
         container: this.windowsystem_container
       });
       var windowsystem_element = this.windowsystem.getElement();
@@ -308,6 +309,11 @@ function () {
 
       new_node.getWindow().attachWindowSystem(this.windowsystem);
       this.windowsystem.addWindow(new_node.getWindow(), params);
+    };
+
+    UI.prototype.removeNode = function (rm_node) {
+      rm_node.getWindow().destroy();
+      this.windowsystem.removeWindow(rm_node.getWindow());
     };
 
     return UI;

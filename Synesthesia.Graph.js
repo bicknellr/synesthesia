@@ -223,6 +223,10 @@ function () {
       throw new Error("Graph.Node(.informDisconnected): Not implemented.");
     };
 
+    Node.prototype.destroy = function () {
+      throw new Error("Graph.Node(.destroy): Not implemented.");
+    };
+
     return Node;
   })();
 

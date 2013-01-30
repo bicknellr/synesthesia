@@ -65,31 +65,26 @@
   opacity: 0;
 }
   .Synesthesia_WindowSystem_NodeWindow__main .title {
+    display: -webkit-flex;
+
     -webkit-user-select: none;
     cursor: -webkit-grab;
     cursor: grab;
 
-    height: 14px;
     font-size: 11px;
 
     -webkit-flex: 0 0 auto;
     -moz-flex: 0 0 auto;
     flex: 0 0 auto;
 
-    background-color: #ffffff;
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#FDFDFD), to(#D0D0D0));
+    background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(255, 255, 255, 0.7)), to(rgba(255, 255, 255, 0)));
     border-bottom: 1px solid #808080;
-    padding: 3px;
+    padding-left: 3px;
     color: #606060;
 
     -webkit-transition:
       background-image ease-in-out 0.4s,
   }
-  /*
-  .Synesthesia_WindowSystem_NodeWindow__main .title:hover {
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#E6E9EE), to(#B2B4B9));
-  }
-  */
 
   .Synesthesia_WindowSystem_NodeWindow__main .content {
     position: relative;
