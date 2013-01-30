@@ -559,7 +559,13 @@ function () {
       for (var endpoint_ix = 0; endpoint_ix < endpoints.length; endpoint_ix++) {
         var cur_endpoint = endpoints[endpoint_ix];
 
-        var connections = cur_endpoint.getConnections();
+        // Concat used to make a copy. Otherwise connections references
+        // the actual array containing the connections for the current
+        // endpoint which changes after the endpoint has been told it
+        // was disconnected from the connection.
+        // This should probably be done in getConnections...
+        var connections = cur_endpoint.getConnections().concat([]);
+
         for (var connection_ix = 0; connection_ix < connections.length; connection_ix++) {
           var cur_connection = connections[connection_ix];
 
