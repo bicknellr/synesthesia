@@ -567,10 +567,6 @@ function () {
           cur_connection.getOppositeEndpoint(cur_endpoint).informDisconnected(cur_connection);
         }
       }
-
-      if (typeof this.node.onDestroy === "function") {
-        this.node.onDestroy();
-      }
     };
 
     NodeWindow.prototype.handle_drag = function (params) {
