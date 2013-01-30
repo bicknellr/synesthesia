@@ -99,7 +99,7 @@ module.declare("Utilities", [], function () {
       }
     };
 
-    Map.prototype.get = function (k, v) {
+    Map.prototype.get = function (k) {
       return this.values[this.keys.indexOf(k)];
     };
 
