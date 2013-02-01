@@ -1,6 +1,6 @@
 module.declare("Synesthesia",
 ["Utilities", "Synesthesia:UI"],
-function (exports) {
+function () {
 
   var Utilities = module.require("Utilities");
 
