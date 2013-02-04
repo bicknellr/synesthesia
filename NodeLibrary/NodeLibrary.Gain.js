@@ -91,16 +91,16 @@ function () {
     return GainNode;
   })();
 
-  Gain.UI = (function () {
-    function GainUI (params) {
+  Gain.Controller = (function () {
+    function GainController (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Graph.NodeUI.apply(this, [{}]);
+      Graph.NodeController.apply(this, [{}]);
 
       this.setInputDescriptors({
         "waveform": new Graph.EndpointDescriptor({
           name: "waveform",
-          node_ui: this,
+          node_controller: this,
           direction: "input",
           type: "AudioNode",
           accepted_types: [
@@ -109,7 +109,7 @@ function () {
         }),
         "gain": new Graph.EndpointDescriptor({
           name: "gain",
-          node_ui: this,
+          node_controller: this,
           direction: "input",
           type: "AudioParam",
           accepted_types: [
@@ -121,7 +121,7 @@ function () {
       this.setOutputDescriptors({
         "waveform": new Graph.EndpointDescriptor({
           name: "waveform",
-          node_ui: this,
+          node_controller: this,
           direction: "output",
           type: "AudioNode",
           accepted_types: [
@@ -144,13 +144,13 @@ function () {
       */
     }
 
-    GainUI.prototype = Utilities.extend(
-      new Graph.NodeUI()
+    GainController.prototype = Utilities.extend(
+      new Graph.NodeController()
     );
 
-    // Graph.NodeUI
+    // Graph.NodeController
 
-    GainUI.prototype.informWindowPrepared = function (ui_window) {
+    GainController.prototype.informWindowPrepared = function (ui_window) {
       this.ui_window = ui_window;
       this.ui_window.setTitle("Gain");
 
@@ -176,15 +176,15 @@ function () {
       this.ui_window.getContentDiv().appendChild(table_element);
     };
 
-    GainUI.prototype.informConnected = function (connection, endpoint) {
+    GainController.prototype.informConnected = function (connection, endpoint) {
       debugger;
     };
 
-    GainUI.prototype.informDisconnected = function (connection, endpoint) {
+    GainController.prototype.informDisconnected = function (connection, endpoint) {
 
     };
 
-    return GainUI;
+    return GainController;
   })();
 
   return Gain;

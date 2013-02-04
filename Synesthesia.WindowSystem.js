@@ -360,7 +360,7 @@ function () {
           cur_node_window.drawEndpoints(this.canvas);
         this.context.restore();
 
-        var cur_ui_manager = cur_node_window.getNodeUI();
+        var cur_ui_manager = cur_node_window.getNodeController();
 
         var input_endpoints = cur_ui_manager.getInputDescriptors();
         for (var input_name in input_endpoints) {
@@ -396,7 +396,7 @@ function () {
 
       this.window_system = null
 
-      this.node_ui = this.params.node_ui;
+      this.node_controller = this.params.node_controller;
 
       this.draw_callback = this.params.draw_callback || function () {};
 
@@ -422,14 +422,14 @@ function () {
 
       this.title = this.params.title || "Node";
 
-      this.input_endpoints = this.node_ui.getInputDescriptorsArray().map((function (desc) {
+      this.input_endpoints = this.node_controller.getInputDescriptorsArray().map((function (desc) {
         return new WindowSystem.UIEndpoint({
           descriptor: desc,
           node: this.node
         });
       }).bind(this));
 
-      this.output_endpoints = this.node_ui.getOutputDescriptorsArray().map((function (desc) {
+      this.output_endpoints = this.node_controller.getOutputDescriptorsArray().map((function (desc) {
         return new WindowSystem.UIEndpoint({
           descriptor: desc,
           node: this.node
@@ -439,8 +439,8 @@ function () {
       this.build();
     }
 
-    NodeWindow.prototype.getNodeUI = function () {
-      return this.node_ui;
+    NodeWindow.prototype.getNodeController = function () {
+      return this.node_controller;
     };
 
     NodeWindow.prototype.attachWindowSystem = function (window_system) {
@@ -563,7 +563,7 @@ function () {
       this.content_div.setAttribute("data-width", this.width);
       this.content_div.setAttribute("data-height", this.height - this.menu.getElement().offsetHeight);
 
-      this.node_ui.informWindowPrepared(this);
+      this.node_controller.informWindowPrepared(this);
     };
 
     NodeWindow.prototype.destroy = function () {

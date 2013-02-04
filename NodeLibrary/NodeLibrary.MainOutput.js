@@ -46,15 +46,15 @@ function () {
     return MainOutputNode;
   })();
 
-  MainOutput.UI = (function () {
-    function MainOutputUI (params) {
+  MainOutput.Controller = (function () {
+    function MainOutputController (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Graph.NodeUI.apply(this, [{}]);
+      Graph.NodeController.apply(this, [{}]);
 
       this.setInputDescriptors({
         "waveform": new Graph.EndpointDescriptor({
-          node_ui: this,
+          node_controller: this,
           name: "waveform",
           direction: "input",
           type: "AudioNode",
@@ -71,26 +71,26 @@ function () {
       this.ui_window = null;
     }
 
-    MainOutputUI.prototype = Utilities.extend(
-      new Graph.NodeUI()
+    MainOutputController.prototype = Utilities.extend(
+      new Graph.NodeController()
     );
 
-    // Graph.NodeUI
+    // Graph.NodeController
 
-    MainOutputUI.prototype.informWindowPrepared = function (ui_window) {
+    MainOutputController.prototype.informWindowPrepared = function (ui_window) {
       this.ui_window = ui_window;
       this.ui_window.setTitle("Main Output");
     };
 
-    MainOutputUI.prototype.informConnected = function (endpoint, connection) {
+    MainOutputController.prototype.informConnected = function (endpoint, connection) {
 
     };
 
-    MainOutputUI.prototype.informDisconnected = function (endpoint, connection) {
+    MainOutputController.prototype.informDisconnected = function (endpoint, connection) {
 
     };
 
-    return MainOutputUI;
+    return MainOutputController;
   })();
 
   return MainOutput;

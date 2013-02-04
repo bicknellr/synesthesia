@@ -23,7 +23,7 @@ function () {
     function EndpointDescriptor (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      this.node_ui = this.params.node_ui;
+      this.node_controller = this.params.node_controller;
 
       this.name = this.params.name;
 
@@ -123,7 +123,7 @@ function () {
     EndpointDescriptor.prototype.informConnected = function (new_connection_descriptor) {
       this.connection_descriptors.push(new_connection_descriptor);
       
-      this.node_ui.informConnected(this, new_connection_descriptor);
+      this.node_controller.informConnected(this, new_connection_descriptor);
 
       for (var endpoint_ix = 0; endpoint_ix < this.endpoints.length; endpoint_ix++) {
       }
@@ -136,7 +136,7 @@ function () {
           1
         );
       }
-      this.node_ui.informDisconnected(this, rm_connection_descriptor);
+      this.node_controller.informDisconnected(this, rm_connection_descriptor);
     };
 
     return EndpointDescriptor;
@@ -260,23 +260,23 @@ function () {
     return Connection;
   })();
 
-  Graph.NodeUI = (function () {
-    function NodeUI (params) {
+  Graph.NodeController = (function () {
+    function NodeController (params) {
       if (!params) return; // INTERFACE
 
       this.input_descriptors = {};
       this.output_descriptors = {};
     };
 
-    NodeUI.prototype.informWindowPrepared = function (ui_window) {
-      throw new Error("Graph.NodeUI(.informWindowPrepared): Not implemented.");
+    NodeController.prototype.informWindowPrepared = function (ui_window) {
+      throw new Error("Graph.NodeController(.informWindowPrepared): Not implemented.");
     };
 
-    NodeUI.prototype.setInputDescriptors = function (descriptors) {
+    NodeController.prototype.setInputDescriptors = function (descriptors) {
       this.input_descriptors = descriptors;
     };
 
-    NodeUI.prototype.setOutputDescriptors = function (descriptors) {
+    NodeController.prototype.setOutputDescriptors = function (descriptors) {
       this.output_descriptors = descriptors;
     };
 
@@ -284,19 +284,19 @@ function () {
     Requests an array containing objects describing the inputs / outputs.
     The objects in this array are of type Graph.EndpointDescriptor
     */
-    NodeUI.prototype.getInputDescriptors = function () {
+    NodeController.prototype.getInputDescriptors = function () {
       var o = new Object();
       Utilities.copy_properties(this.input_descriptors, o);
       return o;
     };
 
-    NodeUI.prototype.getOutputDescriptors = function () {
+    NodeController.prototype.getOutputDescriptors = function () {
       var o = new Object();
       Utilities.copy_properties(this.output_descriptors, o);
       return o;
     };
 
-    NodeUI.prototype.getInputDescriptorsArray = function () {
+    NodeController.prototype.getInputDescriptorsArray = function () {
       var descriptors = [];
       for (var descriptor_name in this.input_descriptors) {
         if (!this.input_descriptors.hasOwnProperty(descriptor_name)) continue;
@@ -306,7 +306,7 @@ function () {
       return descriptors;
     };
 
-    NodeUI.prototype.getOutputDescriptorsArray = function () {
+    NodeController.prototype.getOutputDescriptorsArray = function () {
       var descriptors = [];
       for (var descriptor_name in this.output_descriptors) {
         if (!this.output_descriptors.hasOwnProperty(descriptor_name)) continue;
@@ -317,15 +317,15 @@ function () {
     };
 
     // Informs the node that a given connection has been connected to / disconnected from the given endpoint.
-    NodeUI.prototype.informConnected = function (endpoint, connection) {
-      throw new Error("Graph.NodeUI(.informConnected): Not implemented.");
+    NodeController.prototype.informConnected = function (endpoint, connection) {
+      throw new Error("Graph.NodeController(.informConnected): Not implemented.");
     };
 
-    NodeUI.prototype.informDisconnected = function (endpoint, connection) {
-      throw new Error("Graph.NodeUI(.informDisconnected): Not implemented.");
+    NodeController.prototype.informDisconnected = function (endpoint, connection) {
+      throw new Error("Graph.NodeController(.informDisconnected): Not implemented.");
     };
 
-    return NodeUI;
+    return NodeController;
   })();
 
   Graph.Node = (function () {

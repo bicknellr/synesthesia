@@ -311,7 +311,7 @@ function () {
 
       var ui_window = new WindowSystem.NodeWindow({
         title: "Window",
-        node_ui: new node_type.UI({
+        node_controller: new node_type.Controller({
           nodes: [
             new node_type.Node({
               synesthesia: this.synesthesia
