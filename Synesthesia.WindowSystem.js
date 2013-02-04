@@ -17,7 +17,7 @@ function () {
       this.container = document.createElement("div");
         Utilities.addClass(this.container, "Synesthesia_WindowSystem");
 
-      this.nodes = [];
+      this.node_windows = [];
 
       var canvas = document.createElement("canvas");
       this.container.appendChild(canvas);
@@ -51,7 +51,7 @@ function () {
         node_window.getElement()
       );
         
-      this.nodes.push(node_window);
+      this.node_windows.push(node_window);
 
       for (var prop_name in params) {
         if (!params.hasOwnProperty(prop_name)) continue;
@@ -68,8 +68,8 @@ function () {
         node_window.getElement()
       );
 
-      this.nodes.splice(
-        this.nodes.indexOf(node_window),
+      this.node_windows.splice(
+        this.node_windows.indexOf(node_window),
         1
       );
     };
