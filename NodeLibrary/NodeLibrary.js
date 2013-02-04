@@ -1,5 +1,13 @@
 module.declare("Synesthesia:NodeLibrary",
-["Utilities", "Synesthesia:Graph", "Synesthesia:UILibrary", "Synesthesia:WindowSystem", "Synesthesia:Envelope"],
+[
+  "Utilities",
+  "Synesthesia:Graph",
+  "Synesthesia:UILibrary",
+  "Synesthesia:WindowSystem",
+  "Synesthesia:Envelope",
+  "Synesthesia:NodeLibrary:MainOutput",
+  "Synesthesia:NodeLibrary:Gain"
+],
 function () {
 
   var Utilities = module.require("Utilities");
@@ -12,69 +20,8 @@ function () {
 
   var NodeLibrary = {};
 
-  NodeLibrary.MainOutput = (function () {
-    function MainOutput (params) {
-      this.params = (typeof params !== "undefined" ? params : {});
-
-      Graph.Node.AudioDestinationNode.apply(this, arguments);
-
-      this.synesthesia = this.params.synesthesia;
-
-      this.setInputDescriptors({
-        "waveform": new Graph.Endpoint({
-          node: this,
-          name: "waveform",
-          type: "AudioNode",
-          accepted_types: [
-            "AudioNode"
-          ],
-          direction: "input"
-        })
-      });
-
-      this.setOutputDescriptors({});
-
-      // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new WindowSystem.NodeWindow({
-        node: this,
-        title: "Main Output",
-        draw_callback: this.draw.bind(this)
-      });
-    }
-
-    MainOutput.prototype = Utilities.extend(
-      new Graph.Node.AudioDestinationNode()
-    );
-
-    MainOutput.prototype.getWindow = function () {
-      return this.ui_window;
-    };
-
-    MainOutput.prototype.informConnected = function (endpoint, connection) {
-
-    };
-
-    MainOutput.prototype.informDisconnected = function (endpoint, connection) {
-
-    };
-
-    MainOutput.prototype.getDestinationForInput = function (input_endpoint) {
-      switch (input_endpoint) {
-        case this.getInputDescriptors()["waveform"]:
-          return this.synesthesia.getDestination();
-      }
-    };
-
-    MainOutput.prototype.informWindowPrepared = function (div) {
-
-    };
-
-    MainOutput.prototype.draw = function () {
-
-    };
-
-    return MainOutput;
-  })();
+  NodeLibrary.MainOutput = module.require("Synesthesia:NodeLibrary:MainOutput");
+  NodeLibrary.Gain = module.require("Synesthesia:NodeLibrary:Gain");
 
   NodeLibrary.KeyboardInput = (function () {
     function KeyboardInput (params) {
@@ -469,177 +416,6 @@ function () {
     };
 
     return FileStream;
-  })();
-
-  NodeLibrary.Gain = (function () {
-    function Gain (params) {
-      this.params = (typeof params !== "undefined" ? params : {});
-
-      Graph.Node.AudioSourceNode.apply(this, arguments);
-      Graph.Node.AudioDestinationNode.apply(this, arguments);
-
-      this.synesthesia = this.params.synesthesia;
-      this.context = this.synesthesia.getContext();
-      this.node = null;
-      if (this.context.createGain) {
-        this.node = this.context.createGain();
-      } else if (this.context.createGainNode) {
-        this.node = this.context.createGainNode();
-      }
-
-      this.gain_sync = new Utilities.SynchronizedValue();
-      this.gain_sync.addListener(this, (function (new_value) {
-        this.node.gain.value = new_value;
-      }).bind(this));
-      this.gain_sync.setValue(this, this.node.gain.value);
-
-      this.setInputDescriptors({
-        "waveform": new Graph.Endpoint({
-          node: this,
-          name: "waveform",
-          type: "AudioNode",
-          accepted_types: [
-            "AudioNode"
-          ],
-          direction: "input"
-        }),
-        "gain": new Graph.Endpoint({
-          node: this,
-          name: "gain",
-          type: "AudioParam",
-          accepted_types: [
-            "AudioParam",
-            "AudioNode"
-          ],
-          direction: "input"
-        }),
-      });
-
-      this.setOutputDescriptors({
-        "waveform": new Graph.Endpoint({
-          node: this,
-          name: "waveform",
-          type: "AudioNode",
-          accepted_types: [
-            "AudioNode",
-            "AudioParam"
-          ],
-          direction: "output"
-        })
-      });
-
-      // MUST BE DEFINED AFTER ENDPOINTS
-      this.ui_window = new WindowSystem.NodeWindow({
-        node: this,
-        title: "Gain",
-        draw_callback: this.draw.bind(this),
-        resizable: false,
-        use_flex: false
-      });
-    }
-
-    Gain.prototype = Utilities.extend(
-      new Graph.Node.AudioSourceNode(),
-      new Graph.Node.AudioDestinationNode()
-    );
-
-    Gain.prototype.getWindow = function () {
-      return this.ui_window;
-    };
-
-    Gain.prototype.informConnected = function (endpoint, connection) {
-      switch (endpoint) {
-        case this.getInputDescriptors()["gain"]:
-          return;
-          // TODO: See informDisconnected.
-          if (this.div.contains(this.range_dragger.getElement())) {
-            this.range_dragger_replacement = document.createTextNode("<connected>");
-            this.div.replaceChild(
-              this.range_dragger_replacement,
-              this.range_dragger.getElement()
-            );
-          }
-          break;
-        case this.getOutputDescriptors()["waveform"]:
-          var other_endpoint = connection.getOppositeEndpoint(endpoint);
-          var other_node = other_endpoint.getNode();
-          this.connectSourceToDestination(
-            this.node,
-            other_node.getDestinationForInput(other_endpoint)
-          );
-          break;
-      }
-    };
-
-    Gain.prototype.informDisconnected = function (endpoint, connection) {
-      switch (endpoint) {
-        case this.getInputDescriptors()["gain"]:
-          return;
-          // TODO: This isn't working because the gain input can take more than one node.
-          if (this.div.contains(this.range_dragger_replacement)) {
-            this.div.replaceChild(
-              this.range_dragger.getElement(),
-              this.range_dragger_replacement
-            );
-          }
-          break;
-        case this.getOutputDescriptors()["waveform"]:
-          var other_endpoint = connection.getOppositeEndpoint(endpoint);
-          var other_node = other_endpoint.getNode();
-          this.disconnectSourceFromDestination(
-            this.node,
-            other_node.getDestinationForInput(other_endpoint)
-          );
-          break;
-      }
-    };
-
-    Gain.prototype.getDestinationForInput = function (input_endpoint) {
-      switch (input_endpoint) {
-        case this.getInputDescriptors()["waveform"]:
-          return this.node;
-        case this.getInputDescriptors()["gain"]:
-          return this.node.gain;
-      }
-    };
-
-    Gain.prototype.setGain = function (value) {
-      // TODO: Why?
-      if (value < 0.01) {
-        value = 0;
-      }
-      this.node.gain.setValueAtTime(value, 0);
-    };
-
-    Gain.prototype.informWindowPrepared = function (div) {
-      this.div = div;
-
-      this.gain_drag_value =  new UILibrary.DragValue({
-        sync_value: this.gain_sync,
-        min_value: this.node.gain.minValue,
-        max_value: this.node.gain.maxValue,
-        digits: 4,
-        sensitivity: 0.0025,
-        direction_lock: "vertical"
-      });
-
-      this.drag_value_table = new UILibrary.DragValueTable({
-        values: [
-          { label: "Gain",
-            drag_value: this.gain_drag_value
-          }
-        ]
-      });
-
-      var table_element = this.drag_value_table.getElement();
-        table_element.style.width = "100%";
-      this.div.appendChild(table_element);
-    };
-
-    Gain.prototype.draw = function () {
-    };
-
-    return Gain;
   })();
 
   NodeLibrary.Delay = (function () {

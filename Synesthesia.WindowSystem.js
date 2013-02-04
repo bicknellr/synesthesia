@@ -165,7 +165,7 @@ function () {
           edit_connection.from_endpoint.informDisconnected(edit_connection);
           edit_connection.to_endpoint.informDisconnected(edit_connection);
           if (selectable_endpoint.direction == "input") {
-            this.temporary_endpoint = new WindowSystem.Endpoint({
+            this.temporary_endpoint = new WindowSystem.UIEndpoint({
               type: null,
               direction: "input"
             });
@@ -173,7 +173,7 @@ function () {
             this.selected_endpoint = edit_connection.from_endpoint;
             edit_connection.setToEndpoint(this.temporary_endpoint);
           } else if (this.selected_endpoint.direction == "output") {
-            this.temporary_endpoint = new WindowSystem.Endpoint({
+            this.temporary_endpoint = new WindowSystem.UIEndpoint({
               type: null,
               direction: "output"
             });
@@ -184,29 +184,29 @@ function () {
         } else {
           // Correct direction.
           if (this.selected_endpoint.direction == "input") {
-            this.temporary_endpoint = new WindowSystem.Endpoint({
+            this.temporary_endpoint = new WindowSystem.UIEndpoint({
               type: null,
               direction: "output"
             });
             this.temporary_endpoint.setPosition(canvasX - 10, canvasY - 10);
-            this.temporary_connection = new WindowSystem.Connection({
+            this.temporary_connection = new WindowSystem.UIConnection({
               from_endpoint: this.temporary_endpoint,
               to_endpoint: this.selected_endpoint,
-              descriptor: new Graph.Connection({
+              descriptor: new Graph.ConnectionDescriptor({
                 from_endpoint: this.temporary_endpoint.getDescriptor(),
                 to_endpoint: this.selected_endpoint.getDescriptor()
               })
             });
           } else if (this.selected_endpoint.direction == "output") {
-            this.temporary_endpoint = new WindowSystem.Endpoint({
+            this.temporary_endpoint = new WindowSystem.UIEndpoint({
               type: null,
               direction: "input"
             });
             this.temporary_endpoint.setPosition(canvasX - 10, canvasY - 10);
-            this.temporary_connection = new WindowSystem.Connection({
+            this.temporary_connection = new WindowSystem.UIConnection({
               from_endpoint: this.selected_endpoint,
               to_endpoint: this.temporary_endpoint,
-              descriptor: new Graph.Connection({
+              descriptor: new Graph.ConnectionDescriptor({
                 from_endpoint: this.selected_endpoint.getDescriptor(),
                 to_endpoint: this.temporary_endpoint.getDescriptor()
               })
@@ -360,16 +360,16 @@ function () {
           cur_node_window.drawEndpoints(this.canvas);
         this.context.restore();
 
-        var cur_node = cur_node_window.getNode();
+        var cur_ui_manager = cur_node_window.getNodeUI();
 
-        var input_endpoints = cur_node.getInputDescriptors();
+        var input_endpoints = cur_ui_manager.getInputDescriptors();
         for (var input_name in input_endpoints) {
-          graph_connections_to_draw.addAll(input_endpoints[input_name].getConnections());
+          graph_connections_to_draw.addAll(input_endpoints[input_name].getConnectionDescriptors());
         }
 
-        var output_endpoints = cur_node.getOutputDescriptors();
+        var output_endpoints = cur_ui_manager.getOutputDescriptors();
         for (var output_name in output_endpoints) {
-          graph_connections_to_draw.addAll(output_endpoints[output_name].getConnections());
+          graph_connections_to_draw.addAll(output_endpoints[output_name].getConnectionDescriptors());
         }
       }
 
@@ -396,11 +396,12 @@ function () {
 
       this.window_system = null
 
-      this.node = this.params.node;
+      this.node_ui = this.params.node_ui;
 
       this.draw_callback = this.params.draw_callback || function () {};
 
       this.element = null;
+      this.content_div = null;
 
       this.x = this.params.x || 0;
       this.y = this.params.y || 0;
@@ -421,15 +422,15 @@ function () {
 
       this.title = this.params.title || "Node";
 
-      this.input_endpoints = this.node.getInputDescriptorsArray().map((function (desc) {
-        return new WindowSystem.Endpoint({
+      this.input_endpoints = this.node_ui.getInputDescriptorsArray().map((function (desc) {
+        return new WindowSystem.UIEndpoint({
           descriptor: desc,
           node: this.node
         });
       }).bind(this));
 
-      this.output_endpoints = this.node.getOutputDescriptorsArray().map((function (desc) {
-        return new WindowSystem.Endpoint({
+      this.output_endpoints = this.node_ui.getOutputDescriptorsArray().map((function (desc) {
+        return new WindowSystem.UIEndpoint({
           descriptor: desc,
           node: this.node
         });
@@ -438,8 +439,8 @@ function () {
       this.build();
     }
 
-    NodeWindow.prototype.getNode = function () {
-      return this.node;
+    NodeWindow.prototype.getNodeUI = function () {
+      return this.node_ui;
     };
 
     NodeWindow.prototype.attachWindowSystem = function (window_system) {
@@ -482,6 +483,16 @@ function () {
       return this.element;
     };
 
+    NodeWindow.prototype.getContentDiv = function () {
+      return this.content_div;
+    };
+
+    NodeWindow.prototype.setTitle = function (new_title) {
+      this.title_menu.setContent(
+        document.createTextNode(new_title)
+      );
+    };
+
     NodeWindow.prototype.build = function () {
       this.element = document.createElement("div");
         this.element.className = "Synesthesia_WindowSystem_NodeWindow__main";
@@ -497,35 +508,37 @@ function () {
           this.window_system.bringToFront(this);
         }).bind(this), false);
 
-      this.title_menu = new UILibrary.Menu({
+      this.title_menu = new UILibrary.MenuItem({
+        content: document.createTextNode(this.title),
+        submenu: new UILibrary.Menu({
+          items: [
+            new UILibrary.MenuItem({
+              content: document.createTextNode("Remove"),
+              callback: (function () {
+                this.window_system.getUI().destroyNodeWindow(this);
+              }).bind(this)
+            })
+          ]
+        })
+      });
+
+      this.menu = new UILibrary.Menu({
         self_closeable: false,
         type: "bar",
         hover: false,
         items: [
-          new UILibrary.MenuItem({
-            content: document.createTextNode(this.title),
-            submenu: new UILibrary.Menu({
-              items: [
-                new UILibrary.MenuItem({
-                  content: document.createTextNode("Remove"),
-                  callback: (function () {
-                    this.window_system.getUI().removeNode(this.node);
-                  }).bind(this)
-                })
-              ]
-            })
-          })
+          this.title_menu
         ]
       });
-        Utilities.addClass(this.title_menu.getElement(), "title");
-      this.element.appendChild(this.title_menu.getElement());
+        Utilities.addClass(this.menu.getElement(), "title");
+      this.element.appendChild(this.menu.getElement());
 
-      this.div = document.createElement("div");
-        this.div.className = "content";
-      this.element.appendChild(this.div);
+      this.content_div = document.createElement("div");
+        this.content_div.className = "content";
+      this.element.appendChild(this.content_div);
 
       this._draggable = new UILibrary.Draggable({
-        handle: this.title_menu.getElement(),
+        handle: this.menu.getElement(),
         cursor: "-webkit-grabbing",
         callback: this.handle_drag.bind(this)
       });
@@ -547,10 +560,10 @@ function () {
 
       // HACK: Work around for Chrome flex-box css width/height reporting bug.
       //var title_style = window.getComputedStyle(this.title_div);
-      this.div.setAttribute("data-width", this.width);
-      this.div.setAttribute("data-height", this.height - this.title_menu.getElement().offsetHeight);
+      this.content_div.setAttribute("data-width", this.width);
+      this.content_div.setAttribute("data-height", this.height - this.menu.getElement().offsetHeight);
 
-      this.node.informWindowPrepared(this.div);
+      this.node_ui.informWindowPrepared(this);
     };
 
     NodeWindow.prototype.destroy = function () {
@@ -608,8 +621,8 @@ function () {
 
       // HACK: Work around for Chrome flex-box css width/height reporting bug.
       //var title_style = window.getComputedStyle(this.title_div);
-      this.div.setAttribute("data-width", this.width);
-      this.div.setAttribute("data-height", this.height - this.title_menu.getElement().offsetHeight);
+      this.content_div.setAttribute("data-width", this.width);
+      this.content_div.setAttribute("data-height", this.height - this.menu.getElement().offsetHeight);
 
       this.reflow();
 
@@ -630,8 +643,8 @@ function () {
       if (this.use_flex) {
         this.element.style.width = "" + this.width + "px";
         this.element.style.height = "" + this.height + "px";
-        this.div.setAttribute("data-width", this.width);
-        this.div.setAttribute("data-height", this.height - this.title_menu.getElement().offsetHeight);
+        this.content_div.setAttribute("data-width", this.width);
+        this.content_div.setAttribute("data-height", this.height - this.menu.getElement().offsetHeight);
       } else {
         var container_style = window.getComputedStyle(this.element);
         this.width = parseInt(container_style.getPropertyValue("width"));
@@ -671,8 +684,8 @@ function () {
     return NodeWindow;
   })();
 
-  WindowSystem.Endpoint = (function () {
-    function Endpoint (params) {
+  WindowSystem.UIEndpoint = (function () {
+    function UIEndpoint (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
       Utilities.Flaggable.apply(this, arguments);
@@ -693,35 +706,35 @@ function () {
       this.connections = [];
     }
 
-    Endpoint.prototype = Utilities.extend(
+    UIEndpoint.prototype = Utilities.extend(
       new Utilities.Flaggable()
     );
 
-    Endpoint.ColorMap = {
+    UIEndpoint.ColorMap = {
       initial: "rgba(0, 0, 0, 1)",
       notes: "rgba(128, 192, 128, 1)",
       AudioNode: "rgba(128, 128, 128, 1)",
       AudioParam: "rgba(128, 128, 256, 1)"
     };
 
-    Endpoint.prototype.getDescriptor = function () {
+    UIEndpoint.prototype.getDescriptor = function () {
       return this.descriptor;
     };
 
-    Endpoint.prototype.getConnections = function () {
+    UIEndpoint.prototype.getConnections = function () {
       return this.connections;
     };
 
-    Endpoint.prototype.setPosition = function (x, y) {
+    UIEndpoint.prototype.setPosition = function (x, y) {
       this.x = x;
       this.y = y;
     };
 
-    Endpoint.prototype.getPosition = function () {
+    UIEndpoint.prototype.getPosition = function () {
       return {x: this.x, y: this.y};
     };
 
-    Endpoint.prototype.getPointForConnection = function (connection) {
+    UIEndpoint.prototype.getPointForConnection = function (connection) {
       if (this.hasFlag("selecting")) {
         var connection_ix = this.connections.indexOf(connection);
         if (this.direction == "output") {
@@ -743,7 +756,7 @@ function () {
       }
     };
 
-    Endpoint.prototype.getConnectionForPoint = function (point) {
+    UIEndpoint.prototype.getConnectionForPoint = function (point) {
       var connection_ix = null;
       switch (this.direction) {
         case "output":
@@ -763,7 +776,7 @@ function () {
       }
     };
 
-    Endpoint.prototype.isPointWithinBounds = function (point) {
+    UIEndpoint.prototype.isPointWithinBounds = function (point) {
       if (!this.hasFlag("hovering")) {
         return this.distanceTo(point) < 10;
       } else {
@@ -786,7 +799,7 @@ function () {
       }
     };
 
-    Endpoint.prototype.distanceTo = function (point) {
+    UIEndpoint.prototype.distanceTo = function (point) {
       return Math.sqrt(
         Math.pow(this.x + 10 - point.x, 2) + 
         Math.pow(this.y + 10 - point.y, 2)
@@ -795,18 +808,18 @@ function () {
 
     // Connections
 
-    Endpoint.prototype.canConnectTo = function (other_endpoint) {
+    UIEndpoint.prototype.canConnectTo = function (other_endpoint) {
       return this.descriptor.canConnectTo(other_endpoint.getDescriptor());
     };
 
-    Endpoint.prototype.informConnected = function (new_connection) {
+    UIEndpoint.prototype.informConnected = function (new_connection) {
       this.descriptor.informConnected(
         new_connection.getDescriptor()
       );
       this.connections.push(new_connection);
     };
 
-    Endpoint.prototype.informDisconnected = function (rm_connection) {
+    UIEndpoint.prototype.informDisconnected = function (rm_connection) {
       if (this.connections.indexOf(rm_connection) != -1) {
         this.descriptor.informDisconnected(
           rm_connection.getDescriptor()
@@ -820,13 +833,13 @@ function () {
 
     // Drawing / positioning.
 
-    Endpoint.prototype.draw = function (canvas) {
+    UIEndpoint.prototype.draw = function (canvas) {
       var context = canvas.getContext("2d");
       context.save();
 
-      var strokeStyle = Endpoint.ColorMap.initial;
-      if (Endpoint.ColorMap[this.type]) {
-        strokeStyle = Endpoint.ColorMap[this.type];
+      var strokeStyle = UIEndpoint.ColorMap.initial;
+      if (UIEndpoint.ColorMap[this.type]) {
+        strokeStyle = UIEndpoint.ColorMap[this.type];
       }
 
       if (this.hasFlag("selecting") && this.connections.length > 0) {
@@ -897,11 +910,11 @@ function () {
       context.restore();
     };
 
-    return Endpoint;
+    return UIEndpoint;
   })();
 
-  WindowSystem.Connection = (function () {
-    function Connection (params) {
+  WindowSystem.UIConnection = (function () {
+    function UIConnection (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
       this.descriptor = this.params.descriptor;
@@ -910,11 +923,11 @@ function () {
       this.to_endpoint = this.params.to_endpoint;
     }
 
-    Connection.prototype.getDescriptor = function () {
+    UIConnection.prototype.getDescriptor = function () {
       return this.descriptor;
     };
 
-    Connection.prototype.getOppositeEndpoint = function (endpoint) {
+    UIConnection.prototype.getOppositeEndpoint = function (endpoint) {
       if (endpoint == this.from_endpoint) {
         return this.to_endpoint;
       } else if (endpoint == this.to_endpoint) {
@@ -924,27 +937,27 @@ function () {
       }
     };
 
-    Connection.prototype.setFromEndpoint = function (from_endpoint) {
+    UIConnection.prototype.setFromEndpoint = function (from_endpoint) {
       this.from_endpoint = from_endpoint;
       this.descriptor.setFromEndpoint(
         this.from_endpoint.getDescriptor()
       );
     };
 
-    Connection.prototype.setToEndpoint = function (to_endpoint) {
+    UIConnection.prototype.setToEndpoint = function (to_endpoint) {
       this.to_endpoint = to_endpoint;
       this.descriptor.setToEndpoint(
         this.to_endpoint.getDescriptor()
       );
     };
 
-    Connection.prototype.draw = function (canvas) {
+    UIConnection.prototype.draw = function (canvas) {
       var context = canvas.getContext("2d");
       context.save();
         // Set color (based on from endpoint).
-        var color = WindowSystem.Endpoint.ColorMap[this.from_endpoint.type];
+        var color = WindowSystem.UIEndpoint.ColorMap[this.from_endpoint.type];
         if (!color) {
-          color = WindowSystem.Endpoint.ColorMap[this.to_endpoint.type];
+          color = WindowSystem.UIEndpoint.ColorMap[this.to_endpoint.type];
         }
         context.fillStyle = color || "rgba(256, 0, 0, 1)";
         context.strokeStyle = color || "rgba(256, 0, 0, 1)";
@@ -1034,7 +1047,7 @@ function () {
       context.restore();
     };
 
-    return Connection;
+    return UIConnection;
   })();
 
   return WindowSystem;

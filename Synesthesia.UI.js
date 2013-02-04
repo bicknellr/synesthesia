@@ -68,6 +68,7 @@ function () {
                   submenu: new UILibrary.Menu({
                     position: "right",
                     items: [
+                      /*
                       new UILibrary.MenuItem({
                         content: document.createTextNode("Keyboard Input"),
                         callback: (function () {
@@ -81,19 +82,19 @@ function () {
 
                         }).bind(this)
                       }),
+                      */
                       new UILibrary.MenuItem({
                         content: document.createTextNode("Main Output"),
                         callback: (function () {
 
-                          this.addNode(
-                            new NodeLibrary.MainOutput({
-                              synesthesia: this.synesthesia
-                            }),
+                          this.createNodeWindow(
+                            NodeLibrary.MainOutput,
                             {x: 10, y: 10}
                           );
 
                         }).bind(this)
                       }),
+                      /*
                       new UILibrary.MenuItem({
                         content: document.createElement("hr"),
                         callback: (function () {
@@ -144,19 +145,19 @@ function () {
 
                         }).bind(this)
                       }),
+                      */
                       new UILibrary.MenuItem({
                         content: document.createTextNode("Gain"),
                         callback: (function () {
 
-                          this.addNode(
-                            new NodeLibrary.Gain({
-                              synesthesia: this.synesthesia
-                            }),
+                          this.createNodeWindow(
+                            NodeLibrary.Gain,
                             {x: 10, y: 10}
                           );
 
                         }).bind(this)
                       }),
+                      /*
                       new UILibrary.MenuItem({
                         content: document.createTextNode("Delay"),
                         callback: (function () {
@@ -235,6 +236,7 @@ function () {
 
                         }).bind(this)
                       })
+                      */
                     ]
                   })
                 })
@@ -304,16 +306,27 @@ function () {
       return this.windowsystem;
     };
 
-    UI.prototype.addNode = function (new_node, params) {
+    UI.prototype.createNodeWindow = function (node_type, params) {
       var params = (typeof params !== "undefined" ? params : {});
 
-      new_node.getWindow().attachWindowSystem(this.windowsystem);
-      this.windowsystem.addWindow(new_node.getWindow(), params);
+      var ui_window = new WindowSystem.NodeWindow({
+        title: "Window",
+        node_ui: new node_type.UI({
+          nodes: [
+            new node_type.Node({
+              synesthesia: this.synesthesia
+            })
+          ]
+        })
+      });
+
+      ui_window.attachWindowSystem(this.windowsystem);
+      this.windowsystem.addWindow(ui_window, params);
     };
 
-    UI.prototype.removeNode = function (rm_node) {
-      rm_node.getWindow().destroy();
-      this.windowsystem.removeWindow(rm_node.getWindow());
+    UI.prototype.destroyNodeWindow = function (rm_node_window) {
+      rm_node_window.destroy();
+      this.windowsystem.removeWindow(rm_node_window);
     };
 
     return UI;

@@ -497,6 +497,11 @@ function () {
       return this.element;
     };
 
+    MenuItem.prototype.setContent = function (new_content) {
+      this.element.replaceChild(new_content, this.content);
+      this.content = new_content;
+    };
+
     MenuItem.prototype.contains = function (test_element) {
       if (this.element == test_element || this.element.contains(test_element)) {
         return true;

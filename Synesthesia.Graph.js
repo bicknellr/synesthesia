@@ -19,94 +19,156 @@ function () {
   
   var Graph = {};
 
-  Graph.Endpoint = (function () {
-    function Endpoint (params) {
+  Graph.EndpointDescriptor = (function () {
+    function EndpointDescriptor (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      this.node = this.params.node;
-      if (!Utilities.conforms(Graph.Node, this.node)) {
-        throw new Error("Graph.Endpoint: Given object is not a valid node.");
-      }
+      this.node_ui = this.params.node_ui;
 
       this.name = this.params.name;
 
       this.type = this.params.type;
-      if (Endpoint.Types.indexOf(this.type) == -1) {
-        throw new Error("Graph.Endpoint: Invalid type '" + this.type + "'.");
+      if (EndpointDescriptor.Types.indexOf(this.type) == -1) {
+        throw new Error("Graph.EndpointDescriptor: Invalid type '" + this.type + "'.");
       }
 
       this.accepted_types = this.params.accepted_types;
       for (var i = 0; i < this.accepted_types.length; i++) {
-        if (Endpoint.Types.indexOf(this.accepted_types[i]) == -1) {
-          throw new Error("Graph.Endpoint: Invalid accepted type '" + this.accpeted_types[i] + "'.");
+        if (EndpointDescriptor.Types.indexOf(this.accepted_types[i]) == -1) {
+          throw new Error("Graph.EndpointDescriptor: Invalid accepted type '" + this.accpeted_types[i] + "'.");
         }
       }
 
       this.direction = this.params.direction;
-      if (Endpoint.Directions.indexOf(this.direction) == -1) {
-        throw new Error("Graph.Endpoint: Invalid direction.");
+      if (EndpointDescriptor.Directions.indexOf(this.direction) == -1) {
+        throw new Error("Graph.EndpointDescriptor: Invalid direction.");
       }
 
-      this.max_connections = this.params.max_connections || Infinity;
+      this.connection_descriptors = [];
 
-      this.connections = [];
+      this.endpoints = [];
+
+      this.max_connections = this.params.max_connections || Infinity;
     }
 
-    Endpoint.Types = [
+    EndpointDescriptor.Types = [
       "notes",
       "AudioNode",
       "AudioParam",
       "canvas" // Do audio first!
     ];
 
-    Endpoint.Directions = [
+    EndpointDescriptor.Directions = [
       "input",
       "output"
     ];
+
+    EndpointDescriptor.prototype.getName = function () {
+      return this.name;
+    };
+
+    EndpointDescriptor.prototype.getType = function () {
+      return this.type;
+    };
+
+    EndpointDescriptor.prototype.getAcceptedTypes = function () {
+      return this.accepted_types;
+    };
+
+    EndpointDescriptor.prototype.getMaxConnections = function () {
+      return this.max_connections;
+    };
+
+    EndpointDescriptor.prototype.getDirection = function () {
+      return this.direction;
+    };
+
+    EndpointDescriptor.prototype.addEndpoint = function (new_endpoint) {
+      this.endpoints.push(new_endpoint);
+    };
+
+    EndpointDescriptor.prototype.removeEndpoint = function (rm_endpoint) {
+      this.endpoints.splice(
+        rm_endpoint,
+        1
+      );
+    };
+
+    EndpointDescriptor.prototype.getConnectionDescriptors = function () {
+      return this.connection_descriptors;
+    };
+
+    EndpointDescriptor.prototype.canConnectTo = function (other_descriptor) {
+
+      // Can't be the same direction.
+      if (this.direction == other_descriptor.getDirection()) return false;
+
+
+      // This endpoint must accept other endpoint type.
+      if (this.accepted_types.indexOf(other_descriptor.getType()) == -1) return false;
+      
+      // Other endpoint must accept this endpoint type.
+      if (other_descriptor.getAcceptedTypes().indexOf(this.type) == -1) return false;
+
+
+      // This endpoint can't be maxed out.
+      if (this.connection_descriptors.length >= this.max_connections) return false;
+
+      // Other endpoint can't be maxed out.
+      if (other_descriptor.getConnectionDescriptors().length >= other_descriptor.getMaxConnections()) return false;
+
+      return true;
+    };
+
+    EndpointDescriptor.prototype.informConnected = function (new_connection_descriptor) {
+      this.connection_descriptors.push(new_connection_descriptor);
+      
+      this.node_ui.informConnected(this, new_connection_descriptor);
+
+      for (var endpoint_ix = 0; endpoint_ix < this.endpoints.length; endpoint_ix++) {
+      }
+    };
+
+    EndpointDescriptor.prototype.informDisconnected = function (rm_connection_descriptor) {
+      if (this.connection_descriptors.indexOf(rm_connection_descriptor) != -1) {
+        this.connection_descriptors.splice(
+          this.connection_descriptors.indexOf(rm_connection_descriptor),
+          1
+        );
+      }
+      this.node_ui.informDisconnected(this, rm_connection_descriptor);
+    };
+
+    return EndpointDescriptor;
+  })();
+
+  Graph.Endpoint = (function () {
+    function Endpoint (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.descriptor = this.params.descriptor;
+      if (!Utilities.conforms(Graph.EndpointDescriptor, this.descriptor)) {
+        throw new Error("Graph.Endpoint: Given object is not a valid descriptor.");
+      }
+
+      this.node = this.params.node;
+      if (!Utilities.conforms(Graph.Node, this.node)) {
+        throw new Error("Graph.Endpoint: Given object is not a valid node.");
+      }
+
+      this.connections = [];
+    }
+
+    Endpoint.prototype.getDescriptor = function () {
+      return this.descriptor;
+    };
 
     Endpoint.prototype.getNode = function () {
       return this.node;
     };
 
-    Endpoint.prototype.getName = function () {
-      return this.name;
-    };
-
-    Endpoint.prototype.getType = function () {
-      return this.type;
-    };
-
-    Endpoint.prototype.getAcceptedTypes = function () {
-      return this.accepted_types;
-    };
-
-    Endpoint.prototype.getMaxConnections = function () {
-      return this.max_connections;
-    };
-
-    Endpoint.prototype.getDirection = function () {
-      return this.direction;
-    };
-
     Endpoint.prototype.getConnections = function () {
       return [].concat(this.connections);
-    };
-
-    Endpoint.prototype.canConnectTo = function (other_endpoint) {
-      // Can't be the same direction.
-      if (this.direction == other_endpoint.getDirection()) return false;
-      
-      // Other endpoint must accept this endpoint type.
-      if (other_endpoint.getAcceptedTypes().indexOf(this.type) == -1) return false;
-      // Other endpoint can't be maxed out.
-      if (other_endpoint.getConnections().length >= other_endpoint.getMaxConnections()) return false;
-
-      // This endpoint must accept other endpoint type.
-      if (this.accepted_types.indexOf(other_endpoint.getType()) == -1) return false;
-      // This endpoint can't be maxed out.
-      if (this.connections.length >= this.max_connections) return false;
-
-      return true;
     };
 
     Endpoint.prototype.informConnected = function (new_connection) {
@@ -127,18 +189,54 @@ function () {
     return Endpoint;
   })();
 
+  Graph.ConnectionDescriptor = (function () {
+    function ConnectionDescriptor (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      this.from_endpoint_descriptor = this.params.from_endpoint_descriptor;
+      this.to_endpoint_descriptor = this.params.to_endpoint_descriptor;
+
+      this.connections = [];
+    }
+
+    ConnectionDescriptor.prototype.setFromEndpoint = function (from_endpoint_descriptor) {
+      this.from_endpoint_descriptor = from_endpoint_descriptor;
+    };
+
+    ConnectionDescriptor.prototype.setToEndpoint = function (to_endpoint_descriptor) {
+      this.to_endpoint_descriptor = to_endpoint_descriptor;
+    };
+
+    ConnectionDescriptor.prototype.getOppositeEndpoint = function (endpoint_descriptor) {
+      if (endpoint_descriptor == this.from_endpoint_descriptor) {
+        return this.to_endpoint_descriptor;
+      } else if (endpoint_descriptor == this.to_endpoint_descriptor) {
+        return this.from_endpoint_descriptor;
+      } else {
+        return null;
+      }
+    };
+
+    ConnectionDescriptor.prototype.addConnection = function (new_connection) {
+      this.connections.push(new_connection);
+    };
+
+    ConnectionDescriptor.prototype.removeConnection = function (rm_connection) {
+      this.connections.splice(
+        this.connections.indexOf(rm_connection),
+        1
+      );
+    };
+
+    return ConnectionDescriptor;
+  })();
+
   Graph.Connection = (function () {
     function Connection (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
       this.from_endpoint = this.params.from_endpoint;
       this.to_endpoint = this.params.to_endpoint;
-      /*
-      console.log("from");
-      console.log(this.from_endpoint);
-      console.log("to");
-      console.log(this.to_endpoint);
-      */
     }
 
     Connection.prototype.setFromEndpoint = function (from_endpoint) {
@@ -162,19 +260,23 @@ function () {
     return Connection;
   })();
 
-  Graph.Node = (function () {
-    function Node (params) {
+  Graph.NodeUI = (function () {
+    function NodeUI (params) {
       if (!params) return; // INTERFACE
-      
+
       this.input_descriptors = {};
       this.output_descriptors = {};
-    }
+    };
 
-    Node.prototype.setInputDescriptors = function (descriptors) {
+    NodeUI.prototype.informWindowPrepared = function (ui_window) {
+      throw new Error("Graph.NodeUI(.informWindowPrepared): Not implemented.");
+    };
+
+    NodeUI.prototype.setInputDescriptors = function (descriptors) {
       this.input_descriptors = descriptors;
     };
 
-    Node.prototype.setOutputDescriptors = function (descriptors) {
+    NodeUI.prototype.setOutputDescriptors = function (descriptors) {
       this.output_descriptors = descriptors;
     };
 
@@ -182,19 +284,19 @@ function () {
     Requests an array containing objects describing the inputs / outputs.
     The objects in this array are of type Graph.EndpointDescriptor
     */
-    Node.prototype.getInputDescriptors = function () {
+    NodeUI.prototype.getInputDescriptors = function () {
       var o = new Object();
       Utilities.copy_properties(this.input_descriptors, o);
       return o;
     };
 
-    Node.prototype.getOutputDescriptors = function () {
+    NodeUI.prototype.getOutputDescriptors = function () {
       var o = new Object();
       Utilities.copy_properties(this.output_descriptors, o);
       return o;
     };
 
-    Node.prototype.getInputDescriptorsArray = function () {
+    NodeUI.prototype.getInputDescriptorsArray = function () {
       var descriptors = [];
       for (var descriptor_name in this.input_descriptors) {
         if (!this.input_descriptors.hasOwnProperty(descriptor_name)) continue;
@@ -204,7 +306,7 @@ function () {
       return descriptors;
     };
 
-    Node.prototype.getOutputDescriptorsArray = function () {
+    NodeUI.prototype.getOutputDescriptorsArray = function () {
       var descriptors = [];
       for (var descriptor_name in this.output_descriptors) {
         if (!this.output_descriptors.hasOwnProperty(descriptor_name)) continue;
@@ -215,12 +317,37 @@ function () {
     };
 
     // Informs the node that a given connection has been connected to / disconnected from the given endpoint.
+    NodeUI.prototype.informConnected = function (endpoint, connection) {
+      throw new Error("Graph.NodeUI(.informConnected): Not implemented.");
+    };
+
+    NodeUI.prototype.informDisconnected = function (endpoint, connection) {
+      throw new Error("Graph.NodeUI(.informDisconnected): Not implemented.");
+    };
+
+    return NodeUI;
+  })();
+
+  Graph.Node = (function () {
+    function Node (params) {
+      if (!params) return; // INTERFACE
+    }
+
+    // Informs the node that a given connection has been connected to / disconnected from the given endpoint.
     Node.prototype.informConnected = function (endpoint, connection) {
       throw new Error("Graph.Node(.informConnected): Not implemented.");
     };
 
     Node.prototype.informDisconnected = function (endpoint, connection) {
       throw new Error("Graph.Node(.informDisconnected): Not implemented.");
+    };
+
+    Node.prototype.clone = function () {
+      throw new Error("Graph.Node(.clone): Not implemented.");
+    };
+
+    Node.prototype.destroy = function () {
+      throw new Error("Graph.Node(.destroy): Not implemented.");
     };
 
     return Node;
