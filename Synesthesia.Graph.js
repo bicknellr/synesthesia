@@ -266,6 +266,8 @@ function () {
 
       this.input_descriptors = {};
       this.output_descriptors = {};
+
+      this.parallelism_manager = null;
     };
 
     NodeController.prototype.informWindowPrepared = function (ui_window) {
@@ -314,6 +316,23 @@ function () {
         descriptors.push(this.output_descriptors[descriptor_name]);
       }
       return descriptors;
+    };
+
+    // Parallelism
+
+    NodeController.prototype.setParallelismManager = function (parallelism_manager) {
+      this.parallelism_manager = parallelism_manager;
+    };
+
+    NodeController.prototype.getParallelismManager = function () {
+      if (!this.parallelism_manager) {
+        throw new Error("Graph.NodeController(.getParallelismManager): No parallelism manager was set.");
+      }
+      return this.parallelism_manager;
+    };
+
+    NodeController.prototype.produceParallelizableNode = function () {
+      throw new Error("Graph.NodeController(.produceParallelizableNode): Not implemented.");
     };
 
     // Informs the node that a given connection has been connected to / disconnected from the given endpoint.

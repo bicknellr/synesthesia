@@ -2,6 +2,7 @@ module.declare("Synesthesia:NodeLibrary:Gain",
 [
   "Utilities",
   "Synesthesia:Graph",
+  "Synesthesia:Parallelism",
   "Synesthesia:UILibrary"
 ],
 function () {
@@ -9,6 +10,7 @@ function () {
   var Utilities = module.require("Utilities");
 
   var Graph = module.require("Synesthesia:Graph");
+  var Parallelism = module.require("Synesthesia:Parallelism");
   var UILibrary = module.require("Synesthesia:UILibrary");
 
   var Gain = {};
@@ -95,7 +97,16 @@ function () {
     function GainController (params) {
       this.params = (typeof params !== "undefined" ? params : {});
 
-      Graph.NodeController.apply(this, [{}]);
+      Graph.NodeController.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+
+      this.setParallelismManager(
+        new Parallelism.ParallelismManager({
+          synesthesia: this.synesthesia,
+          node_controller: this
+        })
+      );
 
       this.setInputDescriptors({
         "waveform": new Graph.EndpointDescriptor({
@@ -131,12 +142,12 @@ function () {
         })
       });
 
-      this.nodes = this.params.nodes || [];
+      this.connections = [];
 
       this.ui_window = null;
 
-      this.gain_sync = new Utilities.SynchronizedValue();
       /*
+      this.gain_sync = new Utilities.SynchronizedValue();
       this.gain_sync.addListener(this, (function (new_value) {
         this.node.gain.value = new_value;
       }).bind(this));
@@ -154,6 +165,7 @@ function () {
       this.ui_window = ui_window;
       this.ui_window.setTitle("Gain");
 
+      /*
       this.gain_drag_value =  new UILibrary.DragValue({
         sync_value: this.gain_sync,
         min_value: 0,
@@ -174,14 +186,22 @@ function () {
       var table_element = this.drag_value_table.getElement();
         table_element.style.width = "100%";
       this.ui_window.getContentDiv().appendChild(table_element);
+      */
     };
 
-    GainController.prototype.informConnected = function (connection, endpoint) {
-      debugger;
+    // These methods have probably become boilerplate that should be moved to NodeController.
+    GainController.prototype.informConnected = function (endpoint, connection) {
+      this.getParallelismManager().informConnected(endpoint, connection);
     };
 
-    GainController.prototype.informDisconnected = function (connection, endpoint) {
+    GainController.prototype.informDisconnected = function (endpoint, connection) {
+      this.getParallelismManager().informDisconnected(endpoint, connection);
+    };
 
+    GainController.prototype.produceParallelizableNode = function () {
+      return new Gain.Node({
+        synesthesia: this.synesthesia
+      });
     };
 
     return GainController;
