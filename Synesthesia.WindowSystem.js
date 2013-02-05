@@ -972,11 +972,11 @@ function () {
             y: start_point.y
           };
           control2 = {
-            x: start_point.x + 0.5 * (end_point.x - start_point.x),
+            x: start_point.x + 0.4 * (end_point.x - start_point.x),
             y: start_point.y
           };
           control3 = {
-            x: start_point.x + 0.5 * (end_point.x - start_point.x),
+            x: start_point.x + 0.6 * (end_point.x - start_point.x),
             y: end_point.y
           };
           control4 = {
