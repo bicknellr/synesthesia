@@ -282,13 +282,13 @@ function () {
 
       this.node_controller = this.params.node_controller;
 
-      this.input_desc_to_endpoint_pm_map = new Utilities.Map(); // Maps input descriptors to their endpoint PMs.
+      this.output_desc_to_endpoint_pm_map = new Utilities.Map(); // Maps output descriptors to their endpoint PMs.
       this.endpoint_pm_to_conn_desc_map = new Utilities.Map(); // Maps endpoint PMs to their associated connection descriptors.
       // Build endpoint PM map.
       (function () {
-        var input_endpoint_descriptors = this.node_controller.getInputDescriptorsArray();
-        for (var endpoint_desc_ix = 0; endpoint_desc_ix < input_endpoint_descriptors.length; endpoint_desc_ix++) {
-          var cur_endpoint_desc = input_endpoint_descriptors[endpoint_desc_ix];
+        var output_endpoint_descriptors = this.node_controller.getOutputDescriptorsArray();
+        for (var endpoint_desc_ix = 0; endpoint_desc_ix < output_endpoint_descriptors.length; endpoint_desc_ix++) {
+          var cur_endpoint_desc = output_endpoint_descriptors[endpoint_desc_ix];
 
           var new_endpoint_pm = new Parallelism.EndpointParallelismManager({
             synesthesia: this.synesthesia,
@@ -296,8 +296,8 @@ function () {
             endpoint_desc: cur_endpoint_desc
           });
 
-          // Map input endpoint descriptor to endpoint PM.
-          this.input_desc_to_endpoint_pm_map.set(
+          // Map output endpoint descriptor to endpoint PM.
+          this.output_desc_to_endpoint_pm_map.set(
             cur_endpoint_desc,
             new_endpoint_pm
           );
@@ -386,11 +386,11 @@ function () {
     ParallelismManager.prototype.hardRewire = function () {
       // Disconnect and reconnect everything to effectively rearrange the graph as desired.
 
-      var input_endpoint_descriptors = this.node_controller.getInputDescriptorsArray();
-      for (var endpoint_desc_ix = 0; endpoint_desc_ix < input_endpoint_descriptors.length; endpoint_desc_ix++) {
-        var cur_endpoint_desc = input_endpoint_descriptors[endpoint_desc_ix];
+      var output_endpoint_descriptors = this.node_controller.getOutputDescriptorsArray();
+      for (var endpoint_desc_ix = 0; endpoint_desc_ix < output_endpoint_descriptors.length; endpoint_desc_ix++) {
+        var cur_endpoint_desc = output_endpoint_descriptors[endpoint_desc_ix];
 
-        var cur_endpoint_pm = this.input_desc_to_endpoint_pm_map.get(cur_endpoint_desc);
+        var cur_endpoint_pm = this.output_desc_to_endpoint_pm_map.get(cur_endpoint_desc);
         var conn_descs_for_endpoint_pm = this.endpoint_pm_to_conn_desc_map.get(cur_endpoint_pm);
         for (var conn_desc_ix = 0; conn_desc_ix < conn_descs_for_endpoint_pm.length; conn_desc_ix++) {
           var cur_conn_desc = conn_descs_for_endpoint_pm[conn_desc_ix];
@@ -440,14 +440,14 @@ function () {
     };
 
     ParallelismManager.prototype.informConnected = function (endpoint_desc, connection_desc) {
-      // Downstream (input-end) PM connects and informs nodes ONLY.
+      // Upstream (output-end) PM connects and informs nodes ONLY.
 
-      if (this.node_controller.getInputDescriptorsArray().indexOf(endpoint_desc) != -1) {
-        // We are the downstream PM; continue.
-        console.log("ParallelismManager(.informConnected): Connecting input...");
-      } else if (this.node_controller.getOutputDescriptorsArray().indexOf(endpoint_desc) != -1) {
-        // We are the upstream PM; do nothing.
-        console.log("ParallelismManager(.informConnected): (output-end)");
+      if (this.node_controller.getOutputDescriptorsArray().indexOf(endpoint_desc) != -1) {
+        // We are the upstream PM; continue.
+        console.log("ParallelismManager(.informConnected): Connecting output...");
+      } else if (this.node_controller.getInputDescriptorsArray().indexOf(endpoint_desc) != -1) {
+        // We are the downstream PM; do nothing.
+        console.log("ParallelismManager(.informConnected): (input-end)");
         return;
       } else {
         // The endpoint given wasn't found, something bad happened.
@@ -455,7 +455,7 @@ function () {
       }
 
       // Delegate connection to the proper endpoint PM.
-      var endpoint_pm = this.input_desc_to_endpoint_pm_map.get(endpoint_desc)
+      var endpoint_pm = this.output_desc_to_endpoint_pm_map.get(endpoint_desc)
       endpoint_pm.informConnected(connection_desc);
 
       // Update the endpoint PM to connection descriptor list map.
@@ -463,14 +463,14 @@ function () {
     };
 
     ParallelismManager.prototype.informDisconnected = function (endpoint_desc, connection_desc) {
-      // Downstream (input-end) PM disconnects and informs nodes ONLY.
+      // Upstream (output-end) PM disconnects and informs nodes ONLY.
 
-      if (this.node_controller.getInputDescriptorsArray().indexOf(endpoint_desc) != -1) {
-        // We are the downstream PM; continue.
-        console.log("ParallelismManager(.informDisconnected): Disconnecting input...");
-      } else if (this.node_controller.getOutputDescriptorsArray().indexOf(endpoint_desc) != -1) {
-        // We are the upstream PM; do nothing.
-        console.log("ParallelismManager(.informDisconnected): (output-end)");
+      if (this.node_controller.getOutputDescriptorsArray().indexOf(endpoint_desc) != -1) {
+        // We are the upstream PM; continue.
+        console.log("ParallelismManager(.informDisconnected): Disconnecting output...");
+      } else if (this.node_controller.getInputDescriptorsArray().indexOf(endpoint_desc) != -1) {
+        // We are the downstream PM; do nothing.
+        console.log("ParallelismManager(.informDisconnected): (input-end)");
         return;
       } else {
         // The endpoint given wasn't found, something bad happened.
@@ -478,7 +478,7 @@ function () {
       }
  
       // Delegate disconnection to the proper endpoint PM.
-      var endpoint_pm = this.input_desc_to_endpoint_pm_map.get(endpoint_desc)
+      var endpoint_pm = this.output_desc_to_endpoint_pm_map.get(endpoint_desc)
       endpoint_pm.informDisconnected(connection_desc);
 
       // Update the endpoint PM to connection descriptor list map.

@@ -272,9 +272,9 @@ function () {
         } else if (this.temporary_connection.getFromEndpoint() == this.temporary_endpoint) {
           this.temporary_connection.setFromEndpoint(selectable_endpoint);
         }
-        // Inform connected. Downstream first.
-        this.temporary_connection.getToEndpoint().informConnected(this.temporary_connection);
+        // Inform connected. Upstream first.
         this.temporary_connection.getFromEndpoint().informConnected(this.temporary_connection);
+        this.temporary_connection.getToEndpoint().informConnected(this.temporary_connection);
         did_finalize_connection = true;
       }
 
@@ -284,9 +284,9 @@ function () {
 
       if (this.temporary_connection) {
         if (!did_finalize_connection) {
-          // Inform disconnected. Downstream first.
-          this.temporary_connection.getToEndpoint().informDisconnected(this.temporary_connection);
+          // Inform disconnected. Upstream first.
           this.temporary_connection.getFromEndpoint().informDisconnected(this.temporary_connection);
+          this.temporary_connection.getToEndpoint().informDisconnected(this.temporary_connection);
           this.connections_map.remove(this.temporary_connection.getDescriptor());
         }
         this.temporary_connection = null;
