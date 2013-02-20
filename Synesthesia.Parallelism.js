@@ -247,29 +247,6 @@ function () {
             connections_generated.push(new_connection);
           }
         }
-        /*
-        // If they aren't parallelized over the same thing, connect to the merge gain.
-
-        var opposite_pkeys = opposite_pm.getActiveChannels(); // This should be exactly [null] in this case!
-
-        for (var pkey_ix = 0; pkey_ix < opposite_pkeys.length; pkey_ix++) {
-          var opposite_node_for_pkey = opposite_pm.getNodeForChannel(opposite_pkeys[pkey_ix]);
-          var opposite_endpoint_for_pkey = opposite_endpoint_desc.getEndpointForNode(opposite_node_for_pkey);
-
-          var new_connection = new Graph.Connection({
-            from_endpoint: opposite_endpoint_for_pkey,
-            to_endpoint: this.merge_gain.getInputDescriptors()["waveform"]
-          });
-          opposite_endpoint_for_pkey.informConnected(
-            new_connection
-          );
-          this.merge_gain.getInputDescriptors()["waveform"].informConnected(
-            new_connection
-          );
-
-          connections_generated.push(new_connection);
-        }
-        */
       }
 
       this.conn_desc_to_conn_arr_map.set(new_connection_desc, connections_generated);
