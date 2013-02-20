@@ -394,42 +394,14 @@ function () {
 
     ParallelismManager.prototype.selectParallelismSource = function (params) {
       var parallelism_source = params.source;
-      //var custom_listener = (typeof params.custom_listener == "function" ? custom_listener : function () {});
 
       var potential_sources = this.getAvailableParallelismSources();
       if (potential_sources.indexOf(parallelism_source) == -1) {
         console.warn("ParallelismManager(.selectParallelismSource): Attempted to select an unavailable / unknown parallelism source.");
       }
       
-      // Destroy old channel listener.
-      if (this.channel_event_listener) {
-        this.selected_parallelism_source.removeChannelListener(this.channel_event_listener);
-      }
-
       // SET NEW SOURCE
       this.selected_parallelism_source = parallelism_source;
-
-      /*
-      // Rig channel listener.
-      this.channel_event_listener = (function (channel_event) {
-        console.warn("UNTESTED\nchannel event: " + channel_event.type);
-        switch (channel_event.type) {
-          case "create":
-            var new_node = this.node_controller.produceParallelizableNode();
-            this.channel_to_node_map.set(channel_event.channel, new_node);
-            break;
-
-          case "destroy":
-            //var rm_node = this.channel_to_node_map.get(channel_event.channel);
-            this.channel_to_node_map.remove(channel_event.channel);
-            break;
-        }
-
-        this.hardRewire();
-      }).bind(this);
-
-      this.selected_parallelism_source.addChannelListener(this.channel_event_listener);
-      */
 
       this.hardRewire();
     };

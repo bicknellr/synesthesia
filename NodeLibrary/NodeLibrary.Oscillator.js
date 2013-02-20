@@ -119,16 +119,6 @@ function () {
     // Synesthesia.Instrument
 
     OscillatorNode.prototype.handleNotes = function (notes) {
-    /*
-      if (this.on_handle_notes && typeof this.on_handle_notes == "function") {
-        this.on_handle_notes(notes);
-      } else {
-        this.playNotes(notes);
-      }
-    };
-
-    OscillatorNode.prototype.playNotes = function (notes) {
-    */
       /*
       Apply off notes first: if this node has connected
       nodes and the connection is removed, the catch
@@ -245,10 +235,7 @@ function () {
       this.parallelism_source = new Parallelism.ParallelismSource();
 
       this.getParallelismManager().selectParallelismSource({
-        source: this.parallelism_source,
-        custom_listener: (function (channel_event) {
-          console.log(channel_event);
-        }).bind(this)
+        source: this.parallelism_source
       });
 
       this.ui_window = null;
@@ -295,35 +282,6 @@ function () {
 
     OscillatorController.prototype.informDisconnected = function (endpoint, connection) {
     };
-
-    /*
-    OscillatorController.prototype.onHandleNotes = function (osc_id, notes) {
-      console.log("osc_id: " + osc_id);
-      console.log(notes);
-
-      if (notes.off) {
-        for (var off_ix = 0; off_ix < notes.off.length; off_ix++) {
-          var cur_note = notes.off[off_ix];
-          var cur_osc = this.osc_map.get(cur_note);
-          if (!cur_osc) return;
-          //cur_osc.disconnect();
-          this.parallelism_source.destroyChannel(cur_osc); //
-          this.osc_map.remove(cur_note);
-          delete cur_osc;
-        }
-      }
-
-      if (notes.on) {
-        for (var on_ix = 0; on_ix < notes.on.length; on_ix++) {
-          var cur_note = notes.on[on_ix];
-          var new_osc = this.produceParallelizableNode();
-          new_osc.playNotes({source: notes.source, on: [cur_note]});
-          this.parallelism_source.createChannel(new_osc);
-          this.osc_map.set(cur_note, new_osc);
-        }
-      }
-    };
-    */
 
     OscillatorController.prototype.produceParallelizableNode = function () {
       var osc_id = this.next_osc_id;
