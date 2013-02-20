@@ -162,15 +162,15 @@ function () {
 
         if (edit_connection) {
           this.temporary_connection = edit_connection;
-          edit_connection.from_endpoint.informDisconnected(edit_connection);
-          edit_connection.to_endpoint.informDisconnected(edit_connection);
+          edit_connection.getFromEndpoint().informDisconnected(edit_connection);
+          edit_connection.getToEndpoint().informDisconnected(edit_connection);
           if (selectable_endpoint.direction == "input") {
             this.temporary_endpoint = new WindowSystem.UIEndpoint({
               type: null,
               direction: "input"
             });
             this.temporary_endpoint.setPosition(canvasX - 10, canvasY - 10);
-            this.selected_endpoint = edit_connection.from_endpoint;
+            this.selected_endpoint = edit_connection.getFromEndpoint();
             edit_connection.setToEndpoint(this.temporary_endpoint);
           } else if (this.selected_endpoint.direction == "output") {
             this.temporary_endpoint = new WindowSystem.UIEndpoint({
@@ -178,7 +178,7 @@ function () {
               direction: "output"
             });
             this.temporary_endpoint.setPosition(canvasX - 10, canvasY - 10);
-            this.selected_endpoint = edit_connection.to_endpoint;
+            this.selected_endpoint = edit_connection.getToEndpoint();
             edit_connection.setFromEndpoint(this.temporary_endpoint);
           }
         } else {
@@ -190,11 +190,11 @@ function () {
             });
             this.temporary_endpoint.setPosition(canvasX - 10, canvasY - 10);
             this.temporary_connection = new WindowSystem.UIConnection({
-              from_endpoint: this.temporary_endpoint,
-              to_endpoint: this.selected_endpoint,
+              from_ui_endpoint: this.temporary_endpoint,
+              to_ui_endpoint: this.selected_endpoint,
               descriptor: new Graph.ConnectionDescriptor({
-                from_endpoint: this.temporary_endpoint.getDescriptor(),
-                to_endpoint: this.selected_endpoint.getDescriptor()
+                from_endpoint_descriptor: this.temporary_endpoint.getDescriptor(),
+                to_endpoint_descriptor: this.selected_endpoint.getDescriptor()
               })
             });
           } else if (this.selected_endpoint.direction == "output") {
@@ -204,11 +204,11 @@ function () {
             });
             this.temporary_endpoint.setPosition(canvasX - 10, canvasY - 10);
             this.temporary_connection = new WindowSystem.UIConnection({
-              from_endpoint: this.selected_endpoint,
-              to_endpoint: this.temporary_endpoint,
+              from_ui_endpoint: this.selected_endpoint,
+              to_ui_endpoint: this.temporary_endpoint,
               descriptor: new Graph.ConnectionDescriptor({
-                from_endpoint: this.selected_endpoint.getDescriptor(),
-                to_endpoint: this.temporary_endpoint.getDescriptor()
+                from_endpoint_descriptor: this.selected_endpoint.getDescriptor(),
+                to_endpoint_descriptor: this.temporary_endpoint.getDescriptor()
               })
             });
           }
@@ -267,14 +267,14 @@ function () {
       });
       var did_finalize_connection = false;
       if (selectable_endpoint && this.selected_endpoint && this.selected_endpoint.canConnectTo(selectable_endpoint)) {
-        if (this.temporary_connection.to_endpoint == this.temporary_endpoint) {
+        if (this.temporary_connection.getToEndpoint() == this.temporary_endpoint) {
           this.temporary_connection.setToEndpoint(selectable_endpoint);
-        } else if (this.temporary_connection.from_endpoint == this.temporary_endpoint) {
+        } else if (this.temporary_connection.getFromEndpoint() == this.temporary_endpoint) {
           this.temporary_connection.setFromEndpoint(selectable_endpoint);
         }
-        // Inform connected.
-        this.temporary_connection.from_endpoint.informConnected(this.temporary_connection);
-        this.temporary_connection.to_endpoint.informConnected(this.temporary_connection);
+        // Inform connected. Downstream first.
+        this.temporary_connection.getToEndpoint().informConnected(this.temporary_connection);
+        this.temporary_connection.getFromEndpoint().informConnected(this.temporary_connection);
         did_finalize_connection = true;
       }
 
@@ -284,8 +284,9 @@ function () {
 
       if (this.temporary_connection) {
         if (!did_finalize_connection) {
-          this.temporary_connection.from_endpoint.informDisconnected(this.temporary_connection);
-          this.temporary_connection.to_endpoint.informDisconnected(this.temporary_connection);
+          // Inform disconnected. Downstream first.
+          this.temporary_connection.getToEndpoint().informDisconnected(this.temporary_connection);
+          this.temporary_connection.getFromEndpoint().informDisconnected(this.temporary_connection);
           this.connections_map.remove(this.temporary_connection.getDescriptor());
         }
         this.temporary_connection = null;
@@ -725,6 +726,10 @@ function () {
       return this.connections;
     };
 
+    UIEndpoint.prototype.getType = function () {
+      return this.type;
+    };
+
     UIEndpoint.prototype.setPosition = function (x, y) {
       this.x = x;
       this.y = y;
@@ -919,35 +924,43 @@ function () {
 
       this.descriptor = this.params.descriptor;
 
-      this.from_endpoint = this.params.from_endpoint;
-      this.to_endpoint = this.params.to_endpoint;
+      this.from_ui_endpoint = this.params.from_ui_endpoint;
+      this.to_ui_endpoint = this.params.to_ui_endpoint;
     }
 
     UIConnection.prototype.getDescriptor = function () {
       return this.descriptor;
     };
 
-    UIConnection.prototype.getOppositeEndpoint = function (endpoint) {
-      if (endpoint == this.from_endpoint) {
-        return this.to_endpoint;
-      } else if (endpoint == this.to_endpoint) {
-        return this.from_endpoint;
+    UIConnection.prototype.getOppositeEndpoint = function (ui_endpoint) {
+      if (ui_endpoint == this.from_ui_endpoint) {
+        return this.to_ui_endpoint;
+      } else if (ui_endpoint == this.to_ui_endpoint) {
+        return this.from_ui_endpoint;
       } else {
         return null;
       }
     };
 
-    UIConnection.prototype.setFromEndpoint = function (from_endpoint) {
-      this.from_endpoint = from_endpoint;
+    UIConnection.prototype.getFromEndpoint = function () {
+      return this.from_ui_endpoint;
+    };
+
+    UIConnection.prototype.setFromEndpoint = function (from_ui_endpoint) {
+      this.from_ui_endpoint = from_ui_endpoint;
       this.descriptor.setFromEndpoint(
-        this.from_endpoint.getDescriptor()
+        this.from_ui_endpoint.getDescriptor()
       );
     };
 
-    UIConnection.prototype.setToEndpoint = function (to_endpoint) {
-      this.to_endpoint = to_endpoint;
+    UIConnection.prototype.getToEndpoint = function () {
+      return this.to_ui_endpoint;
+    };
+
+    UIConnection.prototype.setToEndpoint = function (to_ui_endpoint) {
+      this.to_ui_endpoint = to_ui_endpoint;
       this.descriptor.setToEndpoint(
-        this.to_endpoint.getDescriptor()
+        this.to_ui_endpoint.getDescriptor()
       );
     };
 
@@ -955,15 +968,19 @@ function () {
       var context = canvas.getContext("2d");
       context.save();
         // Set color (based on from endpoint).
-        var color = WindowSystem.UIEndpoint.ColorMap[this.from_endpoint.type];
-        if (!color) {
-          color = WindowSystem.UIEndpoint.ColorMap[this.to_endpoint.type];
+        var color;
+        if (this.from_ui_endpoint && this.from_ui_endpoint.getType()) {
+          color = WindowSystem.UIEndpoint.ColorMap[this.from_ui_endpoint.getType()];
+        } else if (this.to_ui_endpoint && this.to_ui_endpoint.getType()) {
+          color = WindowSystem.UIEndpoint.ColorMap[this.to_ui_endpoint.getType()];
+        } else {
+          color = "rgba(255, 0, 0, 1)";
         }
-        context.fillStyle = color || "rgba(256, 0, 0, 1)";
-        context.strokeStyle = color || "rgba(256, 0, 0, 1)";
+        context.fillStyle = color || "rgba(255, 0, 0, 1)";
+        context.strokeStyle = color || "rgba(255, 0, 0, 1)";
 
-        var start_point = this.from_endpoint.getPointForConnection(this);
-        var end_point = this.to_endpoint.getPointForConnection(this);
+        var start_point = this.from_ui_endpoint.getPointForConnection(this);
+        var end_point = this.to_ui_endpoint.getPointForConnection(this);
 
         // Draw from circle.
         context.beginPath();
@@ -975,10 +992,10 @@ function () {
         );
         context.fill();
 
-        var control1 = { x: 0, y:0 };
-        var control2 = { x: 0, y:0 };
-        var control3 = { x: 0, y:0 };
-        var control4 = { x: 0, y:0 };
+        var control1 = {x: 0, y: 0};
+        var control2 = {x: 0, y: 0};
+        var control3 = {x: 0, y: 0};
+        var control4 = {x: 0, y: 0};
         if (end_point.x - start_point.x > 0) {
           control1 = {
             x: start_point.x + 0.25 * (end_point.x - start_point.x),

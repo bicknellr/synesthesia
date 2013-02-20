@@ -46,7 +46,7 @@ function () {
 
       this.connection_descriptors = [];
 
-      this.endpoints = [];
+      this.node_to_endpoint_map = new Utilities.Map();
 
       this.max_connections = this.params.max_connections || Infinity;
     }
@@ -62,6 +62,10 @@ function () {
       "input",
       "output"
     ];
+
+    EndpointDescriptor.prototype.getNodeController = function () {
+      return this.node_controller;
+    };
 
     EndpointDescriptor.prototype.getName = function () {
       return this.name;
@@ -83,14 +87,23 @@ function () {
       return this.direction;
     };
 
-    EndpointDescriptor.prototype.addEndpoint = function (new_endpoint) {
-      this.endpoints.push(new_endpoint);
+    EndpointDescriptor.prototype.setEndpointForNode = function (assoc_node, new_endpoint) {
+      this.node_to_endpoint_map.set(assoc_node, new_endpoint);
     };
 
-    EndpointDescriptor.prototype.removeEndpoint = function (rm_endpoint) {
-      this.endpoints.splice(
-        rm_endpoint,
-        1
+    EndpointDescriptor.prototype.getEndpointForNode = function (assoc_node) {
+      return this.node_to_endpoint_map.get(assoc_node);
+    };
+
+    EndpointDescriptor.prototype.removeEndpointForNode = function (assoc_node) {
+      return this.node_to_endpoint_map.remove(assoc_node);
+    };
+
+    EndpointDescriptor.prototype.getEndpoints = function () {
+      return this.node_to_endpoint_map.getKeys().map(
+        (function (key) {
+          return this.node_to_endpoint_map.get(key);
+        }).bind(this)
       );
     };
 
@@ -122,11 +135,8 @@ function () {
 
     EndpointDescriptor.prototype.informConnected = function (new_connection_descriptor) {
       this.connection_descriptors.push(new_connection_descriptor);
-      
+      this.node_controller.getParallelismManager().informConnected(this, new_connection_descriptor);
       this.node_controller.informConnected(this, new_connection_descriptor);
-
-      for (var endpoint_ix = 0; endpoint_ix < this.endpoints.length; endpoint_ix++) {
-      }
     };
 
     EndpointDescriptor.prototype.informDisconnected = function (rm_connection_descriptor) {
@@ -136,6 +146,7 @@ function () {
           1
         );
       }
+      this.node_controller.getParallelismManager().informDisconnected(this, rm_connection_descriptor);
       this.node_controller.informDisconnected(this, rm_connection_descriptor);
     };
 
@@ -155,6 +166,8 @@ function () {
       if (!Utilities.conforms(Graph.Node, this.node)) {
         throw new Error("Graph.Endpoint: Given object is not a valid node.");
       }
+
+      this.descriptor.setEndpointForNode(this.node, this);
 
       this.connections = [];
     }
@@ -199,8 +212,16 @@ function () {
       this.connections = [];
     }
 
+    ConnectionDescriptor.prototype.getFromEndpoint = function () {
+      return this.from_endpoint_descriptor;
+    };
+
     ConnectionDescriptor.prototype.setFromEndpoint = function (from_endpoint_descriptor) {
       this.from_endpoint_descriptor = from_endpoint_descriptor;
+    };
+
+    ConnectionDescriptor.prototype.getToEndpoint = function () {
+      return this.to_endpoint_descriptor;
     };
 
     ConnectionDescriptor.prototype.setToEndpoint = function (to_endpoint_descriptor) {
@@ -239,8 +260,16 @@ function () {
       this.to_endpoint = this.params.to_endpoint;
     }
 
+    Connection.prototype.getFromEndpoint = function () {
+      return this.from_endpoint;
+    };
+
     Connection.prototype.setFromEndpoint = function (from_endpoint) {
       this.from_endpoint = from_endpoint;
+    };
+
+    Connection.prototype.getToEndpoint = function () {
+      return this.to_endpoint;
     };
 
     Connection.prototype.setToEndpoint = function (to_endpoint) {
@@ -260,25 +289,19 @@ function () {
     return Connection;
   })();
 
-  Graph.NodeController = (function () {
-    function NodeController (params) {
-      if (!params) return; // INTERFACE
+  Graph.NodeCommon = (function () {
+    function NodeCommon (params) {
+      if (!params) return;
 
       this.input_descriptors = {};
       this.output_descriptors = {};
+    }
 
-      this.parallelism_manager = null;
-    };
-
-    NodeController.prototype.informWindowPrepared = function (ui_window) {
-      throw new Error("Graph.NodeController(.informWindowPrepared): Not implemented.");
-    };
-
-    NodeController.prototype.setInputDescriptors = function (descriptors) {
+    NodeCommon.prototype.setInputDescriptors = function (descriptors) {
       this.input_descriptors = descriptors;
     };
 
-    NodeController.prototype.setOutputDescriptors = function (descriptors) {
+    NodeCommon.prototype.setOutputDescriptors = function (descriptors) {
       this.output_descriptors = descriptors;
     };
 
@@ -286,19 +309,19 @@ function () {
     Requests an array containing objects describing the inputs / outputs.
     The objects in this array are of type Graph.EndpointDescriptor
     */
-    NodeController.prototype.getInputDescriptors = function () {
+    NodeCommon.prototype.getInputDescriptors = function () {
       var o = new Object();
       Utilities.copy_properties(this.input_descriptors, o);
       return o;
     };
 
-    NodeController.prototype.getOutputDescriptors = function () {
+    NodeCommon.prototype.getOutputDescriptors = function () {
       var o = new Object();
       Utilities.copy_properties(this.output_descriptors, o);
       return o;
     };
 
-    NodeController.prototype.getInputDescriptorsArray = function () {
+    NodeCommon.prototype.getInputDescriptorsArray = function () {
       var descriptors = [];
       for (var descriptor_name in this.input_descriptors) {
         if (!this.input_descriptors.hasOwnProperty(descriptor_name)) continue;
@@ -308,7 +331,7 @@ function () {
       return descriptors;
     };
 
-    NodeController.prototype.getOutputDescriptorsArray = function () {
+    NodeCommon.prototype.getOutputDescriptorsArray = function () {
       var descriptors = [];
       for (var descriptor_name in this.output_descriptors) {
         if (!this.output_descriptors.hasOwnProperty(descriptor_name)) continue;
@@ -316,6 +339,35 @@ function () {
         descriptors.push(this.output_descriptors[descriptor_name]);
       }
       return descriptors;
+    };
+
+    // Informs the node that a given connection has been connected to / disconnected from the given endpoint.
+    NodeCommon.prototype.informConnected = function (endpoint, connection) {
+      throw new Error("Graph.NodeCommon(.informConnected): Not implemented.");
+    };
+
+    NodeCommon.prototype.informDisconnected = function (endpoint, connection) {
+      throw new Error("Graph.NodeCommon(.informDisconnected): Not implemented.");
+    };
+
+    return NodeCommon;
+  })();
+
+  Graph.NodeController = (function () {
+    function NodeController (params) {
+      if (!params) return; // INTERFACE
+
+      Graph.NodeCommon.apply(this, arguments);
+
+      this.parallelism_manager = null;
+    }
+
+    NodeController.prototype = Utilities.extend(
+      new Graph.NodeCommon()
+    );
+
+    NodeController.prototype.informWindowPrepared = function (ui_window) {
+      throw new Error("Graph.NodeController(.informWindowPrepared): Not implemented.");
     };
 
     // Parallelism
@@ -335,35 +387,19 @@ function () {
       throw new Error("Graph.NodeController(.produceParallelizableNode): Not implemented.");
     };
 
-    // Informs the node that a given connection has been connected to / disconnected from the given endpoint.
-    NodeController.prototype.informConnected = function (endpoint, connection) {
-      throw new Error("Graph.NodeController(.informConnected): Not implemented.");
-    };
-
-    NodeController.prototype.informDisconnected = function (endpoint, connection) {
-      throw new Error("Graph.NodeController(.informDisconnected): Not implemented.");
-    };
-
     return NodeController;
   })();
 
   Graph.Node = (function () {
     function Node (params) {
       if (!params) return; // INTERFACE
+
+      Graph.NodeCommon.apply(this, arguments);
     }
 
-    // Informs the node that a given connection has been connected to / disconnected from the given endpoint.
-    Node.prototype.informConnected = function (endpoint, connection) {
-      throw new Error("Graph.Node(.informConnected): Not implemented.");
-    };
-
-    Node.prototype.informDisconnected = function (endpoint, connection) {
-      throw new Error("Graph.Node(.informDisconnected): Not implemented.");
-    };
-
-    Node.prototype.clone = function () {
-      throw new Error("Graph.Node(.clone): Not implemented.");
-    };
+    Node.prototype = Utilities.extend(
+      new Graph.NodeCommon()
+    );
 
     Node.prototype.destroy = function () {
       throw new Error("Graph.Node(.destroy): Not implemented.");

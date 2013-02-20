@@ -68,21 +68,17 @@ function () {
                   submenu: new UILibrary.Menu({
                     position: "right",
                     items: [
-                      /*
                       new UILibrary.MenuItem({
                         content: document.createTextNode("Keyboard Input"),
                         callback: (function () {
 
-                          this.addNode(
-                            new NodeLibrary.KeyboardInput({
-                              synesthesia: this.synesthesia
-                            }),
+                          this.createNodeWindow(
+                            NodeLibrary.KeyboardInput,
                             {x: 10, y: 10}
                           );
 
                         }).bind(this)
                       }),
-                      */
                       new UILibrary.MenuItem({
                         content: document.createTextNode("Main Output"),
                         callback: (function () {
@@ -124,14 +120,13 @@ function () {
 
                         }).bind(this)
                       }),
+                      */
                       new UILibrary.MenuItem({
                         content: document.createTextNode("Oscillator"),
                         callback: (function () {
 
-                          this.addNode(
-                            new NodeLibrary.Oscillator({
-                              synesthesia: this.synesthesia
-                            }),
+                          this.createNodeWindow(
+                            NodeLibrary.Oscillator,
                             {x: 10, y: 10}
                           );
 
@@ -145,7 +140,6 @@ function () {
 
                         }).bind(this)
                       }),
-                      */
                       new UILibrary.MenuItem({
                         content: document.createTextNode("Gain"),
                         callback: (function () {

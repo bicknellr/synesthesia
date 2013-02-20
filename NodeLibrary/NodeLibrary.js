@@ -6,7 +6,9 @@ module.declare("Synesthesia:NodeLibrary",
   "Synesthesia:WindowSystem",
   "Synesthesia:Envelope",
   "Synesthesia:NodeLibrary:MainOutput",
-  "Synesthesia:NodeLibrary:Gain"
+  "Synesthesia:NodeLibrary:KeyboardInput",
+  "Synesthesia:NodeLibrary:Gain",
+  "Synesthesia:NodeLibrary:Oscillator"
 ],
 function () {
 
@@ -23,6 +25,7 @@ function () {
   NodeLibrary.MainOutput = module.require("Synesthesia:NodeLibrary:MainOutput");
   NodeLibrary.Gain = module.require("Synesthesia:NodeLibrary:Gain");
 
+  // OVERWRITTEN BELOW
   NodeLibrary.KeyboardInput = (function () {
     function KeyboardInput (params) {
       this.params = (typeof params !== "undefined" ? params : {});
@@ -164,6 +167,7 @@ function () {
 
     return KeyboardInput;
   })();
+  NodeLibrary.KeyboardInput = module.require("Synesthesia:NodeLibrary:KeyboardInput");
 
   NodeLibrary.LiveInput = (function () {
     function LiveInput (params) {
@@ -1636,6 +1640,7 @@ function () {
     return BiquadFilter;
   })();
 
+  // OVERWRITTEN BELOW
   NodeLibrary.Oscillator = (function () {
     function Oscillator (params) {
       this.params = (typeof params !== "undefined" ? params : {});
@@ -1829,6 +1834,7 @@ function () {
 
     return Oscillator;
   })();
+  NodeLibrary.Oscillator = module.require("Synesthesia:NodeLibrary:Oscillator");
 
   NodeLibrary.Oscilloscope = (function () {
     function Oscilloscope (params) {

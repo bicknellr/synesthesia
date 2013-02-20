@@ -548,7 +548,6 @@ function () {
 
       this.type = this.params.type || "dropdown";
       this.label = this.params.label;
-      this.items = this.params.items;
 
       this.position = this.params.position || "below";
       this.hover = (typeof this.params.hover !== "undefined" ? this.params.hover : true);
@@ -557,55 +556,9 @@ function () {
         Utilities.addClass(this.element, "Synesthesia_UILibrary_Menu");
         Utilities.addClass(this.element, this.type);
 
-      for (var item_ix = 0; item_ix < this.items.length; item_ix++) {
-        var cur_item = this.items[item_ix];
-
-        var cur_item_element = cur_item.getElement();
-          Utilities.addClass(cur_item_element, "item");
-
-        if (cur_item.getMenu()) {
-          cur_item.getMenu().setParentMenu(this);
-        }
-
-        cur_item_element.addEventListener("click", ((function (cur_item) {
-          return function (e) {
-            if (cur_item.getMenu()) {
-              if (cur_item.getMenu().isOpen()) {
-                cur_item.close();
-              } else {
-                cur_item.open();
-              }
-            } else {
-              var close_to_root = cur_item.launch();
-              if (typeof close_to_root === "undefined") {
-                this.closeToRoot();
-              } else {
-                if (close_to_root) {
-                  this.closeToRoot();
-                }
-              }
-            }
-          };
-        })(cur_item)).bind(this));
-
-        cur_item_element.addEventListener("mouseover", ((function (cur_item) {
-          return function (e) {
-            var do_open = false;
-
-            for (var i = 0; i < this.items.length; i++) {
-              if (this.hover || (this.items[i].getMenu() && this.items[i].getMenu().isOpen())) {
-                do_open = true;
-                this.items[i].close();
-              }
-            }
-
-            if (do_open) {
-              cur_item.open();
-            }
-          };
-        })(cur_item)).bind(this));
-
-        this.element.appendChild(cur_item_element);
+      this.items = [];
+      for (var item_ix = 0; item_ix < this.params.items.length; item_ix++) {
+        this.appendItem(this.params.items[item_ix]);
       }
 
       window.addEventListener("mousedown", (function (e) {
@@ -626,6 +579,78 @@ function () {
 
     Menu.prototype.getElement = function () {
       return this.element;
+    };
+
+    Menu.prototype.appendItem = function (new_menu_item) {
+      this.makeItem(new_menu_item);
+      this.items.push(new_menu_item);
+      this.element.appendChild(new_menu_item.getElement());
+    };
+
+    Menu.prototype.insertBefore = function (new_menu_item, reference_item) {
+      this.makeItem(new_menu_item);
+      this.items.push(new_menu_item);
+      this.element.insertBefore(new_menu_item.getElement(), reference_item.getElement());
+    };
+
+    Menu.prototype.makeItem = function (new_menu_item) {
+      var new_menu_item_element = new_menu_item.getElement();
+        Utilities.addClass(new_menu_item_element, "item");
+
+      if (new_menu_item.getMenu()) {
+        new_menu_item.getMenu().setParentMenu(this);
+      }
+
+      new_menu_item_element.addEventListener("click", ((function (new_menu_item) {
+        return function (e) {
+          if (new_menu_item.getMenu()) {
+            if (new_menu_item.getMenu().isOpen()) {
+              new_menu_item.close();
+            } else {
+              new_menu_item.open();
+            }
+          } else {
+            var close_to_root = new_menu_item.launch();
+            if (typeof close_to_root === "undefined") {
+              this.closeToRoot();
+            } else {
+              if (close_to_root) {
+                this.closeToRoot();
+              }
+            }
+          }
+        };
+      })(new_menu_item)).bind(this));
+
+      new_menu_item_element.addEventListener("mouseover", ((function (new_menu_item) {
+        return function (e) {
+          var do_open = false;
+
+          for (var i = 0; i < this.items.length; i++) {
+            if (this.hover || (this.items[i].getMenu() && this.items[i].getMenu().isOpen())) {
+              do_open = true;
+              this.items[i].close();
+            }
+          }
+
+          if (do_open) {
+            new_menu_item.open();
+          }
+        };
+      })(new_menu_item)).bind(this));
+    };
+
+    Menu.prototype.removeItem = function (rm_menu_item) {
+      if (this.items.indexOf(rm_menu_item) != -1) {
+        throw new Error("UILibrary.Menu(.removeItem): Unknown item.");
+      }
+
+      this.items.splice(
+        this.items.indexOf(rm_menu_item),
+        1
+      );
+
+      this.element.removeChild(rm_menu_item.getElement());
     };
 
     Menu.prototype.setParentMenu = function (parent_menu) {

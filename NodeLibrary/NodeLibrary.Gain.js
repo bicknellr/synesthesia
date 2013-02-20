@@ -24,12 +24,52 @@ function () {
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
+
+      this.controller = this.params.controller;
+
       this.node = null;
       if (this.context.createGain) {
         this.node = this.context.createGain();
       } else if (this.context.createGainNode) {
         this.node = this.context.createGainNode();
       }
+
+      this.setInputDescriptors({
+        "waveform": new Graph.Endpoint({
+          name: "waveform",
+          node: this,
+          descriptor: this.controller.getInputDescriptors()["waveform"],
+          direction: "input",
+          type: "AudioNode",
+          accepted_types: [
+            "AudioNode"
+          ]
+        }),
+        "gain": new Graph.Endpoint({
+          name: "gain",
+          node: this,
+          descriptor: this.controller.getInputDescriptors()["gain"],
+          direction: "input",
+          type: "AudioParam",
+          accepted_types: [
+            "AudioParam",
+            "AudioNode"
+          ]
+        })
+      });
+      this.setOutputDescriptors({
+        "waveform": new Graph.Endpoint({
+          name: "waveform",
+          node: this,
+          descriptor: this.controller.getOutputDescriptors()["waveform"],
+          direction: "output",
+          type: "AudioNode",
+          accepted_types: [
+            "AudioNode",
+            "AudioParam"
+          ]
+        })
+      });
     }
 
     GainNode.prototype = Utilities.extend(
@@ -101,13 +141,6 @@ function () {
 
       this.synesthesia = this.params.synesthesia;
 
-      this.setParallelismManager(
-        new Parallelism.ParallelismManager({
-          synesthesia: this.synesthesia,
-          node_controller: this
-        })
-      );
-
       this.setInputDescriptors({
         "waveform": new Graph.EndpointDescriptor({
           name: "waveform",
@@ -142,7 +175,13 @@ function () {
         })
       });
 
-      this.connections = [];
+      // Must come after setting input/output descriptors.
+      this.setParallelismManager(
+        new Parallelism.ParallelismManager({
+          synesthesia: this.synesthesia,
+          node_controller: this
+        })
+      );
 
       this.ui_window = null;
 
@@ -165,7 +204,10 @@ function () {
       this.ui_window = ui_window;
       this.ui_window.setTitle("Gain");
 
-      /*
+      this.ui_window.getContentDiv().appendChild(
+        document.createTextNode("NOT IMPLEMENTED")
+      );
+
       this.gain_drag_value =  new UILibrary.DragValue({
         sync_value: this.gain_sync,
         min_value: 0,
@@ -186,21 +228,18 @@ function () {
       var table_element = this.drag_value_table.getElement();
         table_element.style.width = "100%";
       this.ui_window.getContentDiv().appendChild(table_element);
-      */
     };
 
-    // These methods have probably become boilerplate that should be moved to NodeController.
     GainController.prototype.informConnected = function (endpoint, connection) {
-      this.getParallelismManager().informConnected(endpoint, connection);
     };
 
     GainController.prototype.informDisconnected = function (endpoint, connection) {
-      this.getParallelismManager().informDisconnected(endpoint, connection);
     };
 
     GainController.prototype.produceParallelizableNode = function () {
       return new Gain.Node({
-        synesthesia: this.synesthesia
+        synesthesia: this.synesthesia,
+        controller: this
       });
     };
 
