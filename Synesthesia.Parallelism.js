@@ -177,10 +177,6 @@ function () {
 
       this.endpoint_desc = this.params.endpoint_desc;
 
-      this.merge_gain = new GainUtilityNode({
-        node: this.synesthesia.getContext().createGainNode()
-      });
-
       this.conn_desc_to_conn_arr_map = new Utilities.Map();
     }
 
@@ -189,7 +185,7 @@ function () {
       var opposite_endpoint_desc = new_connection_desc.getOppositeEndpoint(this.endpoint_desc);
       var opposite_pm = opposite_endpoint_desc.getNodeController().getParallelismManager();
 
-      // Connect inbound node as appropriate.
+      // Connect outbound node as appropriate.
 
       // All connections generated for this connection descriptor should be added here
       // and will be mapped at the end of the function.
