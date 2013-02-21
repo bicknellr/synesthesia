@@ -277,6 +277,7 @@ function () {
       this.synesthesia = this.params.synesthesia;
 
       this.node_controller = this.params.node_controller;
+      this.local_parallelism_source = this.params.local_parallelism_source;
 
       this.output_desc_to_endpoint_pm_map = new Utilities.Map(); // Maps output descriptors to their endpoint PMs.
       this.endpoint_pm_to_conn_desc_map = new Utilities.Map(); // Maps endpoint PMs to their associated connection descriptors.
@@ -365,6 +366,32 @@ function () {
       return results.toArray();
     };
 
+    ParallelismManager.prototype.channelEventListener = function (channel_event) {
+      console.log("channel_event:");
+      console.log(channel_event);
+
+      if (channel_event.type == "create") {
+        var new_node;
+        if (this.selected_parallelism_source == this.local_parallelism_source) {
+          new_node = channel_event.channel;
+        } else {
+          new_node = this.node_controller.produceParallelizableNode();
+        }
+
+        this.channel_to_node_map.set(channel_event.channel, new_node);
+      } else if (channel_event.type == "destroy") {
+        // TODO: inform something to disconnect this node?
+        this.channel_to_node_map.remove(channel_event.channel);
+      }
+
+      this.hardRewire();
+
+      var upstream_pms = this.getUpstreamParallelismManagers();
+      for (var pm_ix = 0; pm_ix < upstream_pms.length; pm_ix++) {
+        upstream_pms[pm_ix].hardRewire();
+      }
+    };
+
     ParallelismManager.prototype.selectParallelismSource = function (params) {
       var parallelism_source = params.source;
 
@@ -372,9 +399,17 @@ function () {
       if (potential_sources.indexOf(parallelism_source) == -1) {
         console.warn("ParallelismManager(.selectParallelismSource): Attempted to select an unavailable / unknown parallelism source.");
       }
+
+      if (this.bound_channel_listener) {
+        this.selected_parallelism_source.removeChannelListener(this.bound_channel_listener);
+        delete this.bound_channel_listener;
+      }
       
       // SET NEW SOURCE
       this.selected_parallelism_source = parallelism_source;
+
+      this.bound_channel_listener = this.channelEventListener.bind(this);
+      this.selected_parallelism_source.addChannelListener(this.bound_channel_listener);
 
       this.hardRewire();
     };

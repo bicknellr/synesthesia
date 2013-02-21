@@ -37,7 +37,8 @@ function () {
 
       this.controller = this.params.controller;
 
-      this.on_handle_notes = this.params.on_handle_notes || function () {};
+      this.id = (typeof this.params.id == "number" ? this.params.id : -1);
+      this.on_handle_notes = this.params.on_handle_notes || null;
 
       this.destination = this.context.createGainNode();
 
@@ -119,6 +120,14 @@ function () {
     // Synesthesia.Instrument
 
     OscillatorNode.prototype.handleNotes = function (notes) {
+      if (this.on_handle_notes) {
+        this.on_handle_notes(this.id, notes);
+      } else {
+        this.playNotes(notes);
+      }
+    };
+
+    OscillatorNode.prototype.playNotes = function (notes) {
       /*
       Apply off notes first: if this node has connected
       nodes and the connection is removed, the catch
@@ -197,8 +206,8 @@ function () {
 
       this.type = Oscillator.Type.SINE;
 
-      this.next_osc_id = 0;
-      this.osc_map = new Utilities.Map();
+      this.next_node_id = 0;
+      this.node_map = new Utilities.Map();
 
       this.setInputDescriptors({
         "notes": new Graph.EndpointDescriptor({
@@ -224,15 +233,16 @@ function () {
         })
       });
 
+      this.parallelism_source = new Parallelism.ParallelismSource();
+
       // Must come after setting input/output descriptors.
       this.setParallelismManager(
         new Parallelism.ParallelismManager({
           synesthesia: this.synesthesia,
-          node_controller: this
+          node_controller: this,
+          local_parallelism_source: this.parallelism_source
         })
       );
-
-      this.parallelism_source = new Parallelism.ParallelismSource();
 
       this.getParallelismManager().selectParallelismSource({
         source: this.parallelism_source
@@ -283,14 +293,44 @@ function () {
     OscillatorController.prototype.informDisconnected = function (endpoint, connection) {
     };
 
+    OscillatorController.prototype.onHandleNotes = function (node_id, notes) {
+      console.log("Oscillator.OscillatorController(.onHandleNotes): #" + node_id);
+      console.log(notes);
+
+      if (notes.off) {
+        for (var off_ix = 0; off_ix < notes.off.length; off_ix++) {
+          var cur_note = notes.off[off_ix];
+          var rm_node = this.node_map.get(cur_note);
+          if (!rm_node) continue;
+          rm_node.playNotes({off: [cur_note]});
+          this.parallelism_source.destroyChannel(rm_node);
+          this.node_map.remove(cur_note);
+          delete rm_node;
+        }
+      }
+
+      if (notes.on) {
+        for (var on_ix = 0; on_ix < notes.on.length; on_ix++) {
+          var cur_note = notes.on[on_ix];
+          if (this.node_map.get(cur_note)) continue;
+          var new_node = this.produceParallelizableNode();
+          new_node.playNotes({on: [cur_note]});
+          this.parallelism_source.createChannel(new_node);
+          this.node_map.set(cur_note, new_node);
+        }
+      }
+
+    };
+
     OscillatorController.prototype.produceParallelizableNode = function () {
-      var osc_id = this.next_osc_id;
+      var node_id = this.next_node_id++;
       return new Oscillator.Node({
         synesthesia: this.synesthesia,
         controller: this,
-        type: this.type
+        type: this.type,
+        id: node_id,
+        on_handle_notes: this.onHandleNotes.bind(this)
       });
-      this.next_osc_id++;
     };
 
     return OscillatorController;
