@@ -641,7 +641,7 @@ function () {
     };
 
     Menu.prototype.removeItem = function (rm_menu_item) {
-      if (this.items.indexOf(rm_menu_item) != -1) {
+      if (this.items.indexOf(rm_menu_item) == -1) {
         throw new Error("UILibrary.Menu(.removeItem): Unknown item.");
       }
 
