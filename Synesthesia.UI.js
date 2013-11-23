@@ -34,26 +34,7 @@ function () {
                 new UILibrary.MenuItem({
                   content: document.createTextNode("About Synesthesia"),
                   callback: (function () {
-                    alert("Add an about page?");
-                  }).bind(this)
-                }),
-                new UILibrary.MenuItem({
-                  content: document.createTextNode("Preferences"),
-                  callback: (function () {
-                    alert("Add preferences.");
-                  }).bind(this)
-                })
-              ]
-            })
-          }),
-          new UILibrary.MenuItem({
-            content: document.createTextNode("File"),
-            submenu: new UILibrary.Menu({
-              items: [
-                new UILibrary.MenuItem({
-                  content: document.createTextNode("New Project..."),
-                  callback: (function () {
-                    alert("This should clear everything out.");
+                    alert("A WebAudio / WebMIDI experiment by Russell Bicknell.");
                   }).bind(this)
                 })
               ]
@@ -254,29 +235,6 @@ function () {
               ]
             })
           }),
-          new UILibrary.MenuItem({
-            content: document.createTextNode("View"),
-            submenu: new UILibrary.Menu({
-              items: [
-                new UILibrary.MenuItem({
-                  content: document.createTextNode("Graph"),
-                  callback: (function () {
-
-                    this.slideview.gotoView("windowsystem");
-
-                  }).bind(this)
-                }),
-                new UILibrary.MenuItem({
-                  content: document.createTextNode("Envelope Editor"),
-                  callback: (function () {
-
-                    this.slideview.gotoView("testright");
-
-                  }).bind(this)
-                })
-              ]
-            })
-          }),
         ]
       });
         Utilities.addClass(this.mainmenu_menubar.getElement(), "mainmenu");
@@ -287,24 +245,8 @@ function () {
         container: this.windowsystem_container
       });
       var windowsystem_element = this.windowsystem.getElement();
-        //Utilities.addClass(windowsystem_element, "windowsystem");
-      //this.container.appendChild(windowsystem_element);
-      
-      var testright_element = document.createElement("div");
-        testright_element.style.setProperty("background-color", "#c0c0c0");
-
-      this.slideview = new UILibrary.SlideView({
-        views: [
-          { name: "windowsystem",
-            element: windowsystem_element
-          },
-          { name: "testright",
-            element: testright_element
-          }
-        ]
-      });
-        Utilities.addClass(this.slideview.getElement(), "slideview");
-      this.container.appendChild(this.slideview.getElement());
+        Utilities.addClass(windowsystem_element, "windowsystem");
+      this.container.appendChild(windowsystem_element);
 
       this.windowsystem.draw();
     }
