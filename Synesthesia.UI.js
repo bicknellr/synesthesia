@@ -82,6 +82,19 @@ function () {
                         }).bind(this)
                       }),
                       new UILibrary.MenuItem({
+                        content: document.createTextNode("MIDI Source"),
+                        callback: (function () {
+
+                          this.addNode(
+                            new NodeLibrary.MIDISource({
+                              synesthesia: this.synesthesia
+                            }),
+                            {x: 10, y: 10}
+                          );
+
+                        }).bind(this)
+                      }),
+                      new UILibrary.MenuItem({
                         content: document.createTextNode("Main Output"),
                         callback: (function () {
 

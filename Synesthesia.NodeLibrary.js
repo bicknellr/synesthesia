@@ -1,8 +1,10 @@
 module.declare("Synesthesia:NodeLibrary",
-["Utilities", "Synesthesia:Graph", "Synesthesia:UILibrary", "Synesthesia:WindowSystem", "Synesthesia:Envelope"],
+["Utilities", "canaryPolyfillMIDIAccess", "Synesthesia:Graph", "Synesthesia:UILibrary", "Synesthesia:WindowSystem", "Synesthesia:Envelope"],
 function () {
 
   var Utilities = module.require("Utilities");
+
+  var canaryPolyfillMIDIAccess = module.require("canaryPolyfillMIDIAccess");
 
   var Graph = module.require("Synesthesia:Graph");
   var UILibrary = module.require("Synesthesia:UILibrary");
@@ -216,6 +218,190 @@ function () {
     };
 
     return KeyboardInput;
+  })();
+
+  NodeLibrary.MIDISource = (function () {
+    function MIDISource (params) {
+      this.params = (typeof params !== "undefined" ? params : {});
+
+      Graph.Node.NoteSourceNode.apply(this, arguments);
+
+      this.synesthesia = this.params.synesthesia;
+      this.notes = {};
+
+      this.setInputDescriptors({});
+
+      this.setOutputDescriptors({
+        "notes": new Graph.Endpoint({
+          node: this,
+          name: "notes",
+          type: "notes",
+          accepted_types: [
+            "notes"
+          ],
+          direction: "output"
+        })
+      });
+
+      this.ui_window = new WindowSystem.NodeWindow({
+        node: this,
+        title: "MIDI Source",
+        draw_callback: this.draw.bind(this)
+      });
+    }
+
+    MIDISource.prototype = Utilities.extend(
+      new Graph.Node.NoteSourceNode()
+    );
+
+    MIDISource.prototype.informConnected = function (endpoint, new_connection) {
+      this.connectToNoteDestination(new_connection.getOppositeEndpoint(endpoint).getNode());
+    };
+
+    MIDISource.prototype.informDisconnected = function (endpoint, rm_connnection) {
+      this.disconnectFromNoteDestination(rm_connection.getOppositeEndpoint(endpoint).getNode());
+    };
+
+    MIDISource.prototype.getWindow = function () {
+      return this.ui_window;
+    };
+
+    MIDISource.prototype.informWindowPrepared = function (div) {
+      this.div = div;
+
+      this.div.appendChild(document.createTextNode("Choose a MIDI Device:"));
+
+      this.div.appendChild(document.createElement("br"));
+
+      this.source_select_element = document.createElement("select");
+        this.source_select_element.addEventListener("change", this.sourceWasSelected.bind(this));
+      this.div.appendChild(this.source_select_element);
+
+      this.requestMIDIAccess();
+    };
+
+    MIDISource.prototype.draw = function () {
+
+    };
+
+    MIDISource.prototype.requestMIDIAccess = function () {
+      if (!navigator.requestMIDIAccess) {
+        this.requestMIDIAccess_failure();
+        return;
+      }
+
+      navigator.requestMIDIAccess().then(
+        this.requestMIDIAccess_success.bind(this),
+        this.requestMIDIAccess_failure.bind(this)
+      );
+    };
+
+    MIDISource.prototype.requestMIDIAccess_success = function (midi_access) {
+      console.log("Successfully retrieved MIDIAccess object.");
+      canaryPolyfillMIDIAccess(midi_access);
+      this.midi_access = midi_access;
+
+      this.update_source_select();
+    };
+
+    MIDISource.prototype.requestMIDIAccess_failure = function () {
+      this.div.innerHTML = "Failed to access MIDI! Open a new MIDI Source node to try again.";
+    };
+
+    MIDISource.prototype.update_source_select = function () {
+      if (!this.midi_access) return;
+
+      this.source_select_element.innerHTML = "";
+
+      var spacer_option = document.createElement("option");
+        spacer_option.setAttribute("disabled", "disabled");
+        spacer_option.appendChild(
+          document.createTextNode("Choose a MIDI device:")
+        );
+      this.source_select_element.appendChild(spacer_option);
+
+      this.source_option_none_element = document.createElement("option");
+        this.source_option_none_element.appendChild(
+          document.createTextNode("none")
+        );
+      this.source_select_element.appendChild(this.source_option_none_element);
+      this.source_select_element.selectedIndex = 1;
+
+      var inputs = this.midi_access.getInputs();
+      for (var input_ix = 0; input_ix < inputs.length; input_ix++) {
+        var cur_input = inputs[input_ix];
+
+        var new_option = document.createElement("option");
+          new_option.appendChild(
+            document.createTextNode("" + cur_input.manufacturer + " " + cur_input.name + " (" + cur_input.id + ")")
+          );
+          new_option.setAttribute("data-midi-id", cur_input.id);
+        this.source_select_element.appendChild(new_option);
+      }
+    };
+
+    MIDISource.prototype.sourceWasSelected = function () {
+      var selected_option = this.source_select_element.options[this.source_select_element.selectedIndex];
+      var selected_midi_id = selected_option.getAttribute("data-midi-id");
+
+      if (this.selected_source) {
+        this.selected_source.onmidimessage = null;
+      }
+
+      try {
+        var selected_source = this.midi_access.getInput(selected_midi_id);
+      } catch (e) {
+        console.error("An error occured while trying to select MIDIInput with id '" + selected_midi_id + "'.");
+        return;
+      }
+
+      this.selected_source = selected_source;
+      this.selected_source.onmidimessage = this.selected_source_onmidimessage.bind(this);
+    };
+
+    MIDISource.prototype.selected_source_onmidimessage = function (message) {
+      var type = (message.data[0] & 0xF0) >> 4;
+      var TYPES = { ON: 9, OFF: 8 };
+      if (type == TYPES.ON) {
+        var note_number = message.data[1];
+        var velocity = message.data[2];
+        this.noteOn(note_number, velocity);
+      } else if (type == TYPES.OFF) {
+        var note_number = message.data[1];
+        var velocity = message.data[2];
+        this.noteOff(note_number);
+      } else {
+        console.log("Unsupported type: " + type);
+      }
+    };
+
+    MIDISource.prototype.noteOn = function (note_number, velocity) {
+      if (this.notes["" + note_number]) return;
+
+      var note = new Envelope.Note({
+        frequency: 440 * Math.pow(2, (note_number - 69) / 12)
+      });
+
+      this.notes["" + note_number] = note;
+
+      this.distributeNotes({
+        source: this,
+        on: [note]
+      });
+    };
+
+    MIDISource.prototype.noteOff = function (note_number) {
+      if (!this.notes["" + note_number]) return;
+
+      this.distributeNotes({
+        source: this,
+        off: [this.notes["" + note_number]]
+      });
+
+      delete this.notes["" + note_number];
+    };
+
+    return MIDISource;
   })();
 
   NodeLibrary.LiveInput = (function () {
