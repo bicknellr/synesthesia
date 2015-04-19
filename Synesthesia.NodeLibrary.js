@@ -412,12 +412,7 @@ function () {
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
-      this.node = null;
-      if (this.context.createGain) {
-        this.node = this.context.createGain();
-      } else if (this.context.createGainNode) {
-        this.node = this.context.createGainNode();
-      }
+      this.node = this.context.createGain();
 
       this.audio_stream = null;
 
@@ -536,12 +531,7 @@ function () {
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
-      this.node = null;
-      if (this.context.createGain) {
-        this.node = this.context.createGain();
-      } else if (this.context.createGainNode) {
-        this.node = this.context.createGainNode();
-      }
+      this.node = this.context.createGain();
 
       this.audio_stream = null;
 
@@ -666,12 +656,7 @@ function () {
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
-      this.node = null;
-      if (this.context.createGain) {
-        this.node = this.context.createGain();
-      } else if (this.context.createGainNode) {
-        this.node = this.context.createGainNode();
-      }
+      this.node = this.context.createGain();
 
       this.gain_sync = new Utilities.SynchronizedValue();
       this.gain_sync.addListener(this, (function (new_value) {
@@ -802,8 +787,8 @@ function () {
 
       this.gain_drag_value =  new UILibrary.DragValue({
         sync_value: this.gain_sync,
-        min_value: this.node.gain.minValue,
-        max_value: this.node.gain.maxValue,
+        min_value: 0,
+        max_value: 1,
         digits: 4,
         sensitivity: 0.0025,
         direction_lock: "vertical"
@@ -837,12 +822,7 @@ function () {
 
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
-      this.node = null;
-      if (this.context.createDelay) {
-        this.node = this.context.createDelay();
-      } else if (this.context.createDelayNode) {
-        this.node = this.context.createDelayNode();
-      }
+      this.node = this.context.createDelay(10);
 
       this.delayTime_sync = new Utilities.SynchronizedValue();
       this.delayTime_sync.addListener(this, (function (new_value) {
@@ -933,9 +913,6 @@ function () {
     };
 
     Delay.prototype.setDelay = function (value) {
-      if (value < 0.01) {
-        value = 0;
-      }
       this.node.delayTime.setValueAtTime(value, 0);
     };
 
@@ -944,8 +921,8 @@ function () {
 
       this.delayTime_drag_value = new UILibrary.DragValue({
         sync_value: this.delayTime_sync,
-        min_value: this.node.delayTime.minValue,
-        max_value: this.node.delayTime.maxValue,
+        min_value: 0,
+        max_value: 10,
         sensitivity: 0.0001,
         digits: 4,
         direction_lock: "vertical",
@@ -1104,8 +1081,8 @@ function () {
 
       this.threshold_drag_value = new UILibrary.DragValue({
         sync_value: this.threshold_sync,
-        min_value: this.node.threshold.minValue,
-        max_value: this.node.threshold.maxValue,
+        min_value: -100,
+        max_value: 0,
         sensitivity: 0.01,
         digits: 2,
         direction_lock: "vertical",
@@ -1116,8 +1093,8 @@ function () {
 
       this.knee_drag_value = new UILibrary.DragValue({
         sync_value: this.knee_sync,
-        min_value: this.node.knee.minValue,
-        max_value: this.node.knee.maxValue,
+        min_value: 0,
+        max_value: 40,
         sensitivity: 0.01,
         digits: 2,
         direction_lock: "vertical",
@@ -1128,8 +1105,8 @@ function () {
 
       this.ratio_drag_value = new UILibrary.DragValue({
         sync_value: this.ratio_sync,
-        min_value: this.node.ratio.minValue,
-        max_value: this.node.ratio.maxValue,
+        min_value: 1,
+        max_value: 20,
         sensitivity: 0.01,
         digits: 2,
         direction_lock: "vertical"
@@ -1154,8 +1131,8 @@ function () {
 
       this.reduction_drag_value = new UILibrary.DragValue({
         sync_value: this.reduction_sync,
-        min_value: this.node.reduction.minValue,
-        max_value: this.node.reduction.maxValue,
+        min_value: 0,
+        max_value: 100,
         sensitivity: 0.01,
         digits: 2,
         direction_lock: "vertical",
@@ -1166,8 +1143,8 @@ function () {
 
       this.attack_drag_value = new UILibrary.DragValue({
         sync_value: this.attack_sync,
-        min_value: this.node.attack.minValue,
-        max_value: this.node.attack.maxValue,
+        min_value: 0,
+        max_value: 1,
         sensitivity: 0.01,
         digits: 2,
         direction_lock: "vertical",
@@ -1178,8 +1155,8 @@ function () {
 
       this.release_drag_value = new UILibrary.DragValue({
         sync_value: this.release_sync,
-        min_value: this.node.release.minValue,
-        max_value: this.node.release.maxValue,
+        min_value: 0,
+        max_value: 1,
         sensitivity: 0.01,
         digits: 2,
         direction_lock: "vertical",
@@ -1884,14 +1861,14 @@ function () {
     }
 
     BiquadFilter.Type = {
-      LOWPASS: 0,
-      HIGHPASS: 1,
-      BANDPASS: 2,
-      LOWSHELF: 3,
-      HIGHSHELF: 4,
-      PEAKING: 5,
-      NOTCH: 6,
-      ALLPASS: 7
+      LOWPASS: "lowpass",
+      HIGHPASS: "highpass",
+      BANDPASS: "bandpass",
+      LOWSHELF: "lowshelf",
+      HIGHSHELF: "highshelf",
+      PEAKING: "peaking",
+      NOTCH: "notch",
+      ALLPASS: "allpass"
     };
 
     BiquadFilter.prototype = Utilities.extend(
@@ -1965,8 +1942,8 @@ function () {
 
       this.frequency_drag_value = new UILibrary.DragValue({
         sync_value: this.frequency_sync,
-        min_value: this.node.frequency.minValue,
-        max_value: this.node.frequency.maxValue,
+        min_value: 10,
+        max_value: 22050,
         sensitivity: 10,
         direction_lock: "vertical",
         string_format: function (str) {
@@ -1976,8 +1953,8 @@ function () {
 
       this.Q_drag_value = new UILibrary.DragValue({
         sync_value: this.Q_sync,
-        min_value: this.node.Q.minValue,
-        max_value: this.node.Q.maxValue,
+        min_value: 0.0001,
+        max_value: 1000,
         sensitivity: 0.01,
         digits: 2,
         direction_lock: "vertical"
@@ -1985,8 +1962,8 @@ function () {
 
       this.gain_drag_value = new UILibrary.DragValue({
         sync_value: this.gain_sync,
-        min_value: this.node.gain.minValue,
-        max_value: this.node.gain.maxValue,
+        min_value: -40,
+        max_value: 40,
         sensitivity: 0.05,
         digits: 2,
         direction_lock: "vertical"
@@ -2058,7 +2035,7 @@ function () {
       this.synesthesia = this.params.synesthesia;
       this.context = this.synesthesia.getContext();
 
-      this.destination = this.context.createGainNode();
+      this.destination = this.context.createGain();
 
       this.type = this.params.type || Oscillator.Type.SINE;
 
@@ -2125,10 +2102,10 @@ function () {
     }
 
     Oscillator.Type = {
-      SINE: 0,
-      SQUARE: 1,
-      SAWTOOTH: 2,
-      TRIANGLE: 3//,
+      SINE: "sine",
+      SQUARE: "square",
+      SAWTOOTH: "sawtooth",
+      TRIANGLE: "triangle",
       //CUSTOM: 4
     };
 
@@ -2253,16 +2230,12 @@ function () {
       // This feels pretty hacky... is there a better way?
       // Connect to a 0 gain node that is connected to the main out.
       // Effectively kills the sound but still causes AudioProcessingEvents to occur.
-      this.audio_sink = this.context.createGainNode();
+      this.audio_sink = this.context.createGain();
         this.audio_sink.gain.value = 0;
         this.audio_sink.connect(this.synesthesia.getDestination());
-      if (this.context.createScriptProcessor) {
         this.node = this.context.createScriptProcessor(2048);
-      } else if (this.context.createJavaScriptNode) {
-        this.node = this.context.createJavaScriptNode(2048);
-      }
-        this.node.onaudioprocess = this.handle_AudioProcessingEvent.bind(this);
-        this.node.connect(this.audio_sink);
+          this.node.onaudioprocess = this.handle_AudioProcessingEvent.bind(this);
+          this.node.connect(this.audio_sink);
 
       this.setInputDescriptors({
         "waveform": new Graph.Endpoint({
