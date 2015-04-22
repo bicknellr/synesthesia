@@ -258,7 +258,7 @@ function () {
       this.connectToNoteDestination(new_connection.getOppositeEndpoint(endpoint).getNode());
     };
 
-    MIDISource.prototype.informDisconnected = function (endpoint, rm_connnection) {
+    MIDISource.prototype.informDisconnected = function (endpoint, rm_connection) {
       this.disconnectFromNoteDestination(rm_connection.getOppositeEndpoint(endpoint).getNode());
     };
 
@@ -298,7 +298,7 @@ function () {
 
     MIDISource.prototype.requestMIDIAccess_success = function (midi_access) {
       console.log("Successfully retrieved MIDIAccess object.");
-      canaryPolyfillMIDIAccess(midi_access);
+      //canaryPolyfillMIDIAccess(midi_access);
       this.midi_access = midi_access;
 
       this.update_source_select();
@@ -327,9 +327,9 @@ function () {
       this.source_select_element.appendChild(this.source_option_none_element);
       this.source_select_element.selectedIndex = 1;
 
-      var inputs = this.midi_access.getInputs();
-      for (var input_ix = 0; input_ix < inputs.length; input_ix++) {
-        var cur_input = inputs[input_ix];
+      var inputs = this.midi_access.inputs;
+      for (var input_key of inputs.keys()) {
+        var cur_input = inputs.get(input_key);
 
         var new_option = document.createElement("option");
           new_option.appendChild(
@@ -349,14 +349,17 @@ function () {
       }
 
       try {
-        var selected_source = this.midi_access.getInput(selected_midi_id);
+        var selected_source = this.midi_access.inputs.get(selected_midi_id);
       } catch (e) {
         console.error("An error occured while trying to select MIDIInput with id '" + selected_midi_id + "'.");
         return;
       }
 
       this.selected_source = selected_source;
-      this.selected_source.onmidimessage = this.selected_source_onmidimessage.bind(this);
+
+      if (this.selected_source) {
+        this.selected_source.onmidimessage = this.selected_source_onmidimessage.bind(this);
+      }
     };
 
     MIDISource.prototype.selected_source_onmidimessage = function (message) {
